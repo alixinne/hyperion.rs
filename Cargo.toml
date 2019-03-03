@@ -5,7 +5,6 @@ authors = ["Vincent Tavernier <vince.tavernier@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-valico = "3.0.0"
 protobuf = "2.3.0"
 palette = "0.4.1"
 clap = { version = "2.32.0", features = ["yaml"] }

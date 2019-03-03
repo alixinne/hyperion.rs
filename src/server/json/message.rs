@@ -2,18 +2,18 @@
 pub struct Adjustment {
     id: Option<String>,
     #[serde(rename = "redAdjust")]
-    red_adjust: Option<[i32; 3]>,
+    red_adjust: Option<[u8; 3]>,
     #[serde(rename = "greenAdjust")]
-    green_adjust: Option<[i32; 3]>,
+    green_adjust: Option<[u8; 3]>,
     #[serde(rename = "blueAdjust")]
-    blue_adjust: Option<[i32; 3]>,
+    blue_adjust: Option<[u8; 3]>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Correction {
     id: Option<String>,
     #[serde(rename = "correctionValues")]
-    correction_values: Option<[i32; 3]>,
+    correction_values: Option<[u8; 3]>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,7 +26,7 @@ pub struct Effect {
 pub struct Temperature {
     id: Option<String>,
     #[serde(rename = "correctionValues")]
-    correction_values: Option<[i32; 3]>,
+    correction_values: Option<[u8; 3]>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,7 +56,7 @@ pub enum HyperionMessage {
     Color {
         priority: i32,
         duration: Option<i32>,
-        color: Vec<i32>,
+        color: Vec<u8>,
     },
     #[serde(rename = "correction")]
     Correction { correction: Correction },

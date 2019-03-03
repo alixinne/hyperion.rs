@@ -29,6 +29,14 @@ impl From<std::io::Error> for HyperionMessageError {
     }
 }
 
+#[derive(Debug)]
+enum HyperionRequest {
+    ColorRequest(message::ColorRequest),
+    ImageRequest(message::ImageRequest),
+    ClearRequest(message::ClearRequest),
+    ClearAllRequest(message::HyperionRequest),
+}
+
 struct ProtoCodec {}
 
 impl ProtoCodec {
@@ -38,7 +46,7 @@ impl ProtoCodec {
 }
 
 impl Decoder for ProtoCodec {
-    type Item = message::HyperionRequest;
+    type Item = HyperionRequest;
     type Error = HyperionMessageError;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
@@ -55,17 +63,41 @@ impl Decoder for ProtoCodec {
         }
 
         // Attempt to parse using protobuf
-        let parsed = protobuf::parse_from_bytes::<Self::Item>(&src[4..(4 + size)]);
+        let range = &src[4..(4 + size)];
+        let parsed = protobuf::parse_from_bytes::<message::HyperionRequest>(range);
+
+        // Process parse result
+        let result = match parsed {
+            Ok(message) => {
+                // We parsed an HyperionMessage, which gives us the actual type
+                // of the payload
+                match message.get_command() {
+                    message::HyperionRequest_Command::COLOR => {
+                        protobuf::parse_from_bytes::<message::ColorRequest>(range)
+                            .map(|rq| HyperionRequest::ColorRequest(rq))
+                    }
+                    message::HyperionRequest_Command::IMAGE => {
+                        protobuf::parse_from_bytes::<message::ImageRequest>(range)
+                            .map(|rq| HyperionRequest::ImageRequest(rq))
+                    }
+                    message::HyperionRequest_Command::CLEAR => {
+                        protobuf::parse_from_bytes::<message::ClearRequest>(range)
+                            .map(|rq| HyperionRequest::ClearRequest(rq))
+                    }
+                    message::HyperionRequest_Command::CLEARALL => {
+                        Ok(HyperionRequest::ClearAllRequest(message))
+                    }
+                }
+                .map_err(|e| HyperionMessageError::DecodeError(e))
+            }
+            Err(parse_error) => Err(HyperionMessageError::DecodeError(parse_error)),
+        };
 
         // Consume the message from the buffer: since it's complete, the parsing
         // success does not depend on more data arriving
         src.advance(4 + size);
 
-        // Process parse result
-        match parsed {
-            Ok(message) => Ok(Some(message)),
-            Err(parse_error) => Err(HyperionMessageError::DecodeError(parse_error)),
-        }
+        result.map(|rq| Some(rq))
     }
 }
 
@@ -116,7 +148,7 @@ pub fn bind(address: &SocketAddr) -> Result<impl Future<Item = (), Error = ()>, 
                     reply
                 })
                 .forward(writer)
-                .map(|_| { })
+                .map(|_| {})
                 .map_err(|e| {
                     warn!("error while processing request: {}", e);
                     ()

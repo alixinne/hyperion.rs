@@ -11,6 +11,7 @@ use std::env;
 
 mod cli;
 
+/// Entry point of the hyperion binary
 fn main() {
     // Initialize logging, default to info
     let log_var_name = "HYPERION_LOG";

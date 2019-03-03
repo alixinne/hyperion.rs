@@ -1,3 +1,5 @@
+//! protobuf protocol server implementation
+
 use std::net::SocketAddr;
 
 use tokio::io;
@@ -11,8 +13,10 @@ use bytes::{BufMut, BytesMut};
 
 use protobuf::Message;
 
+/// Module containing the schema definitions as Serde serializable structures and enums
 mod message;
 
+/// Error raised when parsing a protobuf encoded message fails
 #[derive(Debug, Fail)]
 enum HyperionMessageError {
     #[fail(display = "I/O error: {}", 0)]
@@ -29,6 +33,7 @@ impl From<std::io::Error> for HyperionMessageError {
     }
 }
 
+/// Wrapper type that covers all possible protobuf encoded Hyperion messages
 #[derive(Debug)]
 enum HyperionRequest {
     ColorRequest(message::ColorRequest),
@@ -37,6 +42,7 @@ enum HyperionRequest {
     ClearAllRequest(message::HyperionRequest),
 }
 
+/// tokio Codec to decode incoming Hyperion protobuf messages
 struct ProtoCodec {}
 
 impl ProtoCodec {
@@ -123,6 +129,16 @@ impl Encoder for ProtoCodec {
     }
 }
 
+/// Binds the protobuf protocol server implementation to the given address, returning a future to
+/// process incoming requests.
+///
+/// # Parameters
+///
+/// * `address`: address (and port) of the endpoint to bind the protobuf server to
+///
+/// # Errors
+///
+/// * When the server can't be bound to the given address
 pub fn bind(address: &SocketAddr) -> Result<impl Future<Item = (), Error = ()>, failure::Error> {
     let listener = TcpListener::bind(&address)?;
 

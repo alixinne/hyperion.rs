@@ -1,3 +1,5 @@
+//! JSON protocol server implementation
+
 use std::net::SocketAddr;
 
 use tokio::net::TcpListener;
@@ -5,16 +7,45 @@ use tokio::prelude::*;
 
 use tokio_codec::Framed;
 
+/// Module containing the schema definitions as Serde serializable structures and enums
 mod message;
 
+/// Parse an incoming request as JSON into the corresponding message type
+///
+/// # Parameters
+///
+/// * `line`: input request line to parse as a message
+///
+/// # Errors
+///
+/// When the line cannot be parsed as JSON, the underlying error is returned from serde_json.
 fn parse_request(line: &str) -> serde_json::Result<message::HyperionMessage> {
     serde_json::from_str(line)
 }
 
+/// Encode an outgoing reply as JSON
+///
+/// # Parameters
+///
+/// * `reply`: reply to encode as JSON
+///
+/// # Errors
+///
+/// When the reply cannot be encoded as JSON, the underlying error is returned from serde_json.
 fn encode_reply(reply: &serde_json::Value) -> serde_json::Result<String> {
     serde_json::to_string(reply)
 }
 
+/// Binds the JSON protocol server implementation to the given address, returning a future to
+/// process incoming requests.
+///
+/// # Parameters
+///
+/// * `address`: address (and port) of the endpoint to bind the JSON server to
+///
+/// # Errors
+///
+/// * When the server can't be bound to the given address
 pub fn bind(address: &SocketAddr) -> Result<impl Future<Item = (), Error = ()>, failure::Error> {
     let listener = TcpListener::bind(&address)?;
 

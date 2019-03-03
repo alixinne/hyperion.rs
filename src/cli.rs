@@ -1,16 +1,25 @@
+//! Command line interface (CLI) of the hyperion binary
+
 use clap::App;
 use failure::ResultExt;
 
 use hyperion::server;
 
+/// Error raised when the CLI fails
 #[derive(Debug, Fail)]
 pub enum CliError {
     #[fail(display = "no valid command specified, see hyperion --help for usage details")]
+    /// An invalid subcommand was specified
     InvalidCommand,
     #[fail(display = "server error: {}", 0)]
+    /// The server subcommand encountered an error
     ServerError(#[fail(cause)] server::ServerError),
 }
 
+/// Entry point for the hyperion CLI
+///
+/// Parses arguments for the command line and dispatches to the corresponding subcommands.
+/// See cli.yml for the definition of subcommands and arguments.
 pub fn run() -> Result<(), failure::Error> {
     // Parse CLI args
     let yaml = load_yaml!("cli.yml");

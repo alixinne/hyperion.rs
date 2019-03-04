@@ -1,8 +1,8 @@
 /// Floating-point range in a picture
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScanRange {
-    minimum: f32,
-    maximum: f32,
+    pub minimum: f32,
+    pub maximum: f32,
 }
 
 impl Default for ScanRange {
@@ -24,21 +24,11 @@ impl Default for ScanRange {
 /// filters.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Led {
-    index: i32,
-    hscan: ScanRange,
-    vscan: ScanRange,
+    pub index: i32,
+    pub hscan: ScanRange,
+    pub vscan: ScanRange,
     #[serde(skip_deserializing, skip_serializing)]
-    current_color: palette::LinSrgb,
-}
-
-impl Led {
-    pub fn index(&self) -> i32 {
-        self.index
-    }
-
-    pub fn current_color(&self) -> palette::LinSrgb {
-        self.current_color
-    }
+    pub current_color: palette::LinSrgb,
 }
 
 impl Default for Led {
@@ -47,7 +37,7 @@ impl Default for Led {
             index: 0,
             hscan: ScanRange::default(),
             vscan: ScanRange::default(),
-            current_color: palette::LinSrgb::default(),
+            current_color: palette::LinSrgb::from_components((0.1, 0.2, 0.3))
         }
     }
 }

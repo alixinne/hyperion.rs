@@ -1,5 +1,8 @@
 use super::Led;
 
+use serde_json::Value;
+use std::collections::BTreeMap as Map;
+
 /// Device endpoint definition
 ///
 /// An endpoint is defined by a method (how to contact the target device) and
@@ -8,8 +11,16 @@ use super::Led;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method", content = "target")]
 pub enum Endpoint {
-    #[serde(rename = "stdout")] Stdout,
-    #[serde(rename = "udp")] Udp { address: String },
+    #[serde(rename = "stdout")]
+    Stdout,
+    #[serde(rename = "udp")]
+    Udp { address: String },
+    #[serde(rename = "script")]
+    Script {
+        path: String,
+        #[serde(flatten)]
+        params: Map<String, Value>,
+    },
 }
 
 /// Physical or virtual ambient lighting device representation
@@ -37,7 +48,12 @@ mod tests {
 
     #[test]
     fn serialize_udp_endpoint() {
-        let endpoint = Endpoint::Udp { address: "127.0.0.1:19446".into() };
-        println!("udp endpoint: {}", serde_json::to_string(&endpoint).unwrap());
+        let endpoint = Endpoint::Udp {
+            address: "127.0.0.1:19446".into(),
+        };
+        println!(
+            "udp endpoint: {}",
+            serde_json::to_string(&endpoint).unwrap()
+        );
     }
 }

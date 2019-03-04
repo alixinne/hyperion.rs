@@ -4,6 +4,7 @@
 //! Hyperion software, as well as an abstract wrapper for these.
 
 use tokio;
+use futures::Future;
 
 use std::net::SocketAddr;
 
@@ -30,7 +31,7 @@ impl Builder {
     /// Runs the server wrapper using the provided parameters
     ///
     /// This method will block forever, as it enters the tokio runtime.
-    pub fn run(self) -> Result<(), ServerError> {
+    pub fn run(self) -> Result<impl Future<Item = (), Error = failure::Error>, ServerError> {
         let address = self
             .address
             .parse()
@@ -42,14 +43,7 @@ impl Builder {
         let json_server = json::bind(&json_address).map_err(|_e| ServerError::BindFailed)?;
         let proto_server = proto::bind(&proto_address).map_err(|_e| ServerError::BindFailed)?;
 
-        tokio::run(futures::lazy(|| {
-            tokio::spawn(json_server);
-            tokio::spawn(proto_server);
-
-            Ok(())
-        }));
-
-        Ok(())
+        Ok(json_server.join(proto_server).map(|(_, _)| ()).map_err(|e| e.into()))
     }
 
     /// Set the listening address for the server

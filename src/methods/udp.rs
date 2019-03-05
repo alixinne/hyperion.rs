@@ -1,11 +1,11 @@
-use super::{Method, Led};
+use super::{Led, Method};
 
 /// LED device that forwards raw RGBW data as UDP packets
-pub struct Udp {
-}
+pub struct Udp {}
 
 impl Udp {
     pub fn new(address: String) -> Self {
+        // TODO: implement UDP method
         Self {}
     }
 }

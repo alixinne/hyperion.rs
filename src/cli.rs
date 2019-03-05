@@ -3,7 +3,9 @@
 use clap::App;
 use failure::ResultExt;
 
-use hyperion::server;
+use hyperion::servers;
+
+use std::net::SocketAddr;
 
 use futures::{Future, Stream};
 use stream_cancel::Tripwire;
@@ -16,8 +18,7 @@ pub enum CliError {
     /// An invalid subcommand was specified
     InvalidCommand,
     #[fail(display = "server error: {}", 0)]
-    /// The server subcommand encountered an error
-    ServerError(#[fail(cause)] server::ServerError),
+    ServerError(String),
 }
 
 /// Entry point for the hyperion CLI
@@ -41,52 +42,64 @@ pub fn run() -> Result<(), failure::Error> {
         // Tripwire to cancel the server listening
         let (trigger, tripwire) = Tripwire::new();
 
-        match server::server()
-            .address(server_matches.value_of("bind-addr").unwrap().into())
-            .json_port(
-                value_t!(server_matches, "json-port", u16)
-                    .context("json-port must be a port number")?,
-            )
-            .proto_port(
-                value_t!(server_matches, "proto-port", u16)
-                    .context("proto-port must be a port number")?,
-            )
-            .run()
-        {
-            Ok(server_future) => {
-                tokio::run(futures::lazy(move || {
-                    tokio::spawn(
-                        Signal::new(SIGINT)
-                            .flatten_stream()
-                            .map(|_| "SIGINT")
-                            .select(Signal::new(SIGTERM).flatten_stream().map(|_| "SIGTERM"))
-                            .into_future()
-                            .and_then(move |(signal, _): (Option<&'static str>, _)| {
-                                info!("got {}, terminating", signal.unwrap());
-                                drop(trigger);
-                                Ok(())
-                            })
-                            .map_err(|_| {
-                                panic!("ctrl_c error");
-                            }),
-                    );
+        // Vector of server futures
+        let bind_address = server_matches
+            .value_of("bind-addr")
+            .unwrap()
+            .parse()
+            .map_err(|_| CliError::ServerError("could not parse bind address".into()))?;
 
-                    server_future
-                        .map_err(|error| {
-                            warn!("server error: {:?}", error);
-                        })
-                        .select(tripwire)
-                        .map(|_| {
-                            info!("server terminating");
-                        })
-                        .map_err(|_| {
-                            panic!("select failure");
-                        })
-                }));
-                Ok(())
-            }
-            Err(server_error) => Err(CliError::ServerError(server_error).into()),
-        }
+        let json_address = SocketAddr::new(
+            bind_address,
+            value_t!(server_matches, "json-port", u16)
+                .context("json-port must be a port number")?,
+        );
+
+        let proto_address = SocketAddr::new(
+            bind_address,
+            value_t!(server_matches, "proto-port", u16)
+                .context("proto-port must be a port number")?,
+        );
+
+        let servers = vec![
+            servers::bind_json(&json_address)?,
+            servers::bind_proto(&proto_address)?,
+        ];
+
+        let server_future = futures::future::join_all(servers).map(|_| ());
+
+        tokio::run(futures::lazy(move || {
+            tokio::spawn(
+                Signal::new(SIGINT)
+                    .flatten_stream()
+                    .map(|_| "SIGINT")
+                    .select(Signal::new(SIGTERM).flatten_stream().map(|_| "SIGTERM"))
+                    .into_future()
+                    .and_then(move |(signal, _): (Option<&'static str>, _)| {
+                        info!("got {}, terminating", signal.unwrap());
+                        drop(trigger);
+                        Ok(())
+                    })
+                    .map_err(|_| {
+                        panic!("ctrl_c error");
+                    }),
+            );
+
+            server_future
+                .map_err(|error| {
+                    warn!("server error: {:?}", error);
+                })
+                .select(tripwire)
+                .map(|_| {
+                    info!("server terminating");
+                })
+                .map_err(|_| {
+                    panic!("select failure");
+                })
+        }));
+
+        Ok(())
+    //Err(server_error) => Err(CliError::ServerError(server_error).into()),
     } else {
         bail!(CliError::InvalidCommand)
     }

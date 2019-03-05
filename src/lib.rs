@@ -7,4 +7,4 @@ extern crate serde_derive;
 
 pub mod hyperion;
 pub mod methods;
-pub mod server;
+pub mod servers;

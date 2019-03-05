@@ -46,7 +46,7 @@ fn encode_reply(reply: &serde_json::Value) -> serde_json::Result<String> {
 /// # Errors
 ///
 /// * When the server can't be bound to the given address
-pub fn bind(address: &SocketAddr) -> Result<impl Future<Item = (), Error = std::io::Error>, failure::Error> {
+pub fn bind(address: &SocketAddr) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
     let listener = TcpListener::bind(&address)?;
 
     let server = listener
@@ -90,5 +90,5 @@ pub fn bind(address: &SocketAddr) -> Result<impl Future<Item = (), Error = std::
 
     info!("server listening on {}", address);
 
-    Ok(server)
+    Ok(Box::new(server))
 }

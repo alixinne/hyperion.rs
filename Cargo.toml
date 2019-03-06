@@ -1,27 +1,5 @@
-[package]
-name = "hyperion"
-version = "0.1.0"
-authors = ["Vincent Tavernier <vince.tavernier@gmail.com>"]
-edition = "2018"
-
-[dependencies]
-protobuf = "2.3.0"
-palette = "0.4.1"
-clap = { version = "2.32.0", features = ["yaml"] }
-log = "0.4.6"
-pretty_env_logger = "0.3.0"
-failure = "0.1.5"
-tokio = "0.1.16"
-futures = "0.1.25"
-tokio-codec = "0.1.1"
-bytes = "0.4.11"
-byteorder = "1.3.1"
-serde_json = "1.0.39"
-serde_derive = "1.0.89"
-serde = "1.0.89"
-rlua = "0.16.2"
-stream-cancel = "0.4.4"
-tokio-signal = "0.2.7"
-
-[build-dependencies]
-protobuf-codegen-pure = "2.3.0"
+[workspace]
+members = [
+    "hyperion",
+    "hyperiond",
+]

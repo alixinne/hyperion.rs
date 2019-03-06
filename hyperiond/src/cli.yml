@@ -1,4 +1,4 @@
-name: hyperion
+name: hyperiond
 author: Vincent Tavernier <vince.tavernier@gmail.com>
 about: Hyperion Ambient Lighting software Rust implementation
 subcommands:

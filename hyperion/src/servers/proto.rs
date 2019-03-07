@@ -24,41 +24,41 @@ use codec::*;
 /// # Errors
 ///
 /// * When the server can't be bound to the given address
-pub fn bind(address: &SocketAddr) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
+pub fn bind(
+    address: &SocketAddr,
+) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
     let listener = TcpListener::bind(&address)?;
 
-    let server = listener
-        .incoming()
-        .for_each(|socket| {
-            debug!(
-                "accepted new connection from {}",
-                socket.peer_addr().unwrap()
-            );
+    let server = listener.incoming().for_each(|socket| {
+        debug!(
+            "accepted new connection from {}",
+            socket.peer_addr().unwrap()
+        );
 
-            let framed = Framed::new(socket, ProtoCodec::new());
-            let (writer, reader) = framed.split();
+        let framed = Framed::new(socket, ProtoCodec::new());
+        let (writer, reader) = framed.split();
 
-            let action = reader
-                .map(|request| {
-                    debug!("got request: {:?}", request);
+        let action = reader
+            .map(|request| {
+                debug!("got request: {:?}", request);
 
-                    let mut reply = message::HyperionReply::new();
-                    reply.set_field_type(message::HyperionReply_Type::REPLY);
-                    reply.set_success(true);
+                let mut reply = message::HyperionReply::new();
+                reply.set_field_type(message::HyperionReply_Type::REPLY);
+                reply.set_success(true);
 
-                    reply
-                })
-                .forward(writer)
-                .map(|_| {})
-                .map_err(|e| {
-                    warn!("error while processing request: {}", e);
-                    ()
-                });
+                reply
+            })
+            .forward(writer)
+            .map(|_| {})
+            .map_err(|e| {
+                warn!("error while processing request: {}", e);
+                ()
+            });
 
-            tokio::spawn(action);
+        tokio::spawn(action);
 
-            Ok(())
-        });
+        Ok(())
+    });
 
     info!("server listening on {}", address);
 

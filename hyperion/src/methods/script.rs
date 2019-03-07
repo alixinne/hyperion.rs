@@ -27,7 +27,7 @@ impl From<rlua::Error> for ScriptError {
 }
 
 impl Script {
-    fn to_lua_value<'lua>(lua_ctx: &rlua::Context<'lua>, value: &Value) -> rlua::Result<rlua::Value<'lua>> {
+    fn to_lua_value<'lua>(lua_ctx: rlua::Context<'lua>, value: &Value) -> rlua::Result<rlua::Value<'lua>> {
         match value {
             Value::Null => Ok(rlua::Value::Nil),
             Value::Bool(bool_value) => Ok(rlua::Value::Boolean(*bool_value)),
@@ -71,7 +71,7 @@ impl Script {
 
             let params_table = lua_ctx.create_table()?;
             for (key, value) in params.iter() {
-                params_table.set(key.to_string(), Self::to_lua_value(&lua_ctx, value)?)?;
+                params_table.set(key.to_string(), Self::to_lua_value(lua_ctx, value)?)?;
             }
 
             globals.set("hyperion_params", params_table)?;

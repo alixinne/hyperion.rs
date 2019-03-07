@@ -57,7 +57,6 @@ pub fn bind(
             .map(|_| {})
             .map_err(|e| {
                 warn!("error while processing request: {}", e);
-                ()
             });
 
         tokio::spawn(action);

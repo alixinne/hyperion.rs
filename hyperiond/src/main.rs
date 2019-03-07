@@ -15,7 +15,7 @@ mod cli;
 fn main() {
     // Initialize logging, default to info
     let log_var_name = "HYPERION_LOG";
-    if !env::var(log_var_name).is_ok() {
+    if env::var(log_var_name).is_err() {
         env::set_var(log_var_name, "hyperion=info");
     }
 

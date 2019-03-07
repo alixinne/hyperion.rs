@@ -1,6 +1,7 @@
 use super::{Led, Method};
 
 /// Dummy LED device which outputs updates to the standard output
+#[derive(Default)]
 pub struct Stdout {}
 
 impl Stdout {

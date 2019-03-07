@@ -73,21 +73,21 @@ impl Decoder for ProtoCodec {
                 match message.get_command() {
                     message::HyperionRequest_Command::COLOR => {
                         protobuf::parse_from_bytes::<message::ColorRequest>(range)
-                            .map(|rq| HyperionRequest::ColorRequest(rq))
+                            .map(HyperionRequest::ColorRequest)
                     }
                     message::HyperionRequest_Command::IMAGE => {
                         protobuf::parse_from_bytes::<message::ImageRequest>(range)
-                            .map(|rq| HyperionRequest::ImageRequest(rq))
+                            .map(HyperionRequest::ImageRequest)
                     }
                     message::HyperionRequest_Command::CLEAR => {
                         protobuf::parse_from_bytes::<message::ClearRequest>(range)
-                            .map(|rq| HyperionRequest::ClearRequest(rq))
+                            .map(HyperionRequest::ClearRequest)
                     }
                     message::HyperionRequest_Command::CLEARALL => {
                         Ok(HyperionRequest::ClearAllRequest(message))
                     }
                 }
-                .map_err(|e| HyperionMessageError::DecodeError(e))
+                .map_err(HyperionMessageError::DecodeError)
             }
             Err(parse_error) => Err(HyperionMessageError::DecodeError(parse_error)),
         };
@@ -96,7 +96,7 @@ impl Decoder for ProtoCodec {
         // success does not depend on more data arriving
         src.advance(4 + size);
 
-        result.map(|rq| Some(rq))
+        result.map(Option::Some)
     }
 }
 
@@ -116,7 +116,7 @@ impl Encoder for ProtoCodec {
 
         // Write message contents
         item.write_to_writer(&mut dst.writer())
-            .map_err(|e| HyperionMessageError::EncodeError(e))?;
+            .map_err(HyperionMessageError::EncodeError)?;
 
         Ok(())
     }

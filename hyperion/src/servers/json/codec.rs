@@ -27,7 +27,7 @@ fn parse_request(line: &str) -> serde_json::Result<message::HyperionMessage> {
 /// # Errors
 ///
 /// When the reply cannot be encoded as JSON, the underlying error is returned from serde_json.
-fn encode_reply(reply: &serde_json::Value) -> serde_json::Result<String> {
+fn encode_reply(reply: &message::HyperionResponse) -> serde_json::Result<String> {
     serde_json::to_string(reply)
 }
 
@@ -59,7 +59,7 @@ impl Decoder for JsonCodec {
 }
 
 impl Encoder for JsonCodec {
-    type Item = serde_json::Value;
+    type Item = message::HyperionResponse;
     type Error = io::Error;
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {

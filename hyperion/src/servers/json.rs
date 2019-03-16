@@ -7,10 +7,9 @@ use tokio::prelude::*;
 
 use tokio_codec::Framed;
 
-use serde_json::Value;
-
 /// Schema definitions as Serde serializable structures and enums
 mod message;
+use message::HyperionResponse;
 
 /// JSON protocol codec definition
 mod codec;
@@ -44,11 +43,11 @@ pub fn bind(
             .and_then(|request| {
                 debug!("processing request: {:?}", request);
 
-                let mut reply = serde_json::Map::<_, _>::new();
-                reply.insert("success".to_owned(), false.into());
-                reply.insert("error".to_owned(), "not implemented".into());
+                let reply = HyperionResponse::ErrorResponse {
+                    success: false,
+                    error: "not implemented".into(),
+                };
 
-                let reply = Value::from(reply);
                 debug!("sending response: {:?}", reply);
 
                 Ok(reply)

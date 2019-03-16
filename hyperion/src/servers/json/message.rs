@@ -81,3 +81,10 @@ pub enum HyperionMessage {
     #[serde(rename = "transform")]
     Transform { transform: Transform },
 }
+
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum HyperionResponse {
+    SuccessResponse { success: bool },
+    ErrorResponse { success: bool, error: String }
+}

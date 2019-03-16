@@ -1,6 +1,13 @@
 name: hyperiond
 author: Vincent Tavernier <vince.tavernier@gmail.com>
 about: Hyperion Ambient Lighting software Rust implementation
+args:
+  - config:
+      long: config
+      short: c
+      value_name: FILE
+      help: Path to the configuration file
+      required: true
 subcommands:
   - server:
       about: Starts the server daemon

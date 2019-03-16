@@ -5,7 +5,10 @@ use failure::ResultExt;
 
 use hyperion::servers;
 
+use std::fs::File;
+use std::io::BufReader;
 use std::net::SocketAddr;
+use std::path::Path;
 
 use futures::{Future, Stream};
 use stream_cancel::Tripwire;
@@ -19,6 +22,14 @@ pub enum CliError {
     InvalidCommand,
     #[fail(display = "server error: {}", 0)]
     ServerError(String),
+}
+
+fn read_config<P: AsRef<Path>>(path: P) -> std::io::Result<hyperion::hyperion::Configuration> {
+    // Open file and create reader
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    Ok(serde_json::from_reader(reader)?)
 }
 
 /// Entry point for the hyperion CLI
@@ -37,6 +48,8 @@ pub fn run() -> Result<(), failure::Error> {
         .get_matches();
 
     debug!("{} {}", crate_name!(), crate_version!());
+
+    let configuration = read_config(matches.value_of("config").expect("--config is required"))?;
 
     if let Some(server_matches) = matches.subcommand_matches("server") {
         // Tripwire to cancel the server listening

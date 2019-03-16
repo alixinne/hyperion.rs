@@ -15,6 +15,7 @@ pub use device::*;
 #[derive(Debug)]
 pub enum StateUpdate {
     ClearAll,
+    SolidColor { color: palette::LinSrgb }
 }
 
 /// A configuration
@@ -50,19 +51,15 @@ impl Future for Hyperion {
     type Error = HyperionError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        match self.receiver.poll() {
-            Ok(value) => Ok(match value {
-                Async::Ready(value) => match value {
-                    Some(state_update) => {
-                        debug!("got state update: {:?}", state_update);
-                        Async::NotReady
-                    }
-                    None => Async::NotReady,
-                },
-                Async::NotReady => Async::NotReady,
-            }),
-            Err(_) => Err(HyperionError::ChannelReceiveFailed),
+        while let Async::Ready(value) = self.receiver.poll().map_err(|_| HyperionError::ChannelReceiveFailed)? {
+            if let Some(state_update) = value {
+                debug!("got state update: {:?}", state_update);
+            } else {
+                return Ok(Async::Ready(()));
+            }
         }
+
+        Ok(Async::NotReady)
     }
 }
 

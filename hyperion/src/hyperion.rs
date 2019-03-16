@@ -1,7 +1,7 @@
 //! Definition of the Hyperion data model
 
 use futures::sync::mpsc;
-use futures::{Async, Poll, Future, Stream};
+use futures::{Async, Future, Poll, Stream};
 
 /// Definition of the Led type
 mod led;
@@ -15,7 +15,7 @@ pub use device::*;
 #[derive(Debug)]
 pub enum StateUpdate {
     ClearAll,
-    SolidColor { color: palette::LinSrgb }
+    SolidColor { color: palette::LinSrgb },
 }
 
 /// A configuration
@@ -36,7 +36,34 @@ impl Hyperion {
     pub fn new(configuration: Configuration) -> (Self, mpsc::UnboundedSender<StateUpdate>) {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
-        (Self { configuration, receiver }, sender)
+        (
+            Self {
+                configuration,
+                receiver,
+            },
+            sender,
+        )
+    }
+
+    fn set_all_leds(&mut self, color: palette::LinSrgb) {
+        for device in self.configuration.devices.iter_mut() {
+            for led in device.leds.iter_mut() {
+                led.current_color = color;
+            }
+        }
+    }
+
+    fn handle_update(&mut self, update: StateUpdate) {
+        match update {
+            StateUpdate::ClearAll => {
+                debug!("clearing all leds");
+                self.set_all_leds(palette::LinSrgb::default());
+            }
+            StateUpdate::SolidColor { color } => {
+                debug!("setting all leds to {:?}", color);
+                self.set_all_leds(color);
+            }
+        }
     }
 }
 
@@ -51,9 +78,14 @@ impl Future for Hyperion {
     type Error = HyperionError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        while let Async::Ready(value) = self.receiver.poll().map_err(|_| HyperionError::ChannelReceiveFailed)? {
+        while let Async::Ready(value) = self
+            .receiver
+            .poll()
+            .map_err(|_| HyperionError::ChannelReceiveFailed)?
+        {
             if let Some(state_update) = value {
                 trace!("got state update: {:?}", state_update);
+                self.handle_update(state_update);
             } else {
                 return Ok(Async::Ready(()));
             }
@@ -69,7 +101,8 @@ mod tests {
 
     #[test]
     pub fn deserialize_full_config() {
-        let config: Configuration = serde_json::from_str(r#"
+        let config: Configuration = serde_json::from_str(
+            r#"
 {
     "devices": [
         {
@@ -97,10 +130,10 @@ mod tests {
         }
     ]
 }
-        "#).unwrap();
+        "#,
+        )
+        .unwrap();
 
         println!("{:?}", config);
     }
 }
-
-

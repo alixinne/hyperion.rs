@@ -37,9 +37,9 @@ pub enum Endpoint {
 /// representation for the physical device.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Device {
-    name: String,
-    endpoint: Endpoint,
-    leds: Vec<Led>,
+    pub name: String,
+    pub endpoint: Endpoint,
+    pub leds: Vec<Led>,
 }
 
 #[cfg(test)]

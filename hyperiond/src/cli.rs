@@ -74,9 +74,11 @@ pub fn run() -> Result<(), failure::Error> {
                 .context("proto-port must be a port number")?,
         );
 
+        let (hyperion, sender) = hyperion::hyperion::Hyperion::new(configuration);
+
         let servers = vec![
-            servers::bind_json(&json_address)?,
-            servers::bind_proto(&proto_address)?,
+            servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,
+            servers::bind_proto(&proto_address, sender.clone(), tripwire.clone())?,
         ];
 
         let server_future = futures::future::join_all(servers).map(|_| ());
@@ -95,6 +97,18 @@ pub fn run() -> Result<(), failure::Error> {
                     })
                     .map_err(|_| {
                         panic!("ctrl_c error");
+                    }),
+            );
+
+            tokio::spawn(
+                hyperion
+                    .map_err(|e| {
+                        warn!("hyperion error: {}", e);
+                    })
+                    .select(tripwire.clone())
+                    .map(|_| ())
+                    .map_err(|_| {
+                        error!("hyperion tripwire error");
                     }),
             );
 

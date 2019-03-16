@@ -53,7 +53,7 @@ impl Future for Hyperion {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         while let Async::Ready(value) = self.receiver.poll().map_err(|_| HyperionError::ChannelReceiveFailed)? {
             if let Some(state_update) = value {
-                debug!("got state update: {:?}", state_update);
+                trace!("got state update: {:?}", state_update);
             } else {
                 return Ok(Async::Ready(()));
             }

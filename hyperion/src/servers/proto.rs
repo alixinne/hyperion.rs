@@ -57,7 +57,7 @@ pub fn bind(
 
         let action = reader
             .map(move |request| {
-                debug!("got request: {:?}", request);
+                trace!("got request: {:?}", request);
 
                 let reply = match request {
                     HyperionRequest::ClearAllRequest(_) => {
@@ -88,7 +88,7 @@ pub fn bind(
                     _ => success_response(false),
                 };
 
-                debug!("sending response: {:?}", reply);
+                trace!("sending response: {:?}", reply);
                 reply
             })
             .forward(writer)

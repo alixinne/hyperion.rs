@@ -50,7 +50,7 @@ pub fn bind(
 
         let action = reader
             .and_then(move |request| {
-                debug!("processing request: {:?}", request);
+                trace!("processing request: {:?}", request);
 
                 let reply = match request {
                     HyperionMessage::ClearAll => {
@@ -77,7 +77,7 @@ pub fn bind(
                     },
                 };
 
-                debug!("sending response: {:?}", reply);
+                trace!("sending response: {:?}", reply);
 
                 Ok(reply)
             })

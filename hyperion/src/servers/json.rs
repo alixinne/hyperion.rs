@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio::prelude::*;
 
-use tokio_codec::Framed;
+use tokio::codec::Framed;
 
 use crate::hyperion::StateUpdate;
 use futures::sync::mpsc;

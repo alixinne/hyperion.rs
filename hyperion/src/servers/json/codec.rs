@@ -1,5 +1,5 @@
 use bytes::BytesMut;
-use tokio_codec::{Decoder, Encoder, LinesCodec};
+use tokio::codec::{Decoder, Encoder, LinesCodec};
 
 use super::message;
 

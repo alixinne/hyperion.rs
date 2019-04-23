@@ -1,4 +1,4 @@
-use tokio_codec::{Decoder, Encoder};
+use tokio::codec::{Decoder, Encoder};
 
 use super::message;
 

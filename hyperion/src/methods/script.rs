@@ -125,7 +125,7 @@ mod tests {
         map.insert("version".to_owned(), Value::String(format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))));
 
         let method: Box<dyn Method> =
-            Box::new(Script::new("scripts/methods/stdout.lua".into(), map).unwrap());
+            Box::new(Script::new("../scripts/methods/stdout.lua".into(), map).unwrap());
         let leds = vec![Led::default()];
 
         method.write(&leds[..]);

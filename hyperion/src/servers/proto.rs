@@ -60,7 +60,7 @@ pub fn bind(
                 trace!("got request: {:?}", request);
 
                 let reply = match request {
-                    HyperionRequest::ClearAllRequest(_) => {
+                    HyperionRequest::ClearAllRequest(_) | HyperionRequest::ClearRequest(_) => {
                         // Update state
                         sender.unbounded_send(StateUpdate::ClearAll).unwrap();
 

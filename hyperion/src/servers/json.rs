@@ -53,7 +53,7 @@ pub fn bind(
                 trace!("processing request: {:?}", request);
 
                 let reply = match request {
-                    HyperionMessage::ClearAll => {
+                    HyperionMessage::ClearAll | HyperionMessage::Clear { .. } => {
                         // Update state
                         sender.unbounded_send(StateUpdate::ClearAll).unwrap();
 

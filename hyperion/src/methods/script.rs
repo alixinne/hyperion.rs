@@ -14,8 +14,8 @@ pub struct Script {
 
 #[derive(Debug, Fail)]
 pub enum ScriptError {
-    #[fail(display = "loading the script failed")]
-    LoadError,
+    #[fail(display = "loading the script failed: {}", 0)]
+    LoadError(failure::Error),
     #[fail(display = "lua error: {}", 0)]
     LuaError(rlua::Error),
 }
@@ -82,7 +82,7 @@ impl Script {
             Ok(())
         }) {
             Ok(_) => Ok(Self { lua }),
-            Err(_error) => Err(ScriptError::LoadError),
+            Err(error) => Err(ScriptError::LoadError(error)),
         }
     }
 }

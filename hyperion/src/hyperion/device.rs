@@ -23,6 +23,10 @@ pub enum Endpoint {
     },
 }
 
+fn default_frequency() -> u32 {
+    10
+}
+
 /// Physical or virtual ambient lighting device representation
 ///
 /// Devices in an Hyperion instance are uniquely identified by a name.
@@ -37,9 +41,15 @@ pub enum Endpoint {
 /// representation for the physical device.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Device {
+    /// Name of the device
     pub name: String,
+    /// Target endpoint to contact
     pub endpoint: Endpoint,
+    /// List of LED specifications
     pub leds: Vec<Led>,
+    /// Update frequency (Hz)
+    #[serde(default = "default_frequency")]
+    pub frequency: u32,
 }
 
 #[cfg(test)]

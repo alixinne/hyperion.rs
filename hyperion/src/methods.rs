@@ -13,10 +13,10 @@ pub use udp::Udp;
 mod script;
 pub use script::Script;
 
-pub fn from_endpoint(endpoint: Endpoint) -> Box<dyn Method> {
+pub fn from_endpoint(endpoint: &Endpoint) -> Box<dyn Method + Send> {
     match endpoint {
         Endpoint::Stdout => Box::new(Stdout::new()),
-        Endpoint::Udp { address } => Box::new(Udp::new(address)),
-        Endpoint::Script { path, params } => Box::new(Script::new(path, params).unwrap()),
+        Endpoint::Udp { address } => Box::new(Udp::new(address.to_owned())),
+        Endpoint::Script { path, params } => Box::new(Script::new(path.to_owned(), params.to_owned()).unwrap()),
     }
 }

@@ -1,5 +1,9 @@
 //! Definition of the Hyperion data model
 
+use std::time::Duration;
+
+use tokio::timer::Interval;
+
 use futures::sync::mpsc;
 use futures::{Async, Future, Poll, Stream};
 
@@ -10,6 +14,9 @@ pub use led::*;
 /// Definition of the Device type
 mod device;
 pub use device::*;
+
+use crate::methods;
+use crate::methods::Method;
 
 /// State update messages for the Hyperion service
 #[derive(Debug)]
@@ -24,22 +31,46 @@ pub struct Configuration {
     devices: Vec<Device>,
 }
 
+struct DeviceInstance {
+    method: Box<dyn Method + Send>,
+    updater: Interval,
+}
+
+impl From<&Device> for DeviceInstance {
+    fn from(device: &Device) -> DeviceInstance {
+        DeviceInstance {
+            method: methods::from_endpoint(&device.endpoint),
+            updater: Interval::new_interval(Duration::from_nanos(1_000_000_000u64 / std::cmp::max(1u64, device.frequency as u64))),
+        }
+    }
+}
+
 /// Hyperion service state
 pub struct Hyperion {
     /// Configured state of LED devices
     configuration: Configuration,
     /// Receiver for update messages
     receiver: mpsc::UnboundedReceiver<StateUpdate>,
+    /// Device runtime data
+    devices: Vec<DeviceInstance>,
 }
 
 impl Hyperion {
     pub fn new(configuration: Configuration) -> (Self, mpsc::UnboundedSender<StateUpdate>) {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
+
+        let devices = configuration
+            .devices
+            .iter()
+            .map(DeviceInstance::from)
+            .collect();
+
         (
             Self {
                 configuration,
                 receiver,
+                devices,
             },
             sender,
         )
@@ -71,6 +102,8 @@ impl Hyperion {
 pub enum HyperionError {
     #[fail(display = "failed to receive update from channel")]
     ChannelReceiveFailed,
+    #[fail(display = "failed to poll the updater interval")]
+    UpdaterPollFailed,
 }
 
 impl Future for Hyperion {
@@ -78,6 +111,7 @@ impl Future for Hyperion {
     type Error = HyperionError;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        // Poll channel for state updates
         while let Async::Ready(value) = self
             .receiver
             .poll()
@@ -88,6 +122,25 @@ impl Future for Hyperion {
                 self.handle_update(state_update);
             } else {
                 return Ok(Async::Ready(()));
+            }
+        }
+
+        // Check intervals for devices to write to
+        for (idx, device) in self.devices.iter_mut().enumerate() {
+            let mut write_device = false;
+
+            // Poll all events until NotReady
+            while let Async::Ready(Some(_instant)) = device
+                .updater
+                .poll()
+                .map_err(|_| HyperionError::UpdaterPollFailed)?
+            {
+                write_device = true;
+            }
+
+            // Write device if needed
+            if write_device {
+                device.method.write(&self.configuration.devices[idx].leds[..]);
             }
         }
 

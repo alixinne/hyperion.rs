@@ -13,7 +13,7 @@ impl Stdout {
 impl Method for Stdout {
     fn write(&self, leds: &[Led]) {
         for led in leds {
-            println!("LED{} write({:?})", led.index, led.current_color);
+            debug!("LED{} write({:?})", led.index, led.current_color);
         }
     }
 }

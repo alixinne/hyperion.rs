@@ -13,7 +13,7 @@ impl Udp {
 impl Method for Udp {
     fn write(&self, leds: &[Led]) {
         for led in leds {
-            println!("LED{} UDP write({:?})", led.index, led.current_color);
+            debug!("LED{} UDP write({:?})", led.index, led.current_color);
         }
     }
 }

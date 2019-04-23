@@ -31,17 +31,22 @@ pub struct Configuration {
     devices: Vec<Device>,
 }
 
+/// Runtime data for a given device
+///
+/// This type is constructed from the configuration details in the config file.
 struct DeviceInstance {
+    /// Communication method
     method: Box<dyn Method + Send>,
+    /// Updater future
     updater: Interval,
 }
 
-impl From<&Device> for DeviceInstance {
-    fn from(device: &Device) -> DeviceInstance {
-        DeviceInstance {
-            method: methods::from_endpoint(&device.endpoint),
+impl DeviceInstance {
+    fn from_device(device: &Device) -> Result<DeviceInstance, methods::MethodError> {
+        Ok(DeviceInstance {
+            method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(Duration::from_nanos(1_000_000_000u64 / std::cmp::max(1u64, device.frequency as u64))),
-        }
+        })
     }
 }
 
@@ -56,24 +61,25 @@ pub struct Hyperion {
 }
 
 impl Hyperion {
-    pub fn new(configuration: Configuration) -> (Self, mpsc::UnboundedSender<StateUpdate>) {
+    pub fn new(configuration: Configuration) -> Result<(Self, mpsc::UnboundedSender<StateUpdate>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
 
         let devices = configuration
             .devices
             .iter()
-            .map(DeviceInstance::from)
-            .collect();
+            .map(DeviceInstance::from_device)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(HyperionError::from)?;
 
-        (
+        Ok((
             Self {
                 configuration,
                 receiver,
                 devices,
             },
             sender,
-        )
+        ))
     }
 
     fn set_all_leds(&mut self, color: palette::LinSrgb) {
@@ -104,6 +110,14 @@ pub enum HyperionError {
     ChannelReceiveFailed,
     #[fail(display = "failed to poll the updater interval")]
     UpdaterPollFailed,
+    #[fail(display = "failed to initialize LED devices: {}", error)]
+    LedDeviceInitFailed { error: methods::MethodError },
+}
+
+impl From<methods::MethodError> for HyperionError {
+    fn from(error: methods::MethodError) -> HyperionError {
+        HyperionError::LedDeviceInitFailed { error }
+    }
 }
 
 impl Future for Hyperion {

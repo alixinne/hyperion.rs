@@ -74,7 +74,7 @@ pub fn run() -> Result<(), failure::Error> {
                 .context("proto-port must be a port number")?,
         );
 
-        let (hyperion, sender) = hyperion::hyperion::Hyperion::new(configuration);
+        let (hyperion, sender) = hyperion::hyperion::Hyperion::new(configuration)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,

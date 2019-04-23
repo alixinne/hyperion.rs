@@ -30,3 +30,7 @@ subcommands:
             help: TCP port for the Protobuf server
             default_value: '19445'
             required: true
+        - disable-devices:
+            long: disable-devices
+            value_name: REGEX
+            help: Disable matching devices from updates

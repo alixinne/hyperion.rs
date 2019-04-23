@@ -7,6 +7,8 @@ use tokio::timer::Interval;
 use futures::sync::mpsc;
 use futures::{Async, Future, Poll, Stream};
 
+use regex::Regex;
+
 /// Definition of the Led type
 mod led;
 pub use led::*;
@@ -39,6 +41,8 @@ struct DeviceInstance {
     method: Box<dyn Method + Send>,
     /// Updater future
     updater: Interval,
+    /// List of LED data
+    leds: Vec<LedInstance>,
 }
 
 impl DeviceInstance {
@@ -46,14 +50,13 @@ impl DeviceInstance {
         Ok(DeviceInstance {
             method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(Duration::from_nanos(1_000_000_000u64 / std::cmp::max(1u64, device.frequency as u64))),
+            leds: device.leds.iter().map(|led| LedInstance::new(led)).collect()
         })
     }
 }
 
 /// Hyperion service state
 pub struct Hyperion {
-    /// Configured state of LED devices
-    configuration: Configuration,
     /// Receiver for update messages
     receiver: mpsc::UnboundedReceiver<StateUpdate>,
     /// Device runtime data
@@ -61,20 +64,29 @@ pub struct Hyperion {
 }
 
 impl Hyperion {
-    pub fn new(configuration: Configuration) -> Result<(Self, mpsc::UnboundedSender<StateUpdate>), HyperionError> {
+    pub fn new(configuration: Configuration, disable_devices: Option<Regex>) -> Result<(Self, mpsc::UnboundedSender<StateUpdate>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
 
         let devices = configuration
             .devices
             .iter()
+            .filter(|device| {
+                if let Some(rgx) = disable_devices.as_ref() {
+                    if rgx.is_match(&device.name) {
+                        info!("disabling device '{}'", device.name);
+                        return false;
+                    }
+                }
+
+                true
+            })
             .map(DeviceInstance::from_device)
             .collect::<Result<Vec<_>, _>>()
             .map_err(HyperionError::from)?;
 
         Ok((
             Self {
-                configuration,
                 receiver,
                 devices,
             },
@@ -83,7 +95,7 @@ impl Hyperion {
     }
 
     fn set_all_leds(&mut self, color: palette::LinSrgb) {
-        for device in self.configuration.devices.iter_mut() {
+        for device in self.devices.iter_mut() {
             for led in device.leds.iter_mut() {
                 led.current_color = color;
             }
@@ -140,7 +152,7 @@ impl Future for Hyperion {
         }
 
         // Check intervals for devices to write to
-        for (idx, device) in self.devices.iter_mut().enumerate() {
+        for device in self.devices.iter_mut() {
             let mut write_device = false;
 
             // Poll all events until NotReady
@@ -154,7 +166,7 @@ impl Future for Hyperion {
 
             // Write device if needed
             if write_device {
-                device.method.write(&self.configuration.devices[idx].leds[..]);
+                device.method.write(&device.leds[..]);
             }
         }
 

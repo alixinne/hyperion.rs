@@ -1,4 +1,4 @@
-use super::{Led, Method};
+use super::{LedInstance, Method};
 
 use std::cell::RefCell;
 
@@ -38,7 +38,7 @@ impl Udp {
 }
 
 impl Method for Udp {
-    fn write(&self, leds: &[Led]) {
+    fn write(&self, leds: &[LedInstance]) {
         // Get reference to buffer for UDP data
         let mut rgb_buffer = self.rgb_buffer.borrow_mut();
 

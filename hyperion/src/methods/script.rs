@@ -1,4 +1,4 @@
-use super::{Led, Method};
+use super::{LedInstance, Method};
 
 use std::fs;
 
@@ -88,7 +88,7 @@ impl Script {
 }
 
 impl Method for Script {
-    fn write(&self, leds: &[Led]) {
+    fn write(&self, leds: &[LedInstance]) {
         self.lua
             .context(|lua_ctx| -> std::result::Result<(), ScriptError> {
                 let globals = lua_ctx.globals();
@@ -126,7 +126,7 @@ mod tests {
 
         let method: Box<dyn Method> =
             Box::new(Script::new("../scripts/methods/stdout.lua".into(), map).unwrap());
-        let leds = vec![Led::default()];
+        let leds = vec![LedInstance::default()];
 
         method.write(&leds[..]);
     }

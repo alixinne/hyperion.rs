@@ -1,5 +1,5 @@
 /// Floating-point range in a picture
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScanRange {
     pub minimum: f32,
     pub maximum: f32,
@@ -22,13 +22,11 @@ impl Default for ScanRange {
 /// It holds its current color as a linear-space RGB value in image space. The
 /// corresponding value on the target devices is computed downstream by the
 /// filters.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Led {
     pub index: i32,
     pub hscan: ScanRange,
     pub vscan: ScanRange,
-    #[serde(skip_deserializing, skip_serializing)]
-    pub current_color: palette::LinSrgb,
 }
 
 impl Default for Led {
@@ -37,7 +35,30 @@ impl Default for Led {
             index: 0,
             hscan: ScanRange::default(),
             vscan: ScanRange::default(),
-            current_color: palette::LinSrgb::from_components((0.1, 0.2, 0.3))
+        }
+    }
+}
+
+/// Instance of a LED at runtime
+///
+/// Combines the specification of the LED coverage of the screen area plus
+/// its current state.
+#[derive(Debug)]
+pub struct LedInstance {
+    pub spec: Led,
+    pub current_color: palette::LinSrgb,
+}
+
+impl LedInstance {
+    /// Initialize a new LedInstance from its corresponding Led object
+    ///
+    /// # Parameters
+    ///
+    /// * `spec`: specification for this LED
+    pub fn new(spec: &Led) -> Self {
+        Self {
+            spec: (*spec).clone(),
+            current_color: palette::LinSrgb::default(),
         }
     }
 }

@@ -1,4 +1,4 @@
-use super::{Led, Method};
+use super::{LedInstance, Method};
 
 /// Dummy LED device which outputs updates to the standard output
 #[derive(Default)]
@@ -11,9 +11,9 @@ impl Stdout {
 }
 
 impl Method for Stdout {
-    fn write(&self, leds: &[Led]) {
+    fn write(&self, leds: &[LedInstance]) {
         for led in leds {
-            debug!("LED{} write({:?})", led.index, led.current_color);
+            debug!("LED{} write({:?})", led.spec.index, led.current_color);
         }
     }
 }
@@ -25,7 +25,7 @@ mod tests {
     #[test]
     fn stdout_method() {
         let method: Box<dyn Method> = Box::new(Stdout::new());
-        let leds = vec![Led::default()];
+        let leds = vec![LedInstance::default()];
 
         method.write(&leds[..]);
     }

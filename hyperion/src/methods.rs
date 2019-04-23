@@ -1,7 +1,7 @@
-use crate::hyperion::{Led, Endpoint};
+use crate::hyperion::{LedInstance, Endpoint};
 
 pub trait Method {
-    fn write(&self, leds: &[Led]);
+    fn write(&self, leds: &[LedInstance]);
 }
 
 mod stdout;

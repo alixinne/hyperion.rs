@@ -28,21 +28,22 @@ impl From<rlua::Error> for ScriptError {
 }
 
 macro_rules! register_lua_log {
-    ($lua_ctx:expr, $path:expr, $log:tt, $name:expr) => {
-        {
-            let cloned_log_path = $path.clone().into_owned();
-            let log_function = $lua_ctx.create_function(move |_, message: String| {
-                $log!("{}: {}", cloned_log_path, message);
-                Ok(())
-            })?;
+    ($lua_ctx:expr, $path:expr, $log:tt, $name:expr) => {{
+        let cloned_log_path = $path.clone().into_owned();
+        let log_function = $lua_ctx.create_function(move |_, message: String| {
+            $log!("{}: {}", cloned_log_path, message);
+            Ok(())
+        })?;
 
-            $lua_ctx.globals().set($name, log_function)?;
-        }
-    }
+        $lua_ctx.globals().set($name, log_function)?;
+    }};
 }
 
 impl Script {
-    fn to_lua_value<'lua>(lua_ctx: rlua::Context<'lua>, value: &Value) -> rlua::Result<rlua::Value<'lua>> {
+    fn to_lua_value<'lua>(
+        lua_ctx: rlua::Context<'lua>,
+        value: &Value,
+    ) -> rlua::Result<rlua::Value<'lua>> {
         match value {
             Value::Null => Ok(rlua::Value::Nil),
             Value::Bool(bool_value) => Ok(rlua::Value::Boolean(*bool_value)),
@@ -52,10 +53,10 @@ impl Script {
                 } else {
                     Ok(rlua::Value::Number(number_value.as_f64().unwrap()))
                 }
-            },
+            }
             Value::String(string_value) => {
                 Ok(rlua::Value::String(lua_ctx.create_string(&string_value)?))
-            },
+            }
             Value::Array(array_value) => {
                 let table = lua_ctx.create_table()?;
 
@@ -64,7 +65,7 @@ impl Script {
                 }
 
                 Ok(rlua::Value::Table(table))
-            },
+            }
             Value::Object(object_value) => {
                 let table = lua_ctx.create_table()?;
 
@@ -77,7 +78,10 @@ impl Script {
         }
     }
 
-    pub fn new<P: AsRef<Path>>(path: &P, params: Map<String, Value>) -> std::result::Result<Self, ScriptError> {
+    pub fn new<P: AsRef<Path>>(
+        path: &P,
+        params: Map<String, Value>,
+    ) -> std::result::Result<Self, ScriptError> {
         let lua = Lua::new();
         let path = path.as_ref().to_path_buf();
 
@@ -90,7 +94,10 @@ impl Script {
 
             // Add host information
             let hyperion_table = lua_ctx.create_table()?;
-            hyperion_table.set("version", format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")))?;
+            hyperion_table.set(
+                "version",
+                format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")),
+            )?;
 
             // Register table in the params table
             params_table.set("host", hyperion_table)?;

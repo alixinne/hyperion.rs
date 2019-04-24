@@ -61,13 +61,15 @@ pub fn bind(
                     }
                     HyperionMessage::Color { color, .. } => {
                         // Update state
-                        sender.unbounded_send(StateUpdate::SolidColor {
-                            color: palette::LinSrgb::from_components((
-                                f32::from(color[0]) / 255.0,
-                                f32::from(color[1]) / 255.0,
-                                f32::from(color[2]) / 255.0,
-                            )),
-                        }).unwrap();
+                        sender
+                            .unbounded_send(StateUpdate::SolidColor {
+                                color: palette::LinSrgb::from_components((
+                                    f32::from(color[0]) / 255.0,
+                                    f32::from(color[1]) / 255.0,
+                                    f32::from(color[2]) / 255.0,
+                                )),
+                            })
+                            .unwrap();
 
                         HyperionResponse::SuccessResponse { success: true }
                     }

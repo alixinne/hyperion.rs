@@ -134,7 +134,6 @@ pub fn run() -> Result<(), failure::Error> {
         }));
 
         Ok(())
-    //Err(server_error) => Err(CliError::ServerError(server_error).into()),
     } else {
         bail!(CliError::InvalidCommand)
     }

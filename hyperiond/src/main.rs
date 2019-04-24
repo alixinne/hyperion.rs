@@ -23,7 +23,7 @@ fn main() {
 
     // Run CLI interface
     match cli::run() {
-        Ok(_) => {},
-        Err(err) => error!("{}", err)
+        Ok(_) => {}
+        Err(err) => error!("{}", err),
     }
 }

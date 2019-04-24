@@ -32,11 +32,16 @@ pub struct Temperature {
 #[derive(Debug, Deserialize)]
 pub struct Transform {
     id: Option<String>,
-    #[serde(rename = "saturationGain")] saturation_gain: Option<f32>,
-    #[serde(rename = "valueGain")] value_gain: Option<f32>,
-    #[serde(rename = "saturationLGain")] saturation_lgain: Option<f32>,
-    #[serde(rename = "luminanceGain")] luminance_gain: Option<f32>,
-    #[serde(rename = "luminanceMinimum")] luminance_minimum: Option<f32>,
+    #[serde(rename = "saturationGain")]
+    saturation_gain: Option<f32>,
+    #[serde(rename = "valueGain")]
+    value_gain: Option<f32>,
+    #[serde(rename = "saturationLGain")]
+    saturation_lgain: Option<f32>,
+    #[serde(rename = "luminanceGain")]
+    luminance_gain: Option<f32>,
+    #[serde(rename = "luminanceMinimum")]
+    luminance_minimum: Option<f32>,
     threshold: Option<[f32; 3]>,
     gamma: Option<[f32; 3]>,
     blacklevel: Option<[f32; 3]>,
@@ -86,5 +91,5 @@ pub enum HyperionMessage {
 #[serde(untagged)]
 pub enum HyperionResponse {
     SuccessResponse { success: bool },
-    ErrorResponse { success: bool, error: String }
+    ErrorResponse { success: bool, error: String },
 }

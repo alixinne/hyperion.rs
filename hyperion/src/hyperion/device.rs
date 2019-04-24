@@ -3,7 +3,9 @@ use super::Led;
 use serde_json::Value;
 use std::collections::BTreeMap as Map;
 
-fn default_bit_depth() -> i32 { 8 }
+fn default_bit_depth() -> i32 {
+    8
+}
 
 /// Device endpoint definition
 ///
@@ -16,7 +18,7 @@ pub enum Endpoint {
     #[serde(rename = "stdout")]
     Stdout {
         #[serde(default = "default_bit_depth")]
-        bits: i32
+        bits: i32,
     },
     #[serde(rename = "udp")]
     Udp { address: String },

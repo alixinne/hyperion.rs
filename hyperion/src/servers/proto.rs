@@ -65,26 +65,28 @@ pub fn bind(
                         sender.unbounded_send(StateUpdate::ClearAll).unwrap();
 
                         success_response(true)
-                    },
+                    }
                     HyperionRequest::ColorRequest(color_request) => {
                         let color = color_request.get_RgbColor();
                         let color = (
                             color & 0x000_000FF,
                             (color & 0x0000_FF00) >> 8,
-                            (color & 0x00FF_0000) >> 16
+                            (color & 0x00FF_0000) >> 16,
                         );
 
                         // Update state
-                        sender.unbounded_send(StateUpdate::SolidColor {
-                            color: palette::LinSrgb::from_components((
-                                color.0 as f32 / 255.0,
-                                color.1 as f32 / 255.0,
-                                color.2 as f32 / 255.0,
-                            )),
-                        }).unwrap();
+                        sender
+                            .unbounded_send(StateUpdate::SolidColor {
+                                color: palette::LinSrgb::from_components((
+                                    color.0 as f32 / 255.0,
+                                    color.1 as f32 / 255.0,
+                                    color.2 as f32 / 255.0,
+                                )),
+                            })
+                            .unwrap();
 
                         success_response(true)
-                    },
+                    }
                     _ => success_response(false),
                 };
 

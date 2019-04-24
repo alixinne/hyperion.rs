@@ -26,6 +26,20 @@ impl From<rlua::Error> for ScriptError {
     }
 }
 
+macro_rules! register_lua_log {
+    ($lua_ctx:expr, $path:expr, $log:tt, $name:expr) => {
+        {
+            let cloned_log_path = $path.clone();
+            let log_function = $lua_ctx.create_function(move |_, message: String| {
+                $log!("{}: {}", cloned_log_path, message);
+                Ok(())
+            })?;
+
+            $lua_ctx.globals().set($name, log_function)?;
+        }
+    }
+}
+
 impl Script {
     fn to_lua_value<'lua>(lua_ctx: rlua::Context<'lua>, value: &Value) -> rlua::Result<rlua::Value<'lua>> {
         match value {
@@ -79,8 +93,17 @@ impl Script {
             // Register table in the params table
             params_table.set("host", hyperion_table)?;
 
+            let globals = lua_ctx.globals();
+
             // Register table
-            lua_ctx.globals().set("hyperion_params", params_table)?;
+            globals.set("hyperion_params", params_table)?;
+
+            // Create log functions
+            register_lua_log!(lua_ctx, path, debug, "pdebug");
+            register_lua_log!(lua_ctx, path, error, "perror");
+            register_lua_log!(lua_ctx, path, info, "pinfo");
+            register_lua_log!(lua_ctx, path, trace, "ptrace");
+            register_lua_log!(lua_ctx, path, warn, "pwarn");
 
             // Load script
             lua_ctx.load(&fs::read_to_string(path)?).exec()?;

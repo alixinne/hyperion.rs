@@ -50,7 +50,7 @@ impl DeviceInstance {
         Ok(DeviceInstance {
             method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(Duration::from_nanos(
-                1_000_000_000u64 / std::cmp::max(1u64, device.frequency as u64),
+                1_000_000_000u64 / std::cmp::max(1u64, u64::from(device.frequency)),
             )),
             leds: device
                 .leds

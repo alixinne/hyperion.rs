@@ -3,7 +3,7 @@ use super::{LedInstance, Method};
 use std::fs;
 use std::path::Path;
 
-use rlua::{Function, Lua, MetaMethod, Result, ToLua, UserData, UserDataMethods, Variadic};
+use rlua::{Function, Lua};
 
 use serde_json::Value;
 use std::collections::BTreeMap as Map;
@@ -40,7 +40,7 @@ macro_rules! register_lua_log {
 }
 
 impl Script {
-    fn to_lua_value<'lua>(
+    fn lua_value<'lua>(
         lua_ctx: rlua::Context<'lua>,
         value: &Value,
     ) -> rlua::Result<rlua::Value<'lua>> {
@@ -61,7 +61,7 @@ impl Script {
                 let table = lua_ctx.create_table()?;
 
                 for (i, item) in array_value.iter().enumerate() {
-                    table.set(i + 1, Self::to_lua_value(lua_ctx, item)?)?;
+                    table.set(i + 1, Self::lua_value(lua_ctx, item)?)?;
                 }
 
                 Ok(rlua::Value::Table(table))
@@ -70,7 +70,7 @@ impl Script {
                 let table = lua_ctx.create_table()?;
 
                 for (k, item) in object_value.iter() {
-                    table.set(k.to_string(), Self::to_lua_value(lua_ctx, item)?)?;
+                    table.set(k.to_string(), Self::lua_value(lua_ctx, item)?)?;
                 }
 
                 Ok(rlua::Value::Table(table))
@@ -89,7 +89,7 @@ impl Script {
             // Create params table
             let params_table = lua_ctx.create_table()?;
             for (key, value) in params.iter() {
-                params_table.set(key.to_string(), Self::to_lua_value(lua_ctx, value)?)?;
+                params_table.set(key.to_string(), Self::lua_value(lua_ctx, value)?)?;
             }
 
             // Add host information

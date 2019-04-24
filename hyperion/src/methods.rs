@@ -48,6 +48,6 @@ pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, Meth
     match endpoint {
         Endpoint::Stdout => Ok(Box::new(Stdout::new())),
         Endpoint::Udp { address } => to_box(Udp::new(address.to_owned())),
-        Endpoint::Script { path, params } => to_box(Script::new(path.to_owned(), params.to_owned())),
+        Endpoint::Script { path, params } => to_box(Script::new(path, params.to_owned())),
     }
 }

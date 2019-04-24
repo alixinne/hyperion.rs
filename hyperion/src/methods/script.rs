@@ -1,6 +1,7 @@
 use super::{LedInstance, Method};
 
 use std::fs;
+use std::path::Path;
 
 use rlua::{Function, Lua, MetaMethod, Result, ToLua, UserData, UserDataMethods, Variadic};
 
@@ -29,7 +30,7 @@ impl From<rlua::Error> for ScriptError {
 macro_rules! register_lua_log {
     ($lua_ctx:expr, $path:expr, $log:tt, $name:expr) => {
         {
-            let cloned_log_path = $path.clone();
+            let cloned_log_path = $path.clone().into_owned();
             let log_function = $lua_ctx.create_function(move |_, message: String| {
                 $log!("{}: {}", cloned_log_path, message);
                 Ok(())
@@ -76,10 +77,11 @@ impl Script {
         }
     }
 
-    pub fn new(path: String, params: Map<String, Value>) -> std::result::Result<Self, ScriptError> {
+    pub fn new<P: AsRef<Path>>(path: &P, params: Map<String, Value>) -> std::result::Result<Self, ScriptError> {
         let lua = Lua::new();
+        let path = path.as_ref().to_path_buf();
 
-        match lua.context(|lua_ctx| -> std::result::Result<(), failure::Error> {
+        match lua.context(move |lua_ctx| -> std::result::Result<(), failure::Error> {
             // Create params table
             let params_table = lua_ctx.create_table()?;
             for (key, value) in params.iter() {
@@ -99,11 +101,12 @@ impl Script {
             globals.set("hyperion_params", params_table)?;
 
             // Create log functions
-            register_lua_log!(lua_ctx, path, debug, "pdebug");
-            register_lua_log!(lua_ctx, path, error, "perror");
-            register_lua_log!(lua_ctx, path, info, "pinfo");
-            register_lua_log!(lua_ctx, path, trace, "ptrace");
-            register_lua_log!(lua_ctx, path, warn, "pwarn");
+            let path_name = path.as_path().to_string_lossy();
+            register_lua_log!(lua_ctx, path_name, debug, "pdebug");
+            register_lua_log!(lua_ctx, path_name, error, "perror");
+            register_lua_log!(lua_ctx, path_name, info, "pinfo");
+            register_lua_log!(lua_ctx, path_name, trace, "ptrace");
+            register_lua_log!(lua_ctx, path_name, warn, "pwarn");
 
             // Load script
             lua_ctx.load(&fs::read_to_string(path)?).exec()?;
@@ -151,7 +154,7 @@ mod tests {
     #[test]
     fn script_method() {
         let method: Box<dyn Method> =
-            Box::new(Script::new("../scripts/methods/stdout.lua".into(), Map::new()).unwrap());
+            Box::new(Script::new(&"../scripts/methods/stdout.lua", Map::new()).unwrap());
         let leds = vec![LedInstance::default()];
 
         method.write(&leds[..]);

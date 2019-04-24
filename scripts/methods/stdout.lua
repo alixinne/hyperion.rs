@@ -8,4 +8,4 @@ function write(leds)
 	end
 end
 
-print(hyperion_params.version)
+print("host version: " .. hyperion_params.host.version)

@@ -66,15 +66,21 @@ impl Script {
         let lua = Lua::new();
 
         match lua.context(|lua_ctx| -> std::result::Result<(), failure::Error> {
-            // Set params table
-            let globals = lua_ctx.globals();
-
+            // Create params table
             let params_table = lua_ctx.create_table()?;
             for (key, value) in params.iter() {
                 params_table.set(key.to_string(), Self::to_lua_value(lua_ctx, value)?)?;
             }
 
-            globals.set("hyperion_params", params_table)?;
+            // Add host information
+            let hyperion_table = lua_ctx.create_table()?;
+            hyperion_table.set("version", format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")))?;
+
+            // Register table in the params table
+            params_table.set("host", hyperion_table)?;
+
+            // Register table
+            lua_ctx.globals().set("hyperion_params", params_table)?;
 
             // Load script
             lua_ctx.load(&fs::read_to_string(path)?).exec()?;
@@ -121,11 +127,8 @@ mod tests {
 
     #[test]
     fn script_method() {
-        let mut map = Map::new();
-        map.insert("version".to_owned(), Value::String(format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))));
-
         let method: Box<dyn Method> =
-            Box::new(Script::new("../scripts/methods/stdout.lua".into(), map).unwrap());
+            Box::new(Script::new("../scripts/methods/stdout.lua".into(), Map::new()).unwrap());
         let leds = vec![LedInstance::default()];
 
         method.write(&leds[..]);

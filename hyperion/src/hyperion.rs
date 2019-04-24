@@ -190,8 +190,7 @@ mod tests {
                 "method": "stdout"
             },
             "leds": [ 
-                { "index": 0, "hscan": { "minimum": 0.0, "maximum": 0.5 },
-                              "vscan": { "minimum": 0.0, "maximum": 0.5 } }
+                { "hscan": { "minimum": 0.0, "maximum": 0.5 }, "vscan": { "minimum": 0.0, "maximum": 0.5 } }
             ]
         },
         {
@@ -203,8 +202,7 @@ mod tests {
                 }
             },
             "leds": [ 
-                { "index": 0, "hscan": { "minimum": 0.5, "maximum": 1.0 },
-                              "vscan": { "minimum": 0.5, "maximum": 1.0 } }
+                { "hscan": { "minimum": 0.5, "maximum": 1.0 }, "vscan": { "minimum": 0.5, "maximum": 1.0 } }
             ]
         }
     ]

@@ -22,28 +22,17 @@ impl Default for ScanRange {
 /// It holds its current color as a linear-space RGB value in image space. The
 /// corresponding value on the target devices is computed downstream by the
 /// filters.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Led {
-    pub index: i32,
     pub hscan: ScanRange,
     pub vscan: ScanRange,
-}
-
-impl Default for Led {
-    fn default() -> Self {
-        Self {
-            index: 0,
-            hscan: ScanRange::default(),
-            vscan: ScanRange::default(),
-        }
-    }
 }
 
 /// Instance of a LED at runtime
 ///
 /// Combines the specification of the LED coverage of the screen area plus
 /// its current state.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LedInstance {
     pub spec: Led,
     pub current_color: palette::LinSrgb,

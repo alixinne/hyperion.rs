@@ -12,8 +12,8 @@ impl Stdout {
 
 impl Method for Stdout {
     fn write(&self, leds: &[LedInstance]) {
-        for led in leds {
-            debug!("LED{} write({:?})", led.spec.index, led.current_color);
+        for (i, led) in leds.iter().enumerate() {
+            debug!("LED{} write({:?})", i, led.current_color);
         }
     }
 }

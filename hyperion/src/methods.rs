@@ -4,9 +4,6 @@ pub trait Method {
     fn write(&self, leds: &[LedInstance]);
 }
 
-mod stdout;
-pub use stdout::Stdout;
-
 mod udp;
 pub use udp::Udp;
 
@@ -44,9 +41,22 @@ fn to_box<T, E>(t: Result<T, E>) -> Result<Box<dyn Method + Send>, MethodError>
     .map_err(MethodError::from)
 }
 
+use std::path::{Path, PathBuf};
+fn method_path(name: &str) -> PathBuf {
+    Path::new("scripts").join("methods").join(name.to_owned() + ".lua")
+}
+
+use serde_json::Value;
+use std::collections::BTreeMap as Map;
+fn stdout_params(bits: i32) -> Map<String, Value> {
+    let mut map = Map::new();
+    map.insert("bits".to_owned(), Value::Number(bits.into()));
+    map
+}
+
 pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, MethodError> {
     match endpoint {
-        Endpoint::Stdout => Ok(Box::new(Stdout::new())),
+        Endpoint::Stdout { bits } => to_box(Script::new(&method_path("stdout"), stdout_params(*bits))),
         Endpoint::Udp { address } => to_box(Udp::new(address.to_owned())),
         Endpoint::Script { path, params } => to_box(Script::new(path, params.to_owned())),
     }

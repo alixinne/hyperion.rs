@@ -187,7 +187,8 @@ mod tests {
         {
             "name": "Stdout dummy",
             "endpoint": {
-                "method": "stdout"
+                "method": "stdout",
+                "target": {}
             },
             "leds": [ 
                 { "hscan": { "minimum": 0.0, "maximum": 0.5 }, "vscan": { "minimum": 0.0, "maximum": 0.5 } }

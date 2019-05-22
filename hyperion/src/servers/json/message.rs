@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Deserialize)]
 pub struct Adjustment {
     id: Option<String>,
@@ -48,6 +50,28 @@ pub struct Transform {
     whitelevel: Option<[f32; 3]>,
 }
 
+struct Base64Visitor;
+
+impl <'a>serde::de::Visitor<'a> for Base64Visitor {
+    type Value = Vec<u8>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("base64 image")
+    }
+
+    fn visit_str<A>(self, string: &str) -> Result<Self::Value, A>
+        where A: serde::de::Error {
+        base64::decode(string).map_err(|err| serde::de::Error::custom(err.to_string()))
+    }
+}
+
+fn from_base64<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserializer.deserialize_str(Base64Visitor {})
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command")]
 pub enum HyperionMessage {
@@ -77,7 +101,8 @@ pub enum HyperionMessage {
         duration: Option<i32>,
         imagewidth: i32,
         imageheight: i32,
-        imagedata: String,
+        #[serde(deserialize_with = "from_base64")]
+        imagedata: Vec<u8>,
     },
     #[serde(rename = "serverinfo")]
     ServerInfo,

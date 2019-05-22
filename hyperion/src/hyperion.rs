@@ -25,6 +25,7 @@ use crate::methods::Method;
 pub enum StateUpdate {
     ClearAll,
     SolidColor { color: palette::LinSrgb },
+    Image { data: Vec<u8>, width: u32, height: u32 },
 }
 
 /// A configuration
@@ -114,6 +115,9 @@ impl Hyperion {
             StateUpdate::SolidColor { color } => {
                 debug!("setting all leds to {:?}", color);
                 self.set_all_leds(color);
+            }
+            StateUpdate::Image { data: _, width, height } => {
+                debug!("incoming {}x{} image", width, height);
             }
         }
     }

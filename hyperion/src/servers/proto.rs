@@ -91,7 +91,24 @@ pub fn bind(
 
                         success_response(true)
                     }
-                    _ => success_response(false),
+                    HyperionRequest::ImageRequest(mut image_request) => {
+                        let data = image_request.take_imagedata();
+                        let width = image_request.get_imagewidth() as u32;
+                        let height = image_request.get_imageheight() as u32;
+
+                        // TODO: image: handle priority and duration
+
+                        // Update state
+                        sender
+                            .unbounded_send(StateUpdate::Image {
+                                data,
+                                width,
+                                height,
+                            })
+                            .unwrap();
+
+                        success_response(true)
+                    }
                 };
 
                 trace!("sending response: {:?}", reply);

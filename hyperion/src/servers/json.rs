@@ -77,6 +77,20 @@ pub fn bind(
 
                         HyperionResponse::SuccessResponse { success: true }
                     }
+                    HyperionMessage::Image { imagewidth, imageheight, imagedata, .. } => {
+                        // TODO: image: handle priority and duration
+
+                        // Update state
+                        sender
+                            .unbounded_send(StateUpdate::Image {
+                                data: imagedata,
+                                width: imagewidth as u32,
+                                height: imageheight as u32,
+                            })
+                            .unwrap();
+
+                        HyperionResponse::SuccessResponse { success: true }
+                    },
                     _ => HyperionResponse::ErrorResponse {
                         success: false,
                         error: "not implemented".into(),

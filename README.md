@@ -53,7 +53,6 @@ Works:
 
 * JSON server endpoint
 * Protobuf server endpoint
-* Raw RGB UDP device
 * Commands:
   * Clear/ClearAll
   * Set solid color
@@ -64,6 +63,33 @@ Not implemented yet:
 * Effects
 * Other LED device types
 * LED color filtering
+
+### Supported devices
+
+This list details which devices are supported currently for outputting color data.
+
+* Raw 8-bit RGB UDP
+* Stdout (for debugging)
+
+### Endpoint command status
+
+This table summarizes the commands supported by the JSON and Protobuf interfaces
+to the Hyperion server.
+
+| Command     | JSON  | Protobuf |
+| ----------- | ----- | -------- |
+| Adjustment  | ❌     | N.A.     |
+| Clear       | ✔ (1) | ✔ (1)    |
+| ClearAll    | ✔     | ✔        |
+| Correction  | ❌     | N.A.     |
+| Effect      | ❌     | N.A.     |
+| Image       | ❌     | ❌        |
+| ServerInfo  | ❌     | N.A.     |
+| Temperature | ❌     | N.A.     |
+| Transform   | ❌     | N.A.     |
+
+* (1): no support for the priority field
+* N.A.: not defined for the protocol
 
 ## Authors
 

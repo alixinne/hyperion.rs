@@ -49,14 +49,6 @@ in updated colors in the output of the daemon.
 This is still early work: the crate interface will probably change a lot, and no
 binary releases will be provided until the core functionality is implemented.
 
-Works:
-
-* JSON server endpoint
-* Protobuf server endpoint
-* Commands:
-  * Clear/ClearAll
-  * Set solid color
-
 Not implemented yet:
 
 * Image to LED color (including black border)
@@ -81,6 +73,7 @@ to the Hyperion server.
 | Adjustment  | ❌     | N.A.     |
 | Clear       | ✔ (1) | ✔ (1)    |
 | ClearAll    | ✔     | ✔        |
+| Color       | ✔ (2) | ✔ (2)    |
 | Correction  | ❌     | N.A.     |
 | Effect      | ❌     | N.A.     |
 | Image       | ❌     | ❌        |
@@ -89,7 +82,49 @@ to the Hyperion server.
 | Transform   | ❌     | N.A.     |
 
 * (1): no support for the priority field
+* (2): no support for the priority and duration fields
 * N.A.: not defined for the protocol
+
+### Image processing
+
+The black border detector has not been implemented yet.
+
+### Color processing
+
+The Hyperion daemon is responsible for processing the incoming image data into
+LED colors. This requires processing and transforming colors. The following parts
+of the color processing pipeline have been implemented:
+
+_(none)_
+
+The following parts have to be implemented (they are listed in order of application
+in the computation):
+
+* Transform (saturation gain, luminance gain, luminance minimum + RGB per-channel
+  threshold and gamma)
+* Adjustment (RGB -> RGB mapping matrix)
+* Temperature (RGB per-channel multiplication)
+
+### Effects
+
+Effects in hyperion.rs will be implemented as Lua scripts with a specific API to
+interact with hyperiond. This project uses the Lua interpreter as it is lighter
+to embed than the Python interpreter, and the language differences should not
+matter much for writing effect code.
+
+Effect support is under development.
+
+### Smoothing
+
+Temporal smoothing is not implemented yet.
+
+### Grabbing
+
+Grabbing is not planned yet for hyperion.rs.
+
+### Web configuration
+
+Web configuration of the hyperion.rs is outside of the scope of this project.
 
 ## Authors
 

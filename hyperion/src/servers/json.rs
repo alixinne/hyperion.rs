@@ -54,12 +54,16 @@ pub fn bind(
 
                 let reply = match request {
                     HyperionMessage::ClearAll | HyperionMessage::Clear { .. } => {
+                        // TODO: clear: handle priority
+
                         // Update state
                         sender.unbounded_send(StateUpdate::ClearAll).unwrap();
 
                         HyperionResponse::SuccessResponse { success: true }
                     }
                     HyperionMessage::Color { color, .. } => {
+                        // TODO: color: handle priority and duration
+
                         // Update state
                         sender
                             .unbounded_send(StateUpdate::SolidColor {

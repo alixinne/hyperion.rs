@@ -64,6 +64,8 @@ pub fn bind(
                         // Update state
                         sender.unbounded_send(StateUpdate::ClearAll).unwrap();
 
+                        // TODO: clear: handle priority
+
                         success_response(true)
                     }
                     HyperionRequest::ColorRequest(color_request) => {
@@ -73,6 +75,8 @@ pub fn bind(
                             (color & 0x0000_FF00) >> 8,
                             (color & 0x00FF_0000) >> 16,
                         );
+
+                        // TODO: color: handle priority and duration
 
                         // Update state
                         sender

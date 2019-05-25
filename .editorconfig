@@ -2,6 +2,7 @@ root = true
 
 [*]
 indent_style = space
-
-[*.{yml,yaml}]
 indent_size = 2
+
+[*.rs]
+indent_size = 4

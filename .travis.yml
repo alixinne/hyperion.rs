@@ -12,3 +12,16 @@ cache: cargo
 script:
   - hash cargo-make || cargo install cargo-make
   - cargo make workspace-ci-flow --no-workspace
+after_success: |
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  [ $TRAVIS_OS_NAME = linux ] &&
+  [ $TRAVIS_RUST_VERSION = stable ] &&
+  cargo doc &&
+  echo '<meta http-equiv=refresh content=0;url="hyperion/">' > target/doc/index.html &&
+  pip install --user ghp-import &&
+  ghp-import -n target/doc &&
+  git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+env:
+  global:
+    secure: XX0fboFSk93CUrHteI6+/a0h4A5MYQKbpYcjA6EvHX0zCgleYSGVdf6y8Q14KHwXyoZSbjpDLwK9QeG24072vwAfYrOMWxgHXs0e9drG9Pq6Nc7HO8NdYF4X/BXF6AcDemhHryhkORJwqHR78J6a7JCF259gqDTM3xehETfFmVTch+rKzTE2PseKPmqwc2ZYa4/UAFMDjxt6Us4tP+AthArNA9+0VNv73xpcvr25RdDWtFnBo5CWxLnJcVq9f7LSnfYEDWWJEpbs4MAraanjhHkzjoWk3ybGtwtgXJhYFlTPMK7VUuOE5AFZZHbsgFhAMkBoXAsJmpKmXmE8n1acGqpFQeTMRjwRg26niA6dLRIi+rjywJa7Pr+b94zuIqv8qBNjuckwI700KHWV0I/9t4AEl2Prfr6YoL10n+FVqGh9EJSkAmYHOK5I4AEFV+LQQHfaVxQ4OZ8U/4oZVWOLji1sM+YsDUPsPP9Wj3eDcKfxk6T+lCyJ2ZsazYY9u4uStO+8H0JfrRss+8QBqFY6Aq8aa6MxY2k08TGGlLw857WmZm20U5mqHxYoxAhSeAq+zTaFMSdeNafTqT/yDwuY/XXSnckusHNpgueeXG8svkkP+I+Ami8wXT7XXDpEPMdzUqNMMKiszVEgugtwfzya+H6UIG5XQImR7MsNnHw5yV4=

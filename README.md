@@ -56,7 +56,6 @@ binary releases will be provided until the core functionality is implemented.
 
 Not implemented yet:
 
-* Image to LED color (including black border)
 * Effects
 * Other LED device types
 * LED color filtering
@@ -81,7 +80,7 @@ to the Hyperion server.
 | Color       | ✔ (2) | ✔ (2)    |
 | Correction  | ❌     | N.A.     |
 | Effect      | ❌     | N.A.     |
-| Image       | ❌     | ❌        |
+| Image       | ✔ (2) | ✔ (2)    |
 | ServerInfo  | ❌     | N.A.     |
 | Temperature | ❌     | N.A.     |
 | Transform   | ❌     | N.A.     |

@@ -20,6 +20,8 @@ pub use device::*;
 use crate::methods;
 use crate::methods::Method;
 
+use crate::image::Processor;
+
 /// State update messages for the Hyperion service
 #[derive(Debug)]
 pub enum StateUpdate {
@@ -68,6 +70,8 @@ pub struct Hyperion {
     receiver: mpsc::UnboundedReceiver<StateUpdate>,
     /// Device runtime data
     devices: Vec<DeviceInstance>,
+    /// Image processor
+    image_processor: Option<Processor>,
 }
 
 impl Hyperion {
@@ -95,7 +99,14 @@ impl Hyperion {
             .collect::<Result<Vec<_>, _>>()
             .map_err(HyperionError::from)?;
 
-        Ok((Self { receiver, devices }, sender))
+        Ok((
+            Self {
+                receiver,
+                devices,
+                image_processor: None,
+            },
+            sender,
+        ))
     }
 
     fn set_all_leds(&mut self, color: palette::LinSrgb) {
@@ -116,8 +127,47 @@ impl Hyperion {
                 debug!("setting all leds to {:?}", color);
                 self.set_all_leds(color);
             }
-            StateUpdate::Image { data: _, width, height } => {
+            StateUpdate::Image {
+                data,
+                width,
+                height,
+            } => {
                 debug!("incoming {}x{} image", width, height);
+
+                if self.image_processor.is_none()
+                    || !self
+                        .image_processor
+                        .as_ref()
+                        .unwrap()
+                        .matches(width, height)
+                {
+                    self.image_processor = Some(Processor::new(
+                        width,
+                        height,
+                        self.devices
+                            .iter()
+                            .enumerate()
+                            .flat_map(|(device_idx, device)| {
+                                device
+                                    .leds
+                                    .iter()
+                                    .enumerate()
+                                    .map(move |(led_idx, led)| (device_idx, led, led_idx))
+                            }),
+                    ));
+                }
+
+                let mut processor = self.image_processor.take().unwrap();
+                processor.process_image(
+                    |(device_idx, led_idx), color| {
+                        self.devices[device_idx].leds[led_idx].current_color = color;
+                    },
+                    &data[..],
+                    width,
+                    height,
+                );
+
+                self.image_processor = Some(processor);
             }
         }
     }

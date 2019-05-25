@@ -25,18 +25,21 @@ Assuming the following `config.yml`:
 
     devices:
       - name: stdout script
-        frequency: 1
+        frequency: 1 # Hz
         endpoint:
           method: stdout
           target:
             path: scripts/methods/stdout.lua
         leds: &1
+          # When facing the screen
+          #  * hscan ranges from 0 (left) to 1 (right)
+          #  * vscan ranges from 0 (top) to 1 (bottom)
           - hscan: { min: 0.8, max: 1.0 }
             vscan: { min: 0.0, max: 1.0 }
           - hscan: { min: 0.5, max: 1.0 }
-            vscan: { min: 0.8, max: 1.0 }
+            vscan: { min: 0.0, max: 0.2 }
           - hscan: { min: 0.0, max: 0.5 }
-            vscan: { min: 0.8, max: 1.0 }
+            vscan: { min: 0.0, max: 0.2 }
           - hscan: { min: 0.0, max: 0.2 }
             vscan: { min: 0.0, max: 1.0 }
 

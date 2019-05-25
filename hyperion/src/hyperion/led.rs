@@ -1,15 +1,15 @@
 /// Floating-point range in a picture
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScanRange {
-    pub minimum: f32,
-    pub maximum: f32,
+    pub min: f32,
+    pub max: f32,
 }
 
 impl Default for ScanRange {
     fn default() -> Self {
         Self {
-            minimum: 0.0,
-            maximum: 1.0,
+            min: 0.0,
+            max: 1.0,
         }
     }
 }

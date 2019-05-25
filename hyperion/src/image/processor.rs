@@ -63,11 +63,11 @@ impl Processor {
         for (index, led) in leds.enumerate() {
             for j in min(
                 height - 1,
-                (led.1.spec.vscan.minimum * height as f32).floor() as usize,
+                (led.1.spec.vscan.min * height as f32).floor() as usize,
             )
                 ..min(
                     height,
-                    (led.1.spec.vscan.maximum * height as f32).ceil() as usize,
+                    (led.1.spec.vscan.max * height as f32).ceil() as usize,
                 )
             {
                 // Vertical scan range
@@ -76,12 +76,9 @@ impl Processor {
 
                 for i in min(
                     width - 1,
-                    (led.1.spec.hscan.minimum * width as f32).floor() as usize,
+                    (led.1.spec.hscan.min * width as f32).floor() as usize,
                 )
-                    ..min(
-                        width,
-                        (led.1.spec.hscan.maximum * width as f32).ceil() as usize,
-                    )
+                    ..min(width, (led.1.spec.hscan.max * width as f32).ceil() as usize)
                 {
                     // Horizontal scan range
                     let x_min = i as f32 / width as f32;
@@ -89,10 +86,10 @@ impl Processor {
 
                     let map_index = j * width + i;
 
-                    if led.1.spec.hscan.minimum < x_max
-                        && led.1.spec.hscan.maximum >= x_min
-                        && led.1.spec.vscan.minimum < y_max
-                        && led.1.spec.vscan.maximum >= y_min
+                    if led.1.spec.hscan.min < x_max
+                        && led.1.spec.hscan.max >= x_min
+                        && led.1.spec.vscan.min < y_max
+                        && led.1.spec.vscan.max >= y_min
                     {
                         led_map[map_index].push((index, led.0, led.2));
                     }

@@ -248,7 +248,7 @@ mod tests {
                 "target": {}
             },
             "leds": [ 
-                { "hscan": { "minimum": 0.0, "maximum": 0.5 }, "vscan": { "minimum": 0.0, "maximum": 0.5 } }
+                { "hscan": { "min": 0.0, "max": 0.5 }, "vscan": { "min": 0.0, "max": 0.5 } }
             ]
         },
         {
@@ -260,7 +260,7 @@ mod tests {
                 }
             },
             "leds": [ 
-                { "hscan": { "minimum": 0.5, "maximum": 1.0 }, "vscan": { "minimum": 0.5, "maximum": 1.0 } }
+                { "hscan": { "min": 0.5, "max": 1.0 }, "vscan": { "min": 0.5, "max": 1.0 } }
             ]
         }
     ]

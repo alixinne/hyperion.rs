@@ -5,7 +5,7 @@ use std::path::Path;
 
 use rlua::{Function, Lua};
 
-use serde_json::Value;
+use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
 
 /// Dummy LED device which outputs updates to the standard output
@@ -57,7 +57,7 @@ impl Script {
             Value::String(string_value) => {
                 Ok(rlua::Value::String(lua_ctx.create_string(&string_value)?))
             }
-            Value::Array(array_value) => {
+            Value::Sequence(array_value) => {
                 let table = lua_ctx.create_table()?;
 
                 for (i, item) in array_value.iter().enumerate() {
@@ -66,11 +66,14 @@ impl Script {
 
                 Ok(rlua::Value::Table(table))
             }
-            Value::Object(object_value) => {
+            Value::Mapping(object_value) => {
                 let table = lua_ctx.create_table()?;
 
                 for (k, item) in object_value.iter() {
-                    table.set(k.to_string(), Self::lua_value(lua_ctx, item)?)?;
+                    // Ignore non-string keys
+                    if let Some(key) = k.as_str() {
+                        table.set(key, Self::lua_value(lua_ctx, item)?)?;
+                    }
                 }
 
                 Ok(rlua::Value::Table(table))

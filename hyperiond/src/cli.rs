@@ -31,7 +31,8 @@ fn read_config<P: AsRef<Path>>(path: P) -> std::io::Result<hyperion::hyperion::C
     let file = File::open(path)?;
     let reader = BufReader::new(file);
 
-    Ok(serde_json::from_reader(reader)?)
+    Ok(serde_yaml::from_reader(reader)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?)
 }
 
 /// Entry point for the hyperion CLI

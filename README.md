@@ -21,30 +21,28 @@ Get the source for the project:
     git clone https://github.com/vtavernier/hyperion.rs.git
     cd hyperion.rs
 
-Assuming the following `config.json`:
+Assuming the following `config.yml`:
 
-    {
-        "devices": [
-            {
-                "name": "stdout script",
-                "frequency": 1,
-                "endpoint": {
-                    "method": "stdout",
-                    "target": {}
-                },
-                "leds": [
-                    { "hscan" : { "min" : 0.8, "max" : 1.0 }, "vscan" : { "min" : 0.0, "max" : 1.0 } },
-                    { "hscan" : { "min" : 0.5, "max" : 1.0 }, "vscan" : { "min" : 0.8, "max" : 1.0 } },
-                    { "hscan" : { "min" : 0.0, "max" : 0.5 }, "vscan" : { "min" : 0.8, "max" : 1.0 } },
-                    { "hscan" : { "min" : 0.0, "max" : 0.2 }, "vscan" : { "min" : 0.0, "max" : 1.0 } }
-                ]
-            }
-        ]
-    }
+    devices:
+      - name: stdout script
+        frequency: 1
+        endpoint:
+          method: stdout
+          target:
+            path: scripts/methods/stdout.lua
+        leds: &1
+          - hscan: { min: 0.8, max: 1.0 }
+            vscan: { min: 0.0, max: 1.0 }
+          - hscan: { min: 0.5, max: 1.0 }
+            vscan: { min: 0.8, max: 1.0 }
+          - hscan: { min: 0.0, max: 0.5 }
+            vscan: { min: 0.8, max: 1.0 }
+          - hscan: { min: 0.0, max: 0.2 }
+            vscan: { min: 0.0, max: 1.0 }
 
 You can run the daemon using the following command:
 
-    HYPERION_LOG=hyperion=debug cargo run -- -c config.json s --bind 0.0.0.0
+    HYPERION_LOG=hyperion=debug cargo run -- -c config.yml s --bind 0.0.0.0
 
 The Android app can be used to send commands to this server, which should result
 in updated colors in the output of the daemon.

@@ -1,6 +1,6 @@
 use super::Led;
 
-use serde_json::Value;
+use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
 
 fn default_bit_depth() -> i32 {
@@ -70,7 +70,7 @@ mod tests {
         };
         println!(
             "udp endpoint: {}",
-            serde_json::to_string(&endpoint).unwrap()
+            serde_yaml::to_string(&endpoint).unwrap()
         );
     }
 }

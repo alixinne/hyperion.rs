@@ -49,7 +49,7 @@ fn method_path(name: &str) -> PathBuf {
         .join(name.to_owned() + ".lua")
 }
 
-use serde_json::Value;
+use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
 fn stdout_params(bits: i32) -> Map<String, Value> {
     let mut map = Map::new();

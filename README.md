@@ -9,6 +9,11 @@ lighting software.
 * [`hyperiond/`](hyperiond): daemon program and usage instructions
 * [`hyperion/`](hyperion): core functionality implementation
 
+## Requirements
+
+* [Rust stable](https://rustup.rs/)
+* [protobuf compiler](https://github.com/protocolbuffers/protobuf/releases), `protobuf-compiler` on Debian distributions
+
 ## Usage
 
 Get the source for the project:

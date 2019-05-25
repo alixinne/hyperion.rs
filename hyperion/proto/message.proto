@@ -1,25 +1,6 @@
-package proto;
-
-message HyperionRequest {
-	enum Command {
-		COLOR = 1;
-		IMAGE = 2;
-		CLEAR = 3;
-		CLEARALL = 4;
-	}
-
-	// command specification
-	required Command command = 1;
-
-	// extensions to define all specific requests
-	extensions 10 to 100;
-}
+package message;
 
 message ColorRequest {
-	extend HyperionRequest {
-		optional ColorRequest colorRequest = 10;
-	}
-
 	// priority to use when setting the color
 	required int32 priority = 1;
 
@@ -31,10 +12,6 @@ message ColorRequest {
 }
 
 message ImageRequest {
-	extend HyperionRequest {
-		optional ImageRequest imageRequest = 11;
-	}
-
 	// priority to use when setting the image
 	required int32 priority = 1;
 
@@ -52,12 +29,24 @@ message ImageRequest {
 }
 
 message ClearRequest {
-	extend HyperionRequest {
-		optional ClearRequest clearRequest = 12;
-	}
-
 	// priority which need to be cleared
 	required int32 priority = 1;
+}
+
+message HyperionRequest {
+	enum Command {
+		COLOR = 1;
+		IMAGE = 2;
+		CLEAR = 3;
+		CLEARALL = 4;
+	}
+
+	// command specification
+	required Command command = 1;
+
+	optional ColorRequest colorRequest = 10;
+	optional ImageRequest imageRequest = 11;
+	optional ClearRequest clearRequest = 12;
 }
 
 message HyperionReply {

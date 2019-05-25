@@ -5,7 +5,7 @@ use super::message;
 use byteorder::{BigEndian, ByteOrder};
 use bytes::{BufMut, BytesMut};
 
-use protobuf::Message;
+use prost::Message;
 
 use std::io;
 
@@ -24,9 +24,11 @@ pub enum HyperionMessageError {
     #[fail(display = "I/O error: {}", 0)]
     IoError(io::Error),
     #[fail(display = "decode error: {}", 0)]
-    DecodeError(protobuf::error::ProtobufError),
+    DecodeError(prost::DecodeError),
+    #[fail(display = "invalid message")]
+    InvalidMessageError,
     #[fail(display = "encode error: {}", 0)]
-    EncodeError(protobuf::error::ProtobufError),
+    EncodeError(prost::EncodeError),
 }
 
 impl From<std::io::Error> for HyperionMessageError {
@@ -61,33 +63,32 @@ impl Decoder for ProtoCodec {
             return Ok(None);
         }
 
+        trace!("{} bytes message", size);
+
         // Attempt to parse using protobuf
         let range = &src[4..(4 + size)];
-        let parsed = protobuf::parse_from_bytes::<message::HyperionRequest>(range);
+        let parsed = message::HyperionRequest::decode(range);
 
         // Process parse result
         let result = match parsed {
             Ok(message) => {
                 // We parsed an HyperionMessage, which gives us the actual type
                 // of the payload
-                match message.get_command() {
-                    message::HyperionRequest_Command::COLOR => {
-                        protobuf::parse_from_bytes::<message::ColorRequest>(range)
-                            .map(HyperionRequest::ColorRequest)
+                match message.command() {
+                    message::hyperion_request::Command::Color => {
+                        message.color_request.map(HyperionRequest::ColorRequest)
                     }
-                    message::HyperionRequest_Command::IMAGE => {
-                        protobuf::parse_from_bytes::<message::ImageRequest>(range)
-                            .map(HyperionRequest::ImageRequest)
+                    message::hyperion_request::Command::Image => {
+                        message.image_request.map(HyperionRequest::ImageRequest)
                     }
-                    message::HyperionRequest_Command::CLEAR => {
-                        protobuf::parse_from_bytes::<message::ClearRequest>(range)
-                            .map(HyperionRequest::ClearRequest)
+                    message::hyperion_request::Command::Clear => {
+                        message.clear_request.map(HyperionRequest::ClearRequest)
                     }
-                    message::HyperionRequest_Command::CLEARALL => {
-                        Ok(HyperionRequest::ClearAllRequest(message))
+                    message::hyperion_request::Command::Clearall => {
+                        Some(message).map(HyperionRequest::ClearAllRequest)
                     }
                 }
-                .map_err(HyperionMessageError::DecodeError)
+                .ok_or(HyperionMessageError::InvalidMessageError)
             }
             Err(parse_error) => Err(HyperionMessageError::DecodeError(parse_error)),
         };
@@ -106,7 +107,7 @@ impl Encoder for ProtoCodec {
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
         // Get the size of the message
-        let message_size = item.compute_size();
+        let message_size = item.encoded_len();
 
         // Reserve space in the dst buffer
         dst.reserve(4 + message_size as usize);
@@ -115,7 +116,7 @@ impl Encoder for ProtoCodec {
         dst.put_u32_be(message_size as u32);
 
         // Write message contents
-        item.write_to_writer(&mut dst.writer())
+        item.encode(dst)
             .map_err(HyperionMessageError::EncodeError)?;
 
         Ok(())

@@ -18,9 +18,9 @@ mod codec;
 use codec::*;
 
 fn success_response(success: bool) -> message::HyperionReply {
-    let mut reply = message::HyperionReply::new();
-    reply.set_field_type(message::HyperionReply_Type::REPLY);
-    reply.set_success(success);
+    let mut reply = message::HyperionReply::default();
+    reply.set_type(message::hyperion_reply::Type::Reply);
+    reply.success = Some(success);
 
     reply
 }
@@ -69,7 +69,7 @@ pub fn bind(
                         success_response(true)
                     }
                     HyperionRequest::ColorRequest(color_request) => {
-                        let color = color_request.get_RgbColor();
+                        let color = color_request.rgb_color;
                         let color = (
                             color & 0x000_000FF,
                             (color & 0x0000_FF00) >> 8,
@@ -91,10 +91,10 @@ pub fn bind(
 
                         success_response(true)
                     }
-                    HyperionRequest::ImageRequest(mut image_request) => {
-                        let data = image_request.take_imagedata();
-                        let width = image_request.get_imagewidth() as u32;
-                        let height = image_request.get_imageheight() as u32;
+                    HyperionRequest::ImageRequest(image_request) => {
+                        let data = image_request.imagedata;
+                        let width = image_request.imagewidth as u32;
+                        let height = image_request.imageheight as u32;
 
                         // TODO: image: handle priority and duration
 

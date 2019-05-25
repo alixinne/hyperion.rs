@@ -34,3 +34,6 @@ subcommands:
             long: disable-devices
             value_name: REGEX
             help: Disable matching devices from updates
+        - gui:
+            long: gui
+            help: Show the debug interface

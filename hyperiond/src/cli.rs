@@ -16,6 +16,8 @@ use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
 
 use regex::Regex;
 
+use crate::gui;
+
 /// Error raised when the CLI fails
 #[derive(Debug, Fail)]
 pub enum CliError {
@@ -83,7 +85,14 @@ pub fn run() -> Result<(), failure::Error> {
                 Regex::new(value).expect("failed to parse regex, please see https://docs.rs/regex/1.1.6/regex/#syntax for details")
             });
 
-        let (hyperion, sender) = hyperion::hyperion::Hyperion::new(configuration, disable_devices)?;
+        let (debug_listener, _debug_window) = if server_matches.occurrences_of("gui") > 0 {
+            gui::build_listener()
+        } else {
+            (None, None)
+        };
+
+        let (hyperion, sender) =
+            hyperion::hyperion::Hyperion::new(configuration, disable_devices, debug_listener)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,

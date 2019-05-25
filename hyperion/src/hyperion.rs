@@ -23,11 +23,17 @@ use crate::methods::Method;
 use crate::image::Processor;
 
 /// State update messages for the Hyperion service
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StateUpdate {
     ClearAll,
-    SolidColor { color: palette::LinSrgb },
-    Image { data: Vec<u8>, width: u32, height: u32 },
+    SolidColor {
+        color: palette::LinSrgb,
+    },
+    Image {
+        data: Vec<u8>,
+        width: u32,
+        height: u32,
+    },
 }
 
 /// A configuration
@@ -64,6 +70,14 @@ impl DeviceInstance {
     }
 }
 
+/// Messages sent to the debug monitor
+pub enum DebugMessage {
+    /// A state update forwarded from one of the sources
+    StateUpdate(StateUpdate),
+    /// The hyperion instance is terminating
+    Terminating,
+}
+
 /// Hyperion service state
 pub struct Hyperion {
     /// Receiver for update messages
@@ -72,12 +86,15 @@ pub struct Hyperion {
     devices: Vec<DeviceInstance>,
     /// Image processor
     image_processor: Option<Processor>,
+    /// Debug listener
+    debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
 }
 
 impl Hyperion {
     pub fn new(
         configuration: Configuration,
         disable_devices: Option<Regex>,
+        debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
     ) -> Result<(Self, mpsc::UnboundedSender<StateUpdate>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
@@ -104,6 +121,7 @@ impl Hyperion {
                 receiver,
                 devices,
                 image_processor: None,
+                debug_listener,
             },
             sender,
         ))
@@ -118,6 +136,16 @@ impl Hyperion {
     }
 
     fn handle_update(&mut self, update: StateUpdate) {
+        // Forward state update to the debug listener if we have one
+        if let Some(debug_listener) = self.debug_listener.as_ref() {
+            debug_listener
+                .send(DebugMessage::StateUpdate(update.clone()))
+                .unwrap_or_else(|e| {
+                    error!("failed to forward state update to listener: {:?}", e);
+                    self.debug_listener = None;
+                });
+        }
+
         match update {
             StateUpdate::ClearAll => {
                 debug!("clearing all leds");
@@ -228,6 +256,16 @@ impl Future for Hyperion {
         }
 
         Ok(Async::NotReady)
+    }
+}
+
+impl Drop for Hyperion {
+    fn drop(&mut self) {
+        if let Some(debug_listener) = self.debug_listener.as_ref() {
+            debug_listener.send(DebugMessage::Terminating).unwrap_or_else(|e| {
+                error!("failed to send Terminating message to listener: {:?}", e);
+            });
+        }
     }
 }
 

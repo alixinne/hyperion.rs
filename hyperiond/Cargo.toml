@@ -16,3 +16,13 @@ tokio = "0.1.20"
 tokio-signal = "0.2.7"
 regex = "1.1.6"
 serde_yaml = "0.8.9"
+
+piston_window = { version = "0.93.0", optional = true }
+image = { version = "0.21.1", optional = true }
+
+[features]
+# We add the gui feature by default since for now, the --features
+# flag seems broken on cargo workspaces
+# https://github.com/rust-lang/cargo/issues/5364
+default = ["gui"]
+gui = ["image", "piston_window"]

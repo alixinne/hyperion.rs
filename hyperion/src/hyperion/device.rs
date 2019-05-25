@@ -30,8 +30,8 @@ pub enum Endpoint {
     },
 }
 
-fn default_frequency() -> u32 {
-    10
+fn default_frequency() -> f64 {
+    10.0
 }
 
 /// Physical or virtual ambient lighting device representation
@@ -56,7 +56,7 @@ pub struct Device {
     pub leds: Vec<Led>,
     /// Update frequency (Hz)
     #[serde(default = "default_frequency")]
-    pub frequency: u32,
+    pub frequency: f64,
 }
 
 #[cfg(test)]

@@ -56,10 +56,16 @@ struct DeviceInstance {
 
 impl DeviceInstance {
     fn from_device(device: &Device) -> Result<DeviceInstance, methods::MethodError> {
+        // Clamp frequency to 1/hour Hz
+        let mut freq = 1.0f64 / 3600f64;
+        if device.frequency > freq {
+            freq = device.frequency;
+        }
+
         Ok(DeviceInstance {
             method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(Duration::from_nanos(
-                1_000_000_000u64 / std::cmp::max(1u64, u64::from(device.frequency)),
+                (1_000_000_000f64 / freq) as u64,
             )),
             leds: device
                 .leds

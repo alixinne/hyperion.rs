@@ -64,9 +64,7 @@ impl DeviceInstance {
 
         Ok(DeviceInstance {
             method: methods::from_endpoint(&device.endpoint)?,
-            updater: Interval::new_interval(Duration::from_nanos(
-                (1_000_000_000f64 / freq) as u64,
-            )),
+            updater: Interval::new_interval(Duration::from_nanos((1_000_000_000f64 / freq) as u64)),
             leds: device
                 .leds
                 .iter()
@@ -253,9 +251,11 @@ impl Future for Hyperion {
 impl Drop for Hyperion {
     fn drop(&mut self) {
         if let Some(debug_listener) = self.debug_listener.as_ref() {
-            debug_listener.send(DebugMessage::Terminating).unwrap_or_else(|e| {
-                error!("failed to send Terminating message to listener: {:?}", e);
-            });
+            debug_listener
+                .send(DebugMessage::Terminating)
+                .unwrap_or_else(|e| {
+                    error!("failed to send Terminating message to listener: {:?}", e);
+                });
         }
     }
 }

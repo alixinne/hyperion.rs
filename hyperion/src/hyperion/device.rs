@@ -91,6 +91,10 @@ fn default_idle_resolution() -> u32 {
     16
 }
 
+fn default_idle_retries() -> u32 {
+    5
+}
+
 /// Settings for idling devices
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IdleSettings {
@@ -116,6 +120,26 @@ pub struct IdleSettings {
     /// Changes smaller in value than `2^(-resolution)` will not be considered as updates
     #[serde(default = "default_idle_resolution")]
     pub resolution: u32,
+    /// Number of state updates to send on oneshot changes (default: 5)
+    ///
+    /// Specific devices may be unreliable, and may lose some state updates. This is true for UDP
+    /// devices on unreliable networks for example. This means that single updates might not reach
+    /// the physical device, so this setting ensures that at least `retries` are sent in those
+    /// cases.
+    #[serde(default = "default_idle_retries")]
+    pub retries: u32,
+}
+
+impl IdleSettings {
+    /// Ensures these idle settings are valid
+    ///
+    /// This will warn about invalid retries.
+    fn sanitize(&mut self, device_name: &str) {
+        if self.retries < 1 {
+            warn!("device '{}': invalid idle retries, defaulted to 1", device_name);
+            self.retries = 1;
+        }
+    }
 }
 
 impl Default for IdleSettings {
@@ -125,6 +149,7 @@ impl Default for IdleSettings {
             enabled: default_idle_enabled(),
             holds: default_idle_holds(),
             resolution: default_idle_resolution(),
+            retries: default_idle_retries(),
         }
     }
 }
@@ -196,6 +221,9 @@ impl Device {
         }
 
         self.idle.delay = idle_duration;
+
+        // Sanitize idle settings
+        self.idle.sanitize(&self.name);
     }
 }
 

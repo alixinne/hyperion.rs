@@ -13,8 +13,8 @@ pub struct ChangeTracker {
     nonzero_color_count: usize,
     /// Instant of the last change in any LED value
     last_change: Instant,
-    /// Was the last pass a oneshot change?
-    oneshot_pass: bool,
+    /// Number of passes to apply the oneshot notification for
+    oneshot_pass: u32,
     /// Are we switching back to idle after a oneshot change?
     oneshot_pending: bool,
     /// Instant of the last update of the target device
@@ -88,12 +88,14 @@ impl ChangeTracker {
     ///
     /// * `idle_settings`: settings for device idle modes
     pub fn new(idle_settings: IdleSettings) -> Self {
+        let oneshot_pass = idle_settings.retries;
+
         Self {
             idle_settings,
             total_change: 0.0,
             nonzero_color_count: 0,
             last_change: Instant::now(),
-            oneshot_pass: true,
+            oneshot_pass,
             oneshot_pending: false,
             pass_started: false,
             last_update: Instant::now(),
@@ -123,7 +125,11 @@ impl ChangeTracker {
     /// immediately considered idle. Should be false if continuous updates are expected.
     pub fn end_pass(&mut self, oneshot: bool) {
         assert!(self.pass_started);
-        trace!("end pass: total_change: {}, oneshot: {}", self.total_change, oneshot);
+        trace!(
+            "end pass: total_change: {}, oneshot: {}",
+            self.total_change,
+            oneshot
+        );
 
         // Update change values
         if self.total_change > 2.0f64.powf(-f64::from(self.idle_settings.resolution)) {
@@ -131,9 +137,9 @@ impl ChangeTracker {
         }
 
         // Update oneshot flags
-        self.oneshot_pass = oneshot;
+        self.oneshot_pass = self.idle_settings.retries;
         // If a non-oneshot update comes in, stop waiting for the delay to expire
-        self.oneshot_pending = self.oneshot_pending && oneshot;
+        self.oneshot_pending = self.oneshot_pending && (self.oneshot_pass > 0);
 
         self.pass_started = false;
     }
@@ -178,11 +184,13 @@ impl ChangeTracker {
     /// IdleColor.
     pub fn update_state(&mut self) -> (bool, ChangeState) {
         let now = Instant::now();
+        let delay_expired = now - self.last_change > self.idle_settings.delay;
+
         let new_state =
             // Only consider idle stats if idling is enabled, and we are not waiting on a oneshot
             // update
-            if self.idle_settings.enabled && !self.oneshot_pass && (now - self.last_change > self.idle_settings.delay || self.oneshot_pending) {
-                if self.oneshot_pending && now - self.last_change > self.idle_settings.delay {
+            if self.idle_settings.enabled && self.oneshot_pass == 0 && (delay_expired || self.oneshot_pending) {
+                if self.oneshot_pending && delay_expired {
                     // The delay expired so we can release the oneshot lock
                     self.oneshot_pending = false;
                 }
@@ -198,10 +206,25 @@ impl ChangeTracker {
                     ChangeState::IdleBlack
                 }
             } else {
-                if self.oneshot_pass {
-                    self.oneshot_pass = false;
-                    self.oneshot_pending = true;
+                // Do we still have oneshot retries to perform?
+                if self.oneshot_pass > 0 {
+                    self.oneshot_pass -= 1;
+
+                    // Did we run out of retries or the idle delay expired?
+                    if self.oneshot_pass == 0 ||
+                        delay_expired {
+                            if self.oneshot_pass > 0 {
+                                // We should have sent all retries before the delay expires, this
+                                // makes no sense otherwise
+                                warn!("idle delay {} expired before {} retries were executed ({} left), please lower retries or increase delay", humantime::Duration::from(self.idle_settings.delay), self.idle_settings.retries, self.oneshot_pass);
+                                self.oneshot_pass = 0;
+                            }
+
+                            // All retries sent and delay expired, switch back to idle
+                            self.oneshot_pending = true;
+                        }
                 }
+
                 ChangeState::Active
             };
 

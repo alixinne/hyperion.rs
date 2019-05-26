@@ -29,6 +29,7 @@ Assuming the following `config.yml`:
         idle:
           delay: 5s   # Consider device idle after 5s
           holds: true # This device holds the last command forever
+          retries: 1  # Reliable device, no need to retry sending packets during idle updates
         endpoint:
           method: stdout
           target:

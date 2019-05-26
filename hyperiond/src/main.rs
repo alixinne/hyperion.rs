@@ -26,8 +26,8 @@
 //! Logging is set using the HYPERION_LOG environment variable, which can be set to the desired
 //! logging level (trace, debug, info, warn, error). Note that this will affect logging of all
 //! crates, and if only hyperion logging is required, it should be filtered as such:
-//! `HYPERION_LOG=hyperion=level`. See https://docs.rs/env_logger/0.6.1/env_logger/ for more
-//! details.
+//! `HYPERION_LOG=hyperion=level`. See the [env_logger crate docs](https://docs.rs/env_logger/0.6.1/env_logger/)
+//! for more details.
 //!
 //! # Development
 //!
@@ -51,7 +51,7 @@ extern crate clap;
 #[macro_use]
 extern crate log;
 
-use std::env;
+use env_logger::Env;
 
 mod cli;
 
@@ -60,12 +60,8 @@ mod gui;
 /// Entry point of the hyperion binary
 fn main() {
     // Initialize logging, default to info
-    let log_var_name = "HYPERION_LOG";
-    if env::var(log_var_name).is_err() {
-        env::set_var(log_var_name, "hyperion=info");
-    }
-
-    pretty_env_logger::init_custom_env(log_var_name);
+    env_logger::from_env(Env::default().filter_or("HYPERION_LOG", "hyperion=info"))
+        .init();
 
     // Run CLI interface
     match cli::run() {

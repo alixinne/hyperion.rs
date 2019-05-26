@@ -28,8 +28,8 @@ For now, the CLI is only able to start the hyperion server implementation:
 Logging is set using the HYPERION_LOG environment variable, which can be set to the desired
 logging level (trace, debug, info, warn, error). Note that this will affect logging of all
 crates, and if only hyperion logging is required, it should be filtered as such:
-`HYPERION_LOG=hyperion=level`. See https://docs.rs/env_logger/0.6.1/env_logger/ for more
-details.
+`HYPERION_LOG=hyperion=level`. See the [env_logger crate docs](https://docs.rs/env_logger/0.6.1/env_logger/)
+for more details.
 
 ## Development
 

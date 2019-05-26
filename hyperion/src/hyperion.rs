@@ -60,6 +60,11 @@ impl DeviceInstance {
         let mut freq = 1.0f64 / 3600f64;
         if device.frequency > freq {
             freq = device.frequency;
+        } else {
+            warn!(
+                "device '{}': invalid frequency {}Hz",
+                device.name, device.frequency
+            );
         }
 
         Ok(DeviceInstance {

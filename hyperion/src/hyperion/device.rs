@@ -3,6 +3,10 @@ use super::Led;
 use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
 
+use std::fmt;
+
+use std::time::Duration;
+
 fn default_bit_depth() -> i32 {
     8
 }
@@ -34,6 +38,107 @@ fn default_frequency() -> f64 {
     10.0
 }
 
+struct DurationVisitor;
+
+impl<'a> serde::de::Visitor<'a> for DurationVisitor {
+    type Value = Duration;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("duration")
+    }
+
+    fn visit_str<A>(self, string: &str) -> Result<Self::Value, A>
+    where
+        A: serde::de::Error,
+    {
+        string
+            .parse::<humantime::Duration>()
+            .map(std::convert::Into::<Duration>::into)
+            .map_err(|err| serde::de::Error::custom(err.to_string()))
+    }
+}
+
+fn hyperion_parse_duration<'de, D>(deserializer: D) -> std::result::Result<Duration, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserializer.deserialize_str(DurationVisitor {})
+}
+
+fn hyperion_write_duration<S>(
+    duration: &Duration,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&format!("{}", humantime::Duration::from(*duration)))
+}
+
+fn default_idle_delay() -> Duration {
+    Duration::from_millis(10000)
+}
+
+fn default_idle_enabled() -> bool {
+    true
+}
+
+fn default_idle_holds() -> bool {
+    false
+}
+
+fn default_idle_resolution() -> u32 {
+    16
+}
+
+/// Settings for idling devices
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IdleSettings {
+    /// Time before the device is considered idle (default: 10s)
+    #[serde(
+        serialize_with = "hyperion_write_duration",
+        deserialize_with = "hyperion_parse_duration",
+        default = "default_idle_delay"
+    )]
+    pub delay: Duration,
+    /// true if the device should be idled, false otherwise (default: true)
+    #[serde(default = "default_idle_enabled")]
+    pub enabled: bool,
+    /// true if the devices holds its color without updates, false otherwise (default: false)
+    ///
+    /// If false, the device will be updated on a timer with a `delay/2` period to keep the device
+    /// active. Otherwise the device will not receive state updates as soon as it is considered
+    /// idle, even when displaying a color.
+    #[serde(default = "default_idle_holds")]
+    pub holds: bool,
+    /// Default idle value resolution, in bits (default: 16)
+    ///
+    /// Changes smaller in value than `2^(-resolution)` will not be considered as updates
+    #[serde(default = "default_idle_resolution")]
+    pub resolution: u32,
+}
+
+impl Default for IdleSettings {
+    fn default() -> Self {
+        IdleSettings {
+            delay: default_idle_delay(),
+            enabled: default_idle_enabled(),
+            holds: default_idle_holds(),
+            resolution: default_idle_resolution(),
+        }
+    }
+}
+
+impl fmt::Display for IdleSettings {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.enabled {
+            write!(f, "{}", humantime::Duration::from(self.delay))
+        } else {
+            write!(f, "disabled")
+        }
+    }
+}
+
 /// Physical or virtual ambient lighting device representation
 ///
 /// Devices in an Hyperion instance are uniquely identified by a name.
@@ -57,6 +162,41 @@ pub struct Device {
     /// Update frequency (Hz)
     #[serde(default = "default_frequency")]
     pub frequency: f64,
+    /// Idle timeout
+    #[serde(default)]
+    pub idle: IdleSettings,
+}
+
+impl Device {
+    /// Ensures the configuration of the device is valid
+    ///
+    /// This will warn about invalid frequencies and idle timeouts.
+    pub fn sanitize(&mut self) {
+        // Clamp frequency to 1/hour Hz
+        let mut freq = 1.0f64 / 3600f64;
+        if self.frequency > freq {
+            freq = self.frequency;
+        } else {
+            warn!(
+                "device '{}': invalid frequency {}Hz",
+                self.name, self.frequency
+            );
+        }
+
+        self.frequency = freq;
+
+        // Compute interval from frequency
+        let update_duration = Duration::from_nanos((1_000_000_000f64 / self.frequency) as u64);
+
+        // The idle timeout should be at least 2/frequency
+        let mut idle_duration = self.idle.delay;
+        if 2 * update_duration > idle_duration {
+            warn!("device '{}': idle duration too short", self.name);
+            idle_duration = 2 * update_duration;
+        }
+
+        self.idle.delay = idle_duration;
+    }
 }
 
 #[cfg(test)]

@@ -17,6 +17,10 @@ pub use led::*;
 mod device;
 pub use device::*;
 
+/// Definition of the ChangeTracker type
+mod change_tracker;
+pub use change_tracker::*;
+
 use crate::methods;
 use crate::methods::Method;
 
@@ -42,34 +46,52 @@ pub struct Configuration {
     devices: Vec<Device>,
 }
 
+impl Configuration {
+    /// Ensures the configuration is well-formed
+    ///
+    /// This will issue warnings for fields that need to be changed.
+    pub fn sanitize(&mut self) {
+        for device in &mut self.devices {
+            device.sanitize();
+        }
+    }
+}
+
 /// Runtime data for a given device
 ///
 /// This type is constructed from the configuration details in the config file.
 struct DeviceInstance {
+    /// Name of the device
+    name: String,
     /// Communication method
     method: Box<dyn Method + Send>,
     /// Updater future
     updater: Interval,
     /// List of LED data
     leds: Vec<LedInstance>,
+    /// Change tracker for idle detection
+    change_tracker: ChangeTracker,
 }
 
 impl DeviceInstance {
     fn from_device(device: &Device) -> Result<DeviceInstance, methods::MethodError> {
-        // Clamp frequency to 1/hour Hz
-        let mut freq = 1.0f64 / 3600f64;
-        if device.frequency > freq {
-            freq = device.frequency;
-        } else {
-            warn!(
-                "device '{}': invalid frequency {}Hz",
-                device.name, device.frequency
-            );
-        }
+        // Compute interval from frequency
+        let update_duration = Duration::from_nanos((1_000_000_000f64 / device.frequency) as u64);
+
+        // Log initialized device
+        info!(
+            "initialized device '{}': update {}, idle {}, {} leds",
+            device.name,
+            humantime::Duration::from(update_duration),
+            device.idle,
+            device.leds.len()
+        );
 
         Ok(DeviceInstance {
+            name: device.name.clone(),
             method: methods::from_endpoint(&device.endpoint)?,
-            updater: Interval::new_interval(Duration::from_nanos((1_000_000_000f64 / freq) as u64)),
+            updater: Interval::new_interval(update_duration),
+            change_tracker: ChangeTracker::new(device.idle.clone()),
             leds: device
                 .leds
                 .iter()
@@ -101,12 +123,15 @@ pub struct Hyperion {
 
 impl Hyperion {
     pub fn new(
-        configuration: Configuration,
+        mut configuration: Configuration,
         disable_devices: Option<Regex>,
         debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
     ) -> Result<(Self, mpsc::UnboundedSender<StateUpdate>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
+
+        // Sanitize configuration
+        configuration.sanitize();
 
         let devices = configuration
             .devices
@@ -138,9 +163,19 @@ impl Hyperion {
 
     fn set_all_leds(&mut self, color: palette::LinSrgb) {
         for device in self.devices.iter_mut() {
+            device.change_tracker.new_pass();
+
             for led in device.leds.iter_mut() {
+                // Notify color change to tracker
+                device
+                    .change_tracker
+                    .update_color(&led.current_color, &color);
+
+                // Change actual color
                 led.current_color = color;
             }
+
+            device.change_tracker.end_pass(true);
         }
     }
 
@@ -186,10 +221,26 @@ impl Hyperion {
 
                 // Update LEDs with computed colors
                 let devices_mut = &mut self.devices;
+                for device in devices_mut.iter_mut() {
+                    device.change_tracker.new_pass();
+                }
+
                 self.image_processor
                     .update_leds(|(device_idx, led_idx), color| {
-                        devices_mut[device_idx].leds[led_idx].current_color = color;
+                        let device = &mut devices_mut[device_idx];
+
+                        // Notify color change to tracker
+                        device
+                            .change_tracker
+                            .update_color(&device.leds[led_idx].current_color, &color);
+
+                        // Change actual color
+                        device.leds[led_idx].current_color = color;
                     });
+
+                for device in devices_mut.iter_mut() {
+                    device.change_tracker.end_pass(false);
+                }
             }
         }
     }
@@ -245,7 +296,19 @@ impl Future for Hyperion {
 
             // Write device if needed
             if write_device {
-                device.method.write(&device.leds[..]);
+                // The interval told us to check the device, but now
+                // check the change tracker to see if it's actually useful
+                let (changed, state) = device.change_tracker.update_state();
+
+                // Notify log of state changes
+                if changed {
+                    debug!("device '{}' is now {}", device.name, state);
+                }
+
+                // Write only if we need to
+                if state.should_write() {
+                    device.method.write(&device.leds[..]);
+                }
             }
         }
 

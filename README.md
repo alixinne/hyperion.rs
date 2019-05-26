@@ -25,7 +25,10 @@ Assuming the following `config.yml`:
 
     devices:
       - name: stdout script
-        frequency: 1 # Hz
+        frequency: 1  # Hz
+        idle:
+          delay: 5s   # Consider device idle after 5s
+          holds: true # This device holds the last command forever
         endpoint:
           method: stdout
           target:

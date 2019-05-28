@@ -1,4 +1,5 @@
-use crate::hyperion::{Endpoint, LedInstance};
+use crate::config::Endpoint;
+use crate::runtime::LedInstance;
 
 pub trait Method {
     fn write(&self, leds: &[LedInstance]);

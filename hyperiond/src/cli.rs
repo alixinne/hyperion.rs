@@ -28,7 +28,7 @@ pub enum CliError {
     ServerError(String),
 }
 
-fn read_config<P: AsRef<Path>>(path: P) -> std::io::Result<hyperion::hyperion::Configuration> {
+fn read_config<P: AsRef<Path>>(path: P) -> std::io::Result<hyperion::config::Configuration> {
     // Open file and create reader
     let file = File::open(path)?;
     let reader = BufReader::new(file);

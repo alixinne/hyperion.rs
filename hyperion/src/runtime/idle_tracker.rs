@@ -1,10 +1,12 @@
+//! Definition of the IdleTracker type
+
 use std::fmt;
 use std::time::Instant;
 
-use crate::hyperion::IdleSettings;
+use crate::config::IdleSettings;
 
-/// RGB LED change tracker
-pub struct ChangeTracker {
+/// RGB LED idle tracker
+pub struct IdleTracker {
     /// Duration after which the device is considered idle
     idle_settings: IdleSettings,
     /// Total change in all color components in the current pass
@@ -22,12 +24,12 @@ pub struct ChangeTracker {
     /// true if an update pass is running
     pass_started: bool,
     /// Current state of the tracker
-    current_state: ChangeState,
+    current_state: IdleState,
 }
 
 /// Current state of the tracked device
 #[derive(Clone)]
-pub enum ChangeState {
+pub enum IdleState {
     /// The device is actively being updated
     Active,
     /// The device is idle and turned off
@@ -36,12 +38,12 @@ pub enum ChangeState {
     IdleColor { update_required: bool },
 }
 
-impl ChangeState {
+impl IdleState {
     /// Returns true if the state requires updating the target device
     pub fn should_write(&self) -> bool {
         match self {
-            ChangeState::Active
-            | ChangeState::IdleColor {
+            IdleState::Active
+            | IdleState::IdleColor {
                 update_required: true,
             } => true,
             _ => false,
@@ -53,41 +55,41 @@ impl ChangeState {
     /// # Parameters
     ///
     /// * `other`: state to compare this state to
-    pub fn has_changed(&self, other: &ChangeState) -> bool {
+    pub fn has_changed(&self, other: &IdleState) -> bool {
         match self {
-            ChangeState::Active => match other {
-                ChangeState::Active => false,
+            IdleState::Active => match other {
+                IdleState::Active => false,
                 _ => true,
             },
-            ChangeState::IdleBlack => match other {
-                ChangeState::IdleBlack => false,
+            IdleState::IdleBlack => match other {
+                IdleState::IdleBlack => false,
                 _ => true,
             },
-            ChangeState::IdleColor { .. } => match other {
-                ChangeState::IdleColor { .. } => false,
+            IdleState::IdleColor { .. } => match other {
+                IdleState::IdleColor { .. } => false,
                 _ => true,
             },
         }
     }
 }
 
-impl fmt::Display for ChangeState {
+impl fmt::Display for IdleState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ChangeState::Active => write!(f, "active"),
-            ChangeState::IdleColor { .. } => write!(f, "idle (active)"),
-            ChangeState::IdleBlack => write!(f, "idle (inactive)"),
+            IdleState::Active => write!(f, "active"),
+            IdleState::IdleColor { .. } => write!(f, "idle (active)"),
+            IdleState::IdleBlack => write!(f, "idle (inactive)"),
         }
     }
 }
 
-impl ChangeTracker {
-    /// Create a new change tracker
+impl From<IdleSettings> for IdleTracker {
+    /// Create a new idle tracker
     ///
     /// # Parameters
     ///
     /// * `idle_settings`: settings for device idle modes
-    pub fn new(idle_settings: IdleSettings) -> Self {
+    fn from(idle_settings: IdleSettings) -> Self {
         let oneshot_pass = idle_settings.retries;
 
         Self {
@@ -99,14 +101,16 @@ impl ChangeTracker {
             oneshot_pending: false,
             pass_started: false,
             last_update: Instant::now(),
-            current_state: ChangeState::Active,
+            current_state: IdleState::Active,
         }
     }
+}
 
+impl IdleTracker {
     /// Starts a new pass
     ///
     /// This function should be called before updating LEDs in the device.
-    pub fn new_pass(&mut self) {
+    pub fn start_pass(&mut self) {
         assert!(!self.pass_started);
 
         self.total_change = 0.0;
@@ -182,7 +186,7 @@ impl ChangeTracker {
     /// * `(changed, state)`: `changed` is true if the state changed to its current value `state`.
     /// The `changed` flag does not take into account the state of `update_required` on
     /// IdleColor.
-    pub fn update_state(&mut self) -> (bool, ChangeState) {
+    pub fn update_state(&mut self) -> (bool, IdleState) {
         let now = Instant::now();
         let delay_expired = now - self.last_change > self.idle_settings.delay;
 
@@ -198,12 +202,12 @@ impl ChangeTracker {
                 if self.nonzero_color_count > 0 {
                     // When a color is displayed, we only require an update every delay/2
                     // if the device needs periodic updates to stay on.
-                    ChangeState::IdleColor {
+                    IdleState::IdleColor {
                         update_required: !self.idle_settings.holds
                             && (now - self.last_update) > (self.idle_settings.delay / 2),
                     }
                 } else {
-                    ChangeState::IdleBlack
+                    IdleState::IdleBlack
                 }
             } else {
                 // Do we still have oneshot retries to perform?
@@ -225,7 +229,7 @@ impl ChangeTracker {
                         }
                 }
 
-                ChangeState::Active
+                IdleState::Active
             };
 
         let changed = new_state.has_changed(&self.current_state);

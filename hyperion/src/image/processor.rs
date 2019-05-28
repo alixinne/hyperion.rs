@@ -1,4 +1,4 @@
-use crate::hyperion::LedInstance;
+use crate::runtime::LedInstance;
 use std::cmp::min;
 
 #[derive(Default, Clone)]

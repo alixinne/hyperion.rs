@@ -154,16 +154,14 @@ mod tests {
 devices:
   - name: Stdout dummy
     endpoint:
-      method: stdout
-      target: {}
+      type: stdout
     leds:
       - hscan: { min: 0.0, max: 0.5 }
         vscan: { min: 0.0, max: 0.5 }
   - name: Remote UDP
     endpoint:
-      method: udp
-      target:
-        address: 127.0.0.1:20446
+      type: udp
+      address: 127.0.0.1:20446
     leds:
       - hscan: { min: 0.5, max: 1.0 }
         vscan: { min: 0.5, max: 1.0 }

@@ -13,7 +13,7 @@ fn default_bit_depth() -> i32 {
 /// parameters used by the method to determine the actual target (where to contact
 /// the device).
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "method", content = "target")]
+#[serde(tag = "type")]
 pub enum Endpoint {
     #[serde(rename = "stdout")]
     Stdout {

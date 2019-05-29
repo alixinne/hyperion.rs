@@ -31,9 +31,7 @@ Assuming the following `config.yml`:
           holds: true # This device holds the last command forever
           retries: 1  # Reliable device, no need to retry sending packets during idle updates
         endpoint:
-          method: stdout
-          target:
-            path: scripts/methods/stdout.lua
+          type: stdout
         leds: &1
           # When facing the screen
           #  * hscan ranges from 0 (left) to 1 (right)

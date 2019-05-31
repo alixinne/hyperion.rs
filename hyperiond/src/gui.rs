@@ -101,12 +101,12 @@ mod ui {
                         } => {
                             clear([0.5, 0.5, 0.5, 1.0], g);
 
-                            let scale = size.height / (*height as f64);
+                            let scale = size.height / f64::from(*height);
                             let transform = math::multiply(
                                 math::multiply(
                                     c.transform,
                                     math::translate([
-                                        (size.width - scale * *width as f64) / 2.,
+                                        (size.width - scale * f64::from(*width)) / 2.,
                                         0.,
                                     ]),
                                 ),

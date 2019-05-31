@@ -32,6 +32,7 @@ extern crate log;
 extern crate serde_derive;
 
 pub mod config;
+pub mod filters;
 pub mod hyperion;
 pub mod image;
 pub mod methods;

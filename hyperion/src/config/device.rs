@@ -34,6 +34,9 @@ pub struct Device {
     /// Idle timeout
     #[serde(default)]
     pub idle: IdleSettings,
+    /// Filtering method
+    #[serde(default)]
+    pub filter: Filter,
 }
 
 impl Device {

@@ -41,7 +41,7 @@ where
 }
 
 fn default_idle_delay() -> Duration {
-    Duration::from_millis(10000)
+    Duration::from_millis(5000)
 }
 
 fn default_idle_enabled() -> bool {
@@ -63,7 +63,7 @@ fn default_idle_retries() -> u32 {
 /// Settings for idling devices
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IdleSettings {
-    /// Time before the device is considered idle (default: 10s)
+    /// Time before the device is considered idle (default: 5s)
     #[serde(
         serialize_with = "hyperion_write_duration",
         deserialize_with = "hyperion_parse_duration",
@@ -75,7 +75,7 @@ pub struct IdleSettings {
     pub enabled: bool,
     /// true if the devices holds its color without updates, false otherwise (default: false)
     ///
-    /// If false, the device will be updated on a timer with a `delay/2` period to keep the device
+    /// If false, the device will be updated on a timer with a `delay` period to keep the device
     /// active. Otherwise the device will not receive state updates as soon as it is considered
     /// idle, even when displaying a color.
     #[serde(default = "default_idle_holds")]

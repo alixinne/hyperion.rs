@@ -1,5 +1,7 @@
 //! Definition of the Devices type
 
+use std::time::Instant;
+
 use std::convert::TryFrom;
 
 use futures::{Async, Future, Poll};
@@ -19,20 +21,33 @@ impl Devices {
     ///
     /// # Parameters
     ///
+    /// * `time`: time of the color update
     /// * `color`: new color to apply immediately to all the LEDs of all devices
-    pub fn set_all_leds(&mut self, color: palette::LinSrgb) {
+    /// * `immediate`: apply change immediately (skipping filtering)
+    pub fn set_all_leds(&mut self, time: Instant, color: palette::LinSrgb, immediate: bool) {
         for device in self.devices.iter_mut() {
-            device.set_all_leds(color);
+            device.set_all_leds(time, color, immediate);
         }
     }
 
     /// Update the devices using the given image processor and input image
+    ///
+    /// # Parameters
+    ///
+    /// * `time`: time of the color update
+    /// * `image_processor`: image processor instance
+    /// * `data`: raw RGB image
+    /// * `width`: width of the raw RGB image
+    /// * `height`: height of the raw RGB image
+    /// * `immediate`: apply change immediately (skipping filtering)
     pub fn set_from_image(
         &mut self,
+        time: Instant,
         image_processor: &mut Processor,
         data: Vec<u8>,
         width: u32,
         height: u32,
+        immediate: bool,
     ) {
         // Update stored image
         image_processor
@@ -49,19 +64,12 @@ impl Devices {
             .process_image(&data[..], width, height);
 
         // Update LEDs with computed colors
-        let devices_mut = &mut self.devices;
-        for device in devices_mut.iter_mut() {
-            device.start_pass();
-        }
-
         image_processor.update_leds(|(device_idx, led_idx), color| {
             // Should never fail, we only consider valid LEDs
-            devices_mut[device_idx].set_led(led_idx, color).unwrap();
+            self.devices[device_idx]
+                .set_led(time, led_idx, color, immediate)
+                .unwrap();
         });
-
-        for device in devices_mut.iter_mut() {
-            device.end_pass(false);
-        }
     }
 }
 
@@ -88,7 +96,7 @@ impl Future for Devices {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         // Check intervals for devices to write to
         for device in self.devices.iter_mut() {
-            try_ready!(device.poll());
+            while let Async::Ready(()) = device.poll()? {}
         }
 
         Ok(Async::NotReady)

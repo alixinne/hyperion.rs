@@ -15,16 +15,14 @@ pub struct IdleTracker {
     nonzero_color_count: usize,
     /// Instant of the last change in any LED value
     last_change: Instant,
-    /// Number of passes to apply the oneshot notification for
-    oneshot_pass: u32,
-    /// Are we switching back to idle after a oneshot change?
-    oneshot_pending: bool,
-    /// Instant of the last update of the target device
-    last_update: Instant,
+    /// Number of write passes since the last change
+    passes_since_last_change: u32,
     /// true if an update pass is running
     pass_started: bool,
     /// Current state of the tracker
     current_state: IdleState,
+    /// Is an update pending?
+    update_pending: bool,
 }
 
 /// Current state of the tracked device
@@ -90,18 +88,15 @@ impl From<IdleSettings> for IdleTracker {
     ///
     /// * `idle_settings`: settings for device idle modes
     fn from(idle_settings: IdleSettings) -> Self {
-        let oneshot_pass = idle_settings.retries;
-
         Self {
             idle_settings,
             total_change: 0.0,
             nonzero_color_count: 0,
             last_change: Instant::now(),
-            oneshot_pass,
-            oneshot_pending: false,
+            passes_since_last_change: 0,
             pass_started: false,
-            last_update: Instant::now(),
             current_state: IdleState::Active,
+            update_pending: false,
         }
     }
 }
@@ -122,30 +117,27 @@ impl IdleTracker {
     /// Completes the current pass
     ///
     /// This function should be called after the LEDs have been updated.
-    ///
-    /// # Parameters
-    ///
-    /// `oneshot`: true if this is a oneshot pass, i.e. one after which the devices should be
-    /// immediately considered idle. Should be false if continuous updates are expected.
-    pub fn end_pass(&mut self, oneshot: bool) {
+    pub fn end_pass(&mut self) {
         assert!(self.pass_started);
-        trace!(
-            "end pass: total_change: {}, oneshot: {}",
-            self.total_change,
-            oneshot
-        );
+
+        self.last_change = Instant::now();
 
         // Update change values
         if self.total_change > 2.0f64.powf(-f64::from(self.idle_settings.resolution)) {
-            self.last_change = Instant::now();
+            self.passes_since_last_change = 1;
+        } else if self.passes_since_last_change < self.idle_settings.retries {
+            self.passes_since_last_change += 1;
         }
 
-        // Update oneshot flags
-        self.oneshot_pass = self.idle_settings.retries;
-        // If a non-oneshot update comes in, stop waiting for the delay to expire
-        self.oneshot_pending = self.oneshot_pending && (self.oneshot_pass > 0);
+        trace!("end pass: total_change: {}, last_change: {:?}, passes_since_last_change: {}",
+               self.total_change, self.last_change, self.passes_since_last_change);
 
         self.pass_started = false;
+    }
+
+    /// Notifies the tracker that LED state has changed and should be checked again
+    pub fn notify_changed(&mut self) {
+        self.update_pending = true;
     }
 
     /// Notifies of an update on an LED color
@@ -188,66 +180,31 @@ impl IdleTracker {
     /// IdleColor.
     pub fn update_state(&mut self) -> (bool, IdleState) {
         let now = Instant::now();
-        let delay_expired = now - self.last_change > self.idle_settings.delay;
 
         let new_state =
             // Only consider idle stats if idling is enabled, and we are not waiting on a oneshot
             // update
-            if self.idle_settings.enabled && self.oneshot_pass == 0 && (delay_expired || self.oneshot_pending) {
-                if self.oneshot_pending && delay_expired {
-                    // The delay expired so we can release the oneshot lock
-                    self.oneshot_pending = false;
-                }
-
+            if !self.update_pending && self.idle_settings.enabled && self.passes_since_last_change >= self.idle_settings.retries {
                 if self.nonzero_color_count > 0 {
-                    // When a color is displayed, we only require an update every delay/2
+                    // When a color is displayed, we only require an update every delay
                     // if the device needs periodic updates to stay on.
                     IdleState::IdleColor {
                         update_required: !self.idle_settings.holds
-                            && (now - self.last_update) > (self.idle_settings.delay / 2),
+                            && (now - self.last_change) > self.idle_settings.delay,
                     }
                 } else {
                     IdleState::IdleBlack
                 }
             } else {
-                // Do we still have oneshot retries to perform?
-                if self.oneshot_pass > 0 {
-                    self.oneshot_pass -= 1;
-
-                    // Did we run out of retries or the idle delay expired?
-                    if self.oneshot_pass == 0 ||
-                        delay_expired {
-                            if self.oneshot_pass > 0 {
-                                // We should have sent all retries before the delay expires, this
-                                // makes no sense otherwise
-                                warn!("idle delay {} expired before {} retries were executed ({} left), please lower retries or increase delay", humantime::Duration::from(self.idle_settings.delay), self.idle_settings.retries, self.oneshot_pass);
-                                self.oneshot_pass = 0;
-                            }
-
-                            // All retries sent and delay expired, switch back to idle
-                            self.oneshot_pending = true;
-                        }
-                }
-
                 IdleState::Active
             };
+
+        // Acknowledge update notifications
+        self.update_pending = false;
 
         let changed = new_state.has_changed(&self.current_state);
         self.current_state = new_state;
 
-        // Assume the caller does indeed write to the device after this call
-        if self.current_state.should_write() {
-            self.notify_update();
-        }
-
         (changed, self.current_state.clone())
-    }
-
-    /// Notify the tracker that the device has been updated
-    ///
-    /// This is required to evaluate if an idle device displaying colors should receive updates or
-    /// not.
-    fn notify_update(&mut self) {
-        self.last_update = Instant::now();
     }
 }

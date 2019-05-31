@@ -61,7 +61,6 @@ Not implemented yet:
 
 * Effects
 * Other LED device types
-* LED color filtering
 
 ### Supported devices
 
@@ -123,7 +122,13 @@ Effect support is under development.
 
 ### Smoothing
 
-Temporal smoothing is not implemented yet.
+The following temporal filters are available:
+
+* `nearest`: no filtering. The latest image sample is used as current color.
+  Lowest image to LED latency, but sensitive to noise.
+* `linear`: linear filtering. The LED color reaches the latest image sample
+  linearly in `1/f` seconds (where `f` is the filter frequency). Introduces
+  latency proportional to the filter period.
 
 ### Grabbing
 

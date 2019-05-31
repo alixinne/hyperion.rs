@@ -1,7 +1,7 @@
 //! Definition of the DevinceInstance type
 
 use std::convert::TryFrom;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use futures::{Async, Future, Poll, Stream};
 
@@ -13,6 +13,7 @@ use crate::methods::Method;
 use crate::config::Device;
 
 use super::{IdleTracker, LedInstance};
+use crate::filters::ColorFilter;
 
 /// Runtime data for a given device
 ///
@@ -28,6 +29,8 @@ pub struct DeviceInstance {
     leds: Vec<LedInstance>,
     /// Change tracker for idle detection
     idle_tracker: IdleTracker,
+    /// Filter instance
+    filter: ColorFilter,
 }
 
 impl TryFrom<Device> for DeviceInstance {
@@ -56,12 +59,16 @@ impl TryFrom<Device> for DeviceInstance {
             device.leds.len()
         );
 
+        let filter = ColorFilter::from(device.filter);
+        let capacity = filter.capacity(device.frequency as f32);
+
         Ok(DeviceInstance {
             name: device.name.clone(),
             method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(update_duration),
             idle_tracker: IdleTracker::from(device.idle),
-            leds: device.leds.into_iter().map(LedInstance::from).collect(),
+            leds: device.leds.into_iter().map(|led| LedInstance::new(led, capacity)).collect(),
+            filter,
         })
     }
 }
@@ -78,57 +85,43 @@ impl DeviceInstance {
         self.leds.iter().enumerate()
     }
 
-    /// Starts a new pass
-    ///
-    /// See [IdleTracker::start_pass](hyperion::runtime::IdleTracker::start_pass]
-    pub fn start_pass(&mut self) {
-        self.idle_tracker.start_pass();
-    }
-
-    /// Completes the current pass
-    ///
-    /// See [IdleTracker::end_pass](hyperion::runtime::IdleTracker::end_pass]
-    pub fn end_pass(&mut self, oneshot: bool) {
-        self.idle_tracker.end_pass(oneshot);
-    }
-
-    /// Set all LEDs of this device to a new color immediately
+    /// Set all LEDs of this device to a new color
     ///
     /// # Parameters
     ///
-    /// * `color`: new color to apply immediately to all the LEDs of this device
-    pub fn set_all_leds(&mut self, color: palette::LinSrgb) {
-        self.start_pass();
-
+    /// * `time`: time of the color update
+    /// * `color`: new color to apply to all the LEDs of this device
+    /// * `immediate`: apply change immediately (skipping filtering)
+    pub fn set_all_leds(&mut self, time: Instant, color: palette::LinSrgb, immediate: bool) {
         for led in self.leds.iter_mut() {
-            // Notify color change to tracker
-            self.idle_tracker.update_color(&led.current_color, &color);
-
-            // Change actual color
-            led.current_color = color;
+            // Change LED color
+            led.update_color(time, color, immediate);
         }
 
-        self.end_pass(true);
+        // Notify color change to tracker
+        self.idle_tracker.notify_changed();
     }
 
     /// Set a specific LED to the given color by its index
     ///
     /// # Parameters
     ///
+    /// * `time`: time of the color update
     /// * `led_idx`: 0-based index of the LED to set
     /// * `color`: new color to apply immediately to all the LEDs of this device
-    pub fn set_led(&mut self, led_idx: usize, color: palette::LinSrgb) -> Result<(), DeviceError> {
+    /// * `immediate`: apply change immediately (skipping filtering)
+    pub fn set_led(&mut self, time: Instant, led_idx: usize, color: palette::LinSrgb, immediate: bool) -> Result<(), DeviceError> {
         if led_idx >= self.leds.len() {
             return Err(DeviceError::OutOfBoundsLedIndex(led_idx));
         }
 
         let led = &mut self.leds[led_idx];
 
-        // Notify color change to tracker
-        self.idle_tracker.update_color(&led.current_color, &color);
+        // Change LED color
+        led.update_color(time, color, immediate);
 
-        // Change actual color
-        led.current_color = color;
+        // Notify color change to tracker
+        self.idle_tracker.notify_changed();
 
         Ok(())
     }
@@ -140,6 +133,8 @@ impl Future for DeviceInstance {
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         let mut write_device = false;
+
+        let now = Instant::now();
 
         // Poll all events until NotReady
         while let Async::Ready(Some(_instant)) = self.updater.poll()? {
@@ -159,7 +154,9 @@ impl Future for DeviceInstance {
 
             // Write only if we need to
             if state.should_write() {
-                self.method.write(&self.leds[..]);
+                self.idle_tracker.start_pass();
+                self.method.write(now, &self.filter, &mut self.leds[..], &mut self.idle_tracker);
+                self.idle_tracker.end_pass();
             }
         }
 

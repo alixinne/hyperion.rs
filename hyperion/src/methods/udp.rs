@@ -1,9 +1,14 @@
-use super::{LedInstance, Method};
+use std::time::Instant;
 
 use std::cell::RefCell;
 
 use std::io::{Error, ErrorKind, Result};
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+
+use super::{LedInstance, Method};
+
+use crate::filters::ColorFilter;
+use crate::runtime::IdleTracker;
 
 /// LED device that forwards raw RGB data as UDP packets
 pub struct Udp {
@@ -38,7 +43,7 @@ impl Udp {
 }
 
 impl Method for Udp {
-    fn write(&self, leds: &[LedInstance]) {
+    fn write(&self, time: Instant, filter: &ColorFilter, leds: &mut [LedInstance], idle_tracker: &mut IdleTracker) {
         // Get reference to buffer for UDP data
         let mut rgb_buffer = self.rgb_buffer.borrow_mut();
 
@@ -46,8 +51,9 @@ impl Method for Udp {
         rgb_buffer.resize(leds.len() * 3usize, 0);
 
         // Fill buffer with data
-        for (i, led) in leds.iter().enumerate() {
-            let (r, g, b) = led.current_color.into_components();
+        for (i, led) in leds.iter_mut().enumerate() {
+            let current_color = led.next_value(time, &filter, idle_tracker);
+            let (r, g, b) = current_color.into_components();
 
             rgb_buffer[i * 3] = (r * 255.0f32) as u8;
             rgb_buffer[i * 3 + 1] = (g * 255.0f32) as u8;

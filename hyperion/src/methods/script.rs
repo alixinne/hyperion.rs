@@ -1,4 +1,4 @@
-use super::{LedInstance, Method};
+use std::time::Instant;
 
 use std::fs;
 use std::path::Path;
@@ -7,6 +7,11 @@ use rlua::{Function, Lua};
 
 use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
+
+use super::{LedInstance, Method};
+
+use crate::filters::ColorFilter;
+use crate::runtime::IdleTracker;
 
 /// Dummy LED device which outputs updates to the standard output
 pub struct Script {
@@ -130,7 +135,7 @@ impl Script {
 }
 
 impl Method for Script {
-    fn write(&self, leds: &[LedInstance]) {
+    fn write(&self, time: Instant, filter: &ColorFilter, leds: &mut [LedInstance], idle_tracker: &mut IdleTracker) {
         self.lua
             .context(|lua_ctx| -> std::result::Result<(), ScriptError> {
                 let globals = lua_ctx.globals();
@@ -138,10 +143,11 @@ impl Method for Script {
                 let write_function: Function = globals.get("write")?;
 
                 let led_table = lua_ctx.create_table()?;
-                for (i, led) in leds.iter().enumerate() {
+                for (i, led) in leds.iter_mut().enumerate() {
                     let color_data = lua_ctx.create_table()?;
 
-                    let (r, g, b) = led.current_color.into_components();
+                    let current_color = led.next_value(time, &filter, idle_tracker);
+                    let (r, g, b) = current_color.into_components();
                     color_data.set("r", r)?;
                     color_data.set("g", g)?;
                     color_data.set("b", b)?;
@@ -161,12 +167,22 @@ impl Method for Script {
 mod tests {
     use super::*;
 
+    use std::time::Instant;
+
+    use crate::config::{Filter, IdleSettings, Led};
+    use crate::filters::ColorFilter;
+    use crate::runtime::IdleTracker;
+
     #[test]
     fn script_method() {
         let method: Box<dyn Method> =
             Box::new(Script::new(&"../scripts/methods/stdout.lua", Map::new()).unwrap());
-        let leds = vec![LedInstance::default()];
 
-        method.write(&leds[..]);
+        let time = Instant::now();
+        let filter = ColorFilter::from(Filter::default());
+        let mut leds = vec![LedInstance::new(Led::default(), 1)];
+        let mut idle_tracker = IdleTracker::from(IdleSettings::default());
+
+        method.write(time, &filter, &mut leds[..], &mut idle_tracker);
     }
 }

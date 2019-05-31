@@ -1,5 +1,7 @@
 //! Definition of the Hyperion data model
 
+use std::time::Instant;
+
 use std::convert::TryFrom;
 
 use futures::sync::mpsc;
@@ -83,14 +85,16 @@ impl Hyperion {
                 });
         }
 
+        let now = Instant::now();
+
         match update {
             StateUpdate::ClearAll => {
                 debug!("clearing all leds");
-                self.devices.set_all_leds(palette::LinSrgb::default());
+                self.devices.set_all_leds(now, palette::LinSrgb::default(), false);
             }
             StateUpdate::SolidColor { color } => {
                 debug!("setting all leds to {:?}", color);
-                self.devices.set_all_leds(color);
+                self.devices.set_all_leds(now, color, false);
             }
             StateUpdate::Image {
                 data,
@@ -99,7 +103,7 @@ impl Hyperion {
             } => {
                 debug!("incoming {}x{} image", width, height);
                 self.devices
-                    .set_from_image(&mut self.image_processor, data, width, height);
+                    .set_from_image(now, &mut self.image_processor, data, width, height, false);
             }
         }
     }

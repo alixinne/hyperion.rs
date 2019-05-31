@@ -7,6 +7,9 @@ pub use device::*;
 mod endpoint;
 pub use endpoint::*;
 
+mod filter;
+pub use filter::*;
+
 mod idle_settings;
 pub use idle_settings::*;
 
@@ -29,6 +32,7 @@ mod tests {
             leds: Vec::new(),
             frequency: -2.0,
             idle: IdleSettings::default(),
+            filter: Filter::default(),
         };
 
         device.sanitize();
@@ -46,6 +50,7 @@ mod tests {
                 delay: Duration::from_millis(5),
                 .. Default::default()
             },
+            filter: Filter::default(),
         };
 
         device.sanitize();

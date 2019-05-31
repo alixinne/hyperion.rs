@@ -1,8 +1,20 @@
-use crate::config::Endpoint;
-use crate::runtime::LedInstance;
+use std::time::Instant;
 
+use crate::config::Endpoint;
+use crate::filters::ColorFilter;
+use crate::runtime::{IdleTracker, LedInstance};
+
+/// A method for communicating with a device
 pub trait Method {
-    fn write(&self, leds: &[LedInstance]);
+    /// Write the current LED status to the target device
+    ///
+    /// # Parameters
+    /// 
+    /// * `time`: instant at which the filtered LED values should be evaluated
+    /// * `filter`: filter to interpolate LED values
+    /// * `leds`: reference to the LED state
+    /// * `idle_tracker`: idle state tracker
+    fn write(&self, time: Instant, filter: &ColorFilter, leds: &mut [LedInstance], idle_tracker: &mut IdleTracker);
 }
 
 mod udp;
@@ -59,6 +71,8 @@ fn stdout_params(bits: i32) -> Map<String, Value> {
 }
 
 pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, MethodError> {
+    trace!("creating method for {:?}", endpoint);
+
     match endpoint {
         Endpoint::Stdout { bits } => {
             to_box(Script::new(&method_path("stdout"), stdout_params(*bits)))

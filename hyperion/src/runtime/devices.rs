@@ -12,7 +12,9 @@ use crate::methods;
 
 use super::DeviceInstance;
 
+/// A set of runtime devices
 pub struct Devices {
+    /// List of device instances
     devices: Vec<DeviceInstance>,
 }
 

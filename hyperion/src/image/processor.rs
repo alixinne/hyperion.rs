@@ -1,17 +1,28 @@
+//! Definition of the Processor type
+
 use crate::runtime::LedInstance;
 use std::cmp::min;
 
+/// Image pixel accumulator
 #[derive(Default, Clone)]
 struct Pixel {
+    /// Accumulated color
     color: [f32; 3],
+    /// Number of samples
     count: usize,
 }
 
 impl Pixel {
+    /// Reset this pixels' value and sample count
     pub fn reset(&mut self) {
         *self = Self::default();
     }
 
+    /// Add a new sample to this pixel
+    ///
+    /// # Parameters
+    ///
+    /// * `(r, g, b)`: sampled RGB values
     pub fn sample(&mut self, (r, g, b): (u8, u8, u8)) {
         self.color[0] += f32::from(r) / 255.0;
         self.color[1] += f32::from(g) / 255.0;
@@ -19,6 +30,7 @@ impl Pixel {
         self.count += 1;
     }
 
+    /// Compute the mean of this pixel
     pub fn mean(&self) -> palette::LinSrgb {
         palette::LinSrgb::from_components((
             self.color[0] / self.count as f32,
@@ -31,15 +43,21 @@ impl Pixel {
 /// Raw image data processor
 #[derive(Default)]
 pub struct Processor {
+    /// Width of the LED map
     width: usize,
+    /// Height of the LED map
     height: usize,
+    /// 2D row-major list of (color_idx, device_idx, led_idx)
     led_map: Vec<Vec<(usize, usize, usize)>>,
+    /// Color storage for every known LED
     color_map: Vec<Pixel>,
 }
 
 /// Image processor reference with LED details
 pub struct ProcessorWithDevices<'p, 'a, I: Iterator<Item = (usize, &'a LedInstance, usize)>> {
+    /// Image processor
     processor: &'p mut Processor,
+    /// Device LEDs iterator
     leds: I,
 }
 

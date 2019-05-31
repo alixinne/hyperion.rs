@@ -1,5 +1,6 @@
 //! Definition of the Filter type
 
+/// Default linear filter frequency
 fn default_linear_frequency() -> f32 {
     30.0
 }

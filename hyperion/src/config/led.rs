@@ -12,6 +12,12 @@ use super::ScanRange;
 /// filters.
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Led {
+    /// Horizontal scan range
+    ///
+    /// Horizontal span on screen that this LED covers.
     pub hscan: ScanRange,
+    /// Vertical scan range
+    ///
+    /// Vertical span on screen that this LED covers.
     pub vscan: ScanRange,
 }

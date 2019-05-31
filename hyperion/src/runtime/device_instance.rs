@@ -77,8 +77,10 @@ impl TryFrom<Device> for DeviceInstance {
     }
 }
 
+/// Device operation error type
 #[derive(Debug, Fail)]
 pub enum DeviceError {
+    /// The LED index was greater than the total number of LED in the device
     #[fail(display = "no such LED at index {}", 0)]
     OutOfBoundsLedIndex(usize),
 }

@@ -35,6 +35,14 @@ pub struct Hyperion {
 }
 
 impl Hyperion {
+    /// Create a new Hyperion instance
+    ///
+    /// # Parameters
+    ///
+    /// * `configuration`: configuration to derive this instance from
+    /// * `disable_devices`: regular expression to match on device names. Matching devices will not
+    ///   be instantiated from the configuration.
+    /// * `debug_listener`: channel to send debug updates to.
     pub fn new(
         mut configuration: Configuration,
         disable_devices: Option<Regex>,
@@ -74,6 +82,11 @@ impl Hyperion {
         ))
     }
 
+    /// Handle an incoming state update
+    ///
+    /// # Parameters
+    ///
+    /// * `update`: state update message
     fn handle_update(&mut self, update: StateUpdate) {
         // Forward state update to the debug listener if we have one
         if let Some(debug_listener) = self.debug_listener.as_ref() {

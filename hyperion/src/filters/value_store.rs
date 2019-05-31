@@ -7,6 +7,7 @@ use circular_queue::CircularQueue;
 /// A struct for storing timestamped values for filtering
 #[derive(Debug)]
 pub struct ValueStore<T> {
+    /// Circular buffer of samples
     samples: CircularQueue<Sample<T>>,
 }
 

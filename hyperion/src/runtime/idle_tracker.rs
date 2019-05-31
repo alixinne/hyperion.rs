@@ -33,7 +33,11 @@ pub enum IdleState {
     /// The device is idle and turned off
     IdleBlack,
     /// The device is idle but with a solid color
-    IdleColor { update_required: bool },
+    IdleColor {
+        /// true if the device should be updated to prevent it
+        /// from turning off after its inactivity timeout.
+        update_required: bool,
+    },
 }
 
 impl IdleState {

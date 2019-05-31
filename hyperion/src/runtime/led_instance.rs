@@ -12,8 +12,11 @@ use crate::runtime::IdleTracker;
 /// its current state.
 #[derive(Debug)]
 pub struct LedInstance {
+    /// LED parameters for this instance
     pub spec: Led,
+    /// History of values for this LED
     values: ValueStore<palette::LinSrgb>,
+    /// Current (i.e. written) value of the LED
     current_color: palette::LinSrgb,
 }
 

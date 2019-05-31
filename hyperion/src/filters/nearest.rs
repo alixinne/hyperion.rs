@@ -4,6 +4,9 @@ use std::time::Instant;
 
 use super::{Filter, ValueStore};
 
+/// Nearest filter
+///
+/// Returns the latest sample as soon as it is available.
 #[derive(Default)]
 pub struct Nearest;
 

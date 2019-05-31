@@ -22,6 +22,9 @@
 //!
 //! This source code is released under the [MIT-License](https://opensource.org/licenses/MIT)
 
+#![deny(missing_docs)]
+#![deny(clippy::missing_docs_in_private_items)]
+
 #[macro_use]
 extern crate failure;
 #[macro_use]

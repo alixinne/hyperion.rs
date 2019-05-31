@@ -1,3 +1,5 @@
+//! Definition of the Script method
+
 use std::time::Instant;
 
 use std::fs;
@@ -15,13 +17,17 @@ use crate::runtime::IdleTracker;
 
 /// Dummy LED device which outputs updates to the standard output
 pub struct Script {
+    /// Lua engine instance
     lua: Lua,
 }
 
+/// Scripting engine error
 #[derive(Debug, Fail)]
 pub enum ScriptError {
+    /// Failed to load the script
     #[fail(display = "loading the script failed: {}", 0)]
     LoadError(failure::Error),
+    /// An error ocurred inside the scripting engine
     #[fail(display = "lua error: {}", 0)]
     LuaError(rlua::Error),
 }
@@ -45,6 +51,12 @@ macro_rules! register_lua_log {
 }
 
 impl Script {
+    /// Convert a serde_yaml::Value into a lua value
+    ///
+    /// # Parameters
+    ///
+    /// * `lua_ctx`: context to create Lua values in
+    /// * `value`: value to convert
     fn lua_value<'lua>(
         lua_ctx: rlua::Context<'lua>,
         value: &Value,
@@ -86,6 +98,12 @@ impl Script {
         }
     }
 
+    /// Create a new script method
+    ///
+    /// # Parameters
+    ///
+    /// * `path`: path to the script to load
+    /// * `params`: parameters to pass to the script context
     pub fn new<P: AsRef<Path>>(
         path: &P,
         params: Map<String, Value>,

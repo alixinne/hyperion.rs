@@ -5,16 +5,30 @@ use std::time::{Duration, Instant};
 
 use super::{Filter, Sample, ValueStore};
 
+/// Linear filter
+///
+/// Linearly interpolates values from the unfiltered samples over time.
 pub struct Linear {
+    /// Filter window, as a frequency in Hz
     frequency: f32,
 }
 
 impl Linear {
+    /// Create a new linear filter
+    ///
+    /// # Parameters
+    ///
+    /// * `frequency`: filtering window size, as a frequency in Hz
     pub fn new(frequency: f32) -> Self {
         Self { frequency }
     }
 }
 
+/// Convert a duration to floating-point seconds
+///
+/// # Parameters
+///
+/// * `d`: duration to convert to seconds
 fn t(d: Duration) -> f32 {
     (d.as_secs() as u64 * 1_000_000u64 + u64::from(d.subsec_micros())) as f32 / 1_000_000f32
 }

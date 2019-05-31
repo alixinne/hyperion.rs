@@ -1,3 +1,5 @@
+//! Definition of the UDP method
+
 use std::time::Instant;
 
 use std::cell::RefCell;
@@ -12,12 +14,20 @@ use crate::runtime::IdleTracker;
 
 /// LED device that forwards raw RGB data as UDP packets
 pub struct Udp {
+    /// Address of the target device
     remote_addr: SocketAddr,
+    /// UDP socket to the device
     socket: UdpSocket,
+    /// UDP packet buffer
     rgb_buffer: RefCell<Vec<u8>>,
 }
 
 impl Udp {
+    /// Create a new UDP device method
+    ///
+    /// # Parameters
+    ///
+    /// * `address`: address and port of the target device
     pub fn new(address: String) -> Result<Self> {
         // Resolve remote addr
         let remote_addr = address

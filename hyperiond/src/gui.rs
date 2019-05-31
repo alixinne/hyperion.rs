@@ -1,6 +1,9 @@
+//! Debug GUI implementation
+
 use hyperion::hyperion::DebugMessage;
 use std::sync::mpsc;
 
+/// Debug GUI module
 #[cfg(feature = "gui")]
 mod ui {
     use super::*;
@@ -14,15 +17,23 @@ mod ui {
     use ::image::{ConvertBuffer, RgbImage};
     use piston_window::*;
 
+    /// Debug GUI window
     pub struct DebugGui {
+        /// Thread handle to run the debug GUI
         window_thread: Option<JoinHandle<()>>,
     }
 
+    /// Current GUI mode
     enum GuiMode {
+        /// Display a solid color
         SolidColor([f32; 4]),
+        /// Display the input image
         Image {
+            /// Image as a texture
             texture: G2dTexture,
+            /// Image width
             width: u32,
+            /// Image height
             height: u32,
         },
     }
@@ -34,6 +45,11 @@ mod ui {
     }
 
     impl DebugGui {
+        /// Create a new debug window
+        ///
+        /// # Parameters
+        ///
+        /// * `receiver`: receiver for debug messages
         pub fn new(receiver: mpsc::Receiver<DebugMessage>) -> Self {
             let window_thread = Some(thread::spawn(move || {
                 let mut window: PistonWindow =
@@ -130,18 +146,24 @@ mod ui {
         }
     }
 
+    /// Instantiate a debug listener and associated debug window
     pub fn build_listener() -> (Option<mpsc::Sender<DebugMessage>>, Option<DebugGui>) {
         let (sender, receiver) = mpsc::channel();
         (Some(sender), Some(DebugGui::new(receiver)))
     }
 }
 
+/// Debug GUI module
 #[cfg(not(feature = "gui"))]
 mod ui {
     use super::*;
 
+    /// Dummy debug GUI struct
     pub struct DebugGui;
 
+    /// Instantiate a debug listener and associated debug window
+    ///
+    /// This method ***will fail*** since this version is built without GUI support.
     pub fn build_listener() -> (Option<mpsc::Sender<DebugMessage>>, Option<DebugGui>) {
         panic!("This version of hyperion.rs does not support the debug GUI. Please recompile with --features=gui");
     }

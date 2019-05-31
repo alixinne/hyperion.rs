@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use super::*;
 
+/// Default frequency for a device
 fn default_frequency() -> f64 {
     10.0
 }

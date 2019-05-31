@@ -1,3 +1,5 @@
+//! Temporal filters definitions
+
 mod filter;
 pub use filter::*;
 

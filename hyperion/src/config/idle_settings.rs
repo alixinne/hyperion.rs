@@ -3,6 +3,7 @@
 use std::fmt;
 use std::time::Duration;
 
+/// Serde visitor for deserializing durations
 struct DurationVisitor;
 
 impl<'a> serde::de::Visitor<'a> for DurationVisitor {
@@ -23,6 +24,11 @@ impl<'a> serde::de::Visitor<'a> for DurationVisitor {
     }
 }
 
+/// Parse a duration from a string
+///
+/// # Parameters
+///
+/// `deserializer`: Serde deserializer
 fn hyperion_parse_duration<'de, D>(deserializer: D) -> std::result::Result<Duration, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -30,6 +36,12 @@ where
     deserializer.deserialize_str(DurationVisitor {})
 }
 
+/// Serialize a duration to a string
+///
+/// # Parameters
+///
+/// * `duration`: duration to serialize
+/// * `serializer`: Serde serializer
 fn hyperion_write_duration<S>(
     duration: &Duration,
     serializer: S,
@@ -40,22 +52,27 @@ where
     serializer.serialize_str(&format!("{}", humantime::Duration::from(*duration)))
 }
 
+/// Default idle delay
 fn default_idle_delay() -> Duration {
     Duration::from_millis(5000)
 }
 
+/// Default idle enabled state
 fn default_idle_enabled() -> bool {
     true
 }
 
+/// Default idle holds state
 fn default_idle_holds() -> bool {
     false
 }
 
+/// Default idle min. change resolution
 fn default_idle_resolution() -> u32 {
     16
 }
 
+/// Default idle device retries
 fn default_idle_retries() -> u32 {
     5
 }

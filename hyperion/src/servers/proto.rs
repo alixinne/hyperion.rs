@@ -17,6 +17,11 @@ mod message;
 mod codec;
 use codec::*;
 
+/// Create a success response
+///
+/// # Parameters
+///
+/// `success`: true for a success, false for an error
 fn success_response(success: bool) -> message::HyperionReply {
     let mut reply = message::HyperionReply::default();
     reply.set_type(message::hyperion_reply::Type::Reply);

@@ -1,3 +1,5 @@
+//! Device communication methods definitions
+
 use std::time::Instant;
 
 use crate::config::Endpoint;
@@ -29,12 +31,21 @@ pub use udp::Udp;
 mod script;
 pub use script::Script;
 
+/// Device method error
 #[derive(Debug, Fail)]
 pub enum MethodError {
+    /// Wrapped I/O error
     #[fail(display = "I/O error: {}", error)]
-    IoError { error: std::io::Error },
+    IoError {
+        /// I/O error which triggered the MethodError
+        error: std::io::Error,
+    },
+    /// Wrapped scripting engine error
     #[fail(display = "script error: {}", error)]
-    ScriptError { error: script::ScriptError },
+    ScriptError {
+        /// I/O error which triggered the MethodError
+        error: script::ScriptError,
+    },
 }
 
 impl From<std::io::Error> for MethodError {
@@ -49,6 +60,11 @@ impl From<script::ScriptError> for MethodError {
     }
 }
 
+/// Box a method result
+///
+/// # Parameters
+///
+/// * `t`: result of the method initialization
 fn to_box<T, E>(t: Result<T, E>) -> Result<Box<dyn Method + Send>, MethodError>
 where
     T: Method + Send + 'static,
@@ -62,6 +78,12 @@ where
 }
 
 use std::path::{Path, PathBuf};
+
+/// Get the path to a script method by name
+///
+/// # Parameters
+///
+/// * `name`: name of the script method to find
 fn method_path(name: &str) -> PathBuf {
     Path::new("scripts")
         .join("methods")
@@ -70,12 +92,23 @@ fn method_path(name: &str) -> PathBuf {
 
 use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
+
+/// Turn stdout parameters into stdout script parameters
+///
+/// # Parameters
+///
+/// * `bits`: output bit depth
 fn stdout_params(bits: i32) -> Map<String, Value> {
     let mut map = Map::new();
     map.insert("bits".to_owned(), Value::Number(bits.into()));
     map
 }
 
+/// Create a device method from its endpoint configuration
+///
+/// # Parameters
+///
+/// * `endpoint`: endpoint configuration to use
 pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, MethodError> {
     trace!("creating method for {:?}", endpoint);
 

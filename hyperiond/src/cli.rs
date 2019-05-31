@@ -21,13 +21,19 @@ use crate::gui;
 /// Error raised when the CLI fails
 #[derive(Debug, Fail)]
 pub enum CliError {
-    #[fail(display = "no valid command specified, see hyperion --help for usage details")]
     /// An invalid subcommand was specified
+    #[fail(display = "no valid command specified, see hyperion --help for usage details")]
     InvalidCommand,
+    /// Hyperion server error
     #[fail(display = "server error: {}", 0)]
     ServerError(String),
 }
 
+/// Parse the configuration at a given path
+///
+/// # Parameters
+///
+/// * `path`: path to the configuration to load
 fn read_config<P: AsRef<Path>>(path: P) -> std::io::Result<hyperion::config::Configuration> {
     // Open file and create reader
     let file = File::open(path)?;

@@ -25,6 +25,7 @@ pub trait Filter<T> {
 /// Linear RGB color filter implementation
 pub type ColorFilter = Box<dyn Filter<palette::LinSrgb> + Send>;
 
+/// Filter configuration
 type FilterConfig = crate::config::Filter;
 
 impl From<FilterConfig> for ColorFilter {

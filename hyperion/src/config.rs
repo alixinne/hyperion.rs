@@ -1,3 +1,5 @@
+//! Configuration model definitions
+
 mod configuration;
 pub use configuration::*;
 

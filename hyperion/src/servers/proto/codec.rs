@@ -12,21 +12,29 @@ use std::io;
 /// Wrapper type that covers all possible protobuf encoded Hyperion messages
 #[derive(Debug)]
 pub enum HyperionRequest {
+    /// Solid color request
     ColorRequest(message::ColorRequest),
+    /// Incoming image request
     ImageRequest(message::ImageRequest),
+    /// Clear colors request
     ClearRequest(message::ClearRequest),
+    /// Clear all colors request
     ClearAllRequest(message::HyperionRequest),
 }
 
 /// Error raised when parsing a protobuf encoded message fails
 #[derive(Debug, Fail)]
 pub enum HyperionMessageError {
+    /// I/O error
     #[fail(display = "I/O error: {}", 0)]
     IoError(io::Error),
+    /// Protobuf decoding error
     #[fail(display = "decode error: {}", 0)]
     DecodeError(prost::DecodeError),
+    /// Invalid incoming message
     #[fail(display = "invalid message")]
     InvalidMessageError,
+    /// Protobuf encoding error
     #[fail(display = "encode error: {}", 0)]
     EncodeError(prost::EncodeError),
 }
@@ -41,6 +49,7 @@ impl From<std::io::Error> for HyperionMessageError {
 pub struct ProtoCodec {}
 
 impl ProtoCodec {
+    /// Create a new ProtoCodec
     pub fn new() -> Self {
         Self {}
     }

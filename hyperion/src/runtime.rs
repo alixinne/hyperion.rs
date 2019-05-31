@@ -1,3 +1,5 @@
+//! Hyperion runtime model types
+
 mod device_instance;
 pub use device_instance::*;
 

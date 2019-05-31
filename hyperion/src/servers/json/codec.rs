@@ -31,11 +31,14 @@ fn encode_reply(reply: &message::HyperionResponse) -> serde_json::Result<String>
     serde_json::to_string(reply)
 }
 
+/// JSON tokio codec
 pub struct JsonCodec {
+    /// Line parsing codec
     lines: LinesCodec,
 }
 
 impl JsonCodec {
+    /// Create a new JsonCodec
     pub fn new() -> Self {
         Self {
             lines: LinesCodec::new(),

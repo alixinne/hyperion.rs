@@ -135,7 +135,13 @@ impl Script {
 }
 
 impl Method for Script {
-    fn write(&self, time: Instant, filter: &ColorFilter, leds: &mut [LedInstance], idle_tracker: &mut IdleTracker) {
+    fn write(
+        &self,
+        time: Instant,
+        filter: &ColorFilter,
+        leds: &mut [LedInstance],
+        idle_tracker: &mut IdleTracker,
+    ) {
         self.lua
             .context(|lua_ctx| -> std::result::Result<(), ScriptError> {
                 let globals = lua_ctx.globals();

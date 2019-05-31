@@ -9,12 +9,18 @@ pub trait Method {
     /// Write the current LED status to the target device
     ///
     /// # Parameters
-    /// 
+    ///
     /// * `time`: instant at which the filtered LED values should be evaluated
     /// * `filter`: filter to interpolate LED values
     /// * `leds`: reference to the LED state
     /// * `idle_tracker`: idle state tracker
-    fn write(&self, time: Instant, filter: &ColorFilter, leds: &mut [LedInstance], idle_tracker: &mut IdleTracker);
+    fn write(
+        &self,
+        time: Instant,
+        filter: &ColorFilter,
+        leds: &mut [LedInstance],
+        idle_tracker: &mut IdleTracker,
+    );
 }
 
 mod udp;

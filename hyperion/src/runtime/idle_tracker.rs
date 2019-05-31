@@ -129,8 +129,12 @@ impl IdleTracker {
             self.passes_since_last_change += 1;
         }
 
-        trace!("end pass: total_change: {}, last_change: {:?}, passes_since_last_change: {}",
-               self.total_change, self.last_change, self.passes_since_last_change);
+        trace!(
+            "end pass: total_change: {}, last_change: {:?}, passes_since_last_change: {}",
+            self.total_change,
+            self.last_change,
+            self.passes_since_last_change
+        );
 
         self.pass_started = false;
     }

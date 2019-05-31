@@ -73,4 +73,3 @@ impl Device {
         self.idle.sanitize(&self.name);
     }
 }
-

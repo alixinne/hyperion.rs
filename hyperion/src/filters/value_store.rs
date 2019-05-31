@@ -7,7 +7,7 @@ use circular_queue::CircularQueue;
 /// A struct for storing timestamped values for filtering
 #[derive(Debug)]
 pub struct ValueStore<T> {
-    samples: CircularQueue<Sample<T>>
+    samples: CircularQueue<Sample<T>>,
 }
 
 impl<T: std::fmt::Debug + PartialEq> ValueStore<T> {
@@ -20,7 +20,9 @@ impl<T: std::fmt::Debug + PartialEq> ValueStore<T> {
         // capacity = 0 makes no sense
         assert!(capacity > 0);
 
-        Self { samples: CircularQueue::with_capacity(capacity) }
+        Self {
+            samples: CircularQueue::with_capacity(capacity),
+        }
     }
 
     /// Sample a new value

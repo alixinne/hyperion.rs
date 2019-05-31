@@ -19,16 +19,16 @@ pub struct LedInstance {
 
 impl LedInstance {
     /// Create a new LedInstance from a LED specification
-    /// 
+    ///
     /// # Parameters
-    /// 
+    ///
     /// * `led`: LED specification
     /// * `capacity`: filtering value store capacity
     pub fn new(led: Led, capacity: usize) -> Self {
         Self {
             spec: led,
             values: ValueStore::with_capacity(capacity),
-            current_color: Default::default()
+            current_color: Default::default(),
         }
     }
 
@@ -56,7 +56,12 @@ impl LedInstance {
     /// * `time`: instant to evaluate the color at
     /// * `filter`: filter to use for computing the value
     /// * `idle_tracker`: idle state tracker
-    pub fn next_value(&mut self, time: Instant, filter: &ColorFilter, idle_tracker: &mut IdleTracker) -> palette::LinSrgb {
+    pub fn next_value(
+        &mut self,
+        time: Instant,
+        filter: &ColorFilter,
+        idle_tracker: &mut IdleTracker,
+    ) -> palette::LinSrgb {
         // Compute new value
         let new_value = filter.current_value(time, &self.values);
 

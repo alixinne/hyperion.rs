@@ -77,7 +77,12 @@ pub fn bind(
 
                         HyperionResponse::SuccessResponse { success: true }
                     }
-                    HyperionMessage::Image { imagewidth, imageheight, imagedata, .. } => {
+                    HyperionMessage::Image {
+                        imagewidth,
+                        imageheight,
+                        imagedata,
+                        ..
+                    } => {
                         // TODO: image: handle priority and duration
 
                         // Update state
@@ -90,7 +95,7 @@ pub fn bind(
                             .unwrap();
 
                         HyperionResponse::SuccessResponse { success: true }
-                    },
+                    }
                     _ => HyperionResponse::ErrorResponse {
                         success: false,
                         error: "not implemented".into(),

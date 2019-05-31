@@ -43,7 +43,13 @@ impl Udp {
 }
 
 impl Method for Udp {
-    fn write(&self, time: Instant, filter: &ColorFilter, leds: &mut [LedInstance], idle_tracker: &mut IdleTracker) {
+    fn write(
+        &self,
+        time: Instant,
+        filter: &ColorFilter,
+        leds: &mut [LedInstance],
+        idle_tracker: &mut IdleTracker,
+    ) {
         // Get reference to buffer for UDP data
         let mut rgb_buffer = self.rgb_buffer.borrow_mut();
 

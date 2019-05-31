@@ -9,4 +9,3 @@ pub enum DebugMessage {
     /// The hyperion instance is terminating
     Terminating,
 }
-

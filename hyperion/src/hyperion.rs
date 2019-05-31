@@ -90,7 +90,8 @@ impl Hyperion {
         match update {
             StateUpdate::ClearAll => {
                 debug!("clearing all leds");
-                self.devices.set_all_leds(now, palette::LinSrgb::default(), false);
+                self.devices
+                    .set_all_leds(now, palette::LinSrgb::default(), false);
             }
             StateUpdate::SolidColor { color } => {
                 debug!("setting all leds to {:?}", color);
@@ -102,8 +103,14 @@ impl Hyperion {
                 height,
             } => {
                 debug!("incoming {}x{} image", width, height);
-                self.devices
-                    .set_from_image(now, &mut self.image_processor, data, width, height, false);
+                self.devices.set_from_image(
+                    now,
+                    &mut self.image_processor,
+                    data,
+                    width,
+                    height,
+                    false,
+                );
             }
         }
     }

@@ -13,4 +13,3 @@ pub enum StateUpdate {
         height: u32,
     },
 }
-

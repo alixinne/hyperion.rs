@@ -60,8 +60,7 @@ mod gui;
 /// Entry point of the hyperion binary
 fn main() {
     // Initialize logging, default to info
-    env_logger::from_env(Env::default().filter_or("HYPERION_LOG", "hyperion=info"))
-        .init();
+    env_logger::from_env(Env::default().filter_or("HYPERION_LOG", "hyperion=info")).init();
 
     // Run CLI interface
     match cli::run() {

@@ -67,7 +67,11 @@ impl TryFrom<Device> for DeviceInstance {
             method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(update_duration),
             idle_tracker: IdleTracker::from(device.idle),
-            leds: device.leds.into_iter().map(|led| LedInstance::new(led, capacity)).collect(),
+            leds: device
+                .leds
+                .into_iter()
+                .map(|led| LedInstance::new(led, capacity))
+                .collect(),
             filter,
         })
     }
@@ -110,7 +114,13 @@ impl DeviceInstance {
     /// * `led_idx`: 0-based index of the LED to set
     /// * `color`: new color to apply immediately to all the LEDs of this device
     /// * `immediate`: apply change immediately (skipping filtering)
-    pub fn set_led(&mut self, time: Instant, led_idx: usize, color: palette::LinSrgb, immediate: bool) -> Result<(), DeviceError> {
+    pub fn set_led(
+        &mut self,
+        time: Instant,
+        led_idx: usize,
+        color: palette::LinSrgb,
+        immediate: bool,
+    ) -> Result<(), DeviceError> {
         if led_idx >= self.leds.len() {
             return Err(DeviceError::OutOfBoundsLedIndex(led_idx));
         }
@@ -155,7 +165,12 @@ impl Future for DeviceInstance {
             // Write only if we need to
             if state.should_write() {
                 self.idle_tracker.start_pass();
-                self.method.write(now, &self.filter, &mut self.leds[..], &mut self.idle_tracker);
+                self.method.write(
+                    now,
+                    &self.filter,
+                    &mut self.leds[..],
+                    &mut self.idle_tracker,
+                );
                 self.idle_tracker.end_pass();
             }
         }

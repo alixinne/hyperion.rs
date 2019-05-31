@@ -105,7 +105,10 @@ impl IdleSettings {
     /// `device_name`: name of the device these settings are being sanitized for
     pub fn sanitize(&mut self, device_name: &str) {
         if self.retries < 1 {
-            warn!("device '{}': invalid idle retries, defaulted to 1", device_name);
+            warn!(
+                "device '{}': invalid idle retries, defaulted to 1",
+                device_name
+            );
             self.retries = 1;
         }
     }

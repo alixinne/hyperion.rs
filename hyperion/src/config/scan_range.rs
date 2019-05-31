@@ -11,9 +11,6 @@ pub struct ScanRange {
 
 impl Default for ScanRange {
     fn default() -> Self {
-        Self {
-            min: 0.0,
-            max: 1.0,
-        }
+        Self { min: 0.0, max: 1.0 }
     }
 }

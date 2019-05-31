@@ -52,7 +52,7 @@ pub struct Transform {
 
 struct Base64Visitor;
 
-impl <'a>serde::de::Visitor<'a> for Base64Visitor {
+impl<'a> serde::de::Visitor<'a> for Base64Visitor {
     type Value = Vec<u8>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -60,7 +60,9 @@ impl <'a>serde::de::Visitor<'a> for Base64Visitor {
     }
 
     fn visit_str<A>(self, string: &str) -> Result<Self::Value, A>
-        where A: serde::de::Error {
+    where
+        A: serde::de::Error,
+    {
         base64::decode(string).map_err(|err| serde::de::Error::custom(err.to_string()))
     }
 }

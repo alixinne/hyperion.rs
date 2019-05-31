@@ -48,7 +48,7 @@ mod tests {
             frequency: 1.0,
             idle: IdleSettings {
                 delay: Duration::from_millis(5),
-                .. Default::default()
+                ..Default::default()
             },
             filter: Filter::default(),
         };

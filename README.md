@@ -27,15 +27,16 @@ Assuming the following `config.yml`:
 
 ```yaml
 devices:
-  - name: stdout script
-    frequency: 1  # Hz
+  - name: Raw UDP device
+    frequency: 30 # Hz
     idle:
       delay: 5s   # Consider device idle after 5s
       holds: true # This device holds the last command forever
-      retries: 1  # Reliable device, no need to retry sending packets during idle updates
+      retries: 3  # Unreliable device, retry sending packets 3 times during idle updates
     endpoint:
-      type: stdout
-    leds: &1
+      type: upd
+      address: 192.168.0.27:19446 # Can also use hostnames, e.g. device.local:19446
+    leds:
       # When facing the screen
       #  * hscan ranges from 0 (left) to 1 (right)
       #  * vscan ranges from 0 (top) to 1 (bottom)
@@ -49,9 +50,15 @@ devices:
         vscan: { min: 0.0, max: 1.0 }
 ```
 
-You can run the daemon using the following command:
+You can run the daemon using the following commands:
 
-    HYPERION_LOG=hyperion=debug cargo run -- -c config.yml s --bind 0.0.0.0
+```bash
+# Build and run
+HYPERION_LOG=hyperion=debug cargo run -- -c config.yml s --bind 0.0.0.0
+
+# Run release version (without cargo)
+HYPERION_LOG=hyperion=debug ./target/release/hyperiond -c config.yml s --bind 0.0.0.0
+```
 
 The Android app can be used to send commands to this server, which should result
 in updated colors in the output of the daemon.

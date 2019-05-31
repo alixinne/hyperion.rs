@@ -1,8 +1,11 @@
+use hyperion::hyperion::DebugMessage;
+use std::sync::mpsc;
+
 #[cfg(feature = "gui")]
 mod ui {
-    use hyperion::hyperion::{DebugMessage, StateUpdate};
-    use std::sync::mpsc;
+    use super::*;
 
+    use hyperion::hyperion::StateUpdate;
     use std::thread;
     use std::thread::JoinHandle;
 
@@ -135,7 +138,11 @@ mod ui {
 
 #[cfg(not(feature = "gui"))]
 mod ui {
-    pub fn build_listener() -> ! {
+    use super::*;
+
+    pub struct DebugGui;
+
+    pub fn build_listener() -> (Option<mpsc::Sender<DebugMessage>>, Option<DebugGui>) {
         panic!("This version of hyperion.rs does not support the debug GUI. Please recompile with --features=gui");
     }
 }

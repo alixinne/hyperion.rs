@@ -18,32 +18,36 @@ lighting software.
 
 Get the source for the project:
 
-    git clone https://github.com/vtavernier/hyperion.rs.git
-    cd hyperion.rs
+```bash
+git clone https://github.com/vtavernier/hyperion.rs.git
+cd hyperion.rs
+```
 
 Assuming the following `config.yml`:
 
-    devices:
-      - name: stdout script
-        frequency: 1  # Hz
-        idle:
-          delay: 5s   # Consider device idle after 5s
-          holds: true # This device holds the last command forever
-          retries: 1  # Reliable device, no need to retry sending packets during idle updates
-        endpoint:
-          type: stdout
-        leds: &1
-          # When facing the screen
-          #  * hscan ranges from 0 (left) to 1 (right)
-          #  * vscan ranges from 0 (top) to 1 (bottom)
-          - hscan: { min: 0.8, max: 1.0 }
-            vscan: { min: 0.0, max: 1.0 }
-          - hscan: { min: 0.5, max: 1.0 }
-            vscan: { min: 0.0, max: 0.2 }
-          - hscan: { min: 0.0, max: 0.5 }
-            vscan: { min: 0.0, max: 0.2 }
-          - hscan: { min: 0.0, max: 0.2 }
-            vscan: { min: 0.0, max: 1.0 }
+```yaml
+devices:
+  - name: stdout script
+    frequency: 1  # Hz
+    idle:
+      delay: 5s   # Consider device idle after 5s
+      holds: true # This device holds the last command forever
+      retries: 1  # Reliable device, no need to retry sending packets during idle updates
+    endpoint:
+      type: stdout
+    leds: &1
+      # When facing the screen
+      #  * hscan ranges from 0 (left) to 1 (right)
+      #  * vscan ranges from 0 (top) to 1 (bottom)
+      - hscan: { min: 0.8, max: 1.0 }
+        vscan: { min: 0.0, max: 1.0 }
+      - hscan: { min: 0.5, max: 1.0 }
+        vscan: { min: 0.0, max: 0.2 }
+      - hscan: { min: 0.0, max: 0.5 }
+        vscan: { min: 0.0, max: 0.2 }
+      - hscan: { min: 0.0, max: 0.2 }
+        vscan: { min: 0.0, max: 1.0 }
+```
 
 You can run the daemon using the following command:
 

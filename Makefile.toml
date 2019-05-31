@@ -1,2 +1,15 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
+
+[tasks.package-release]
+dependencies = ["build-release"]
+command = "tar"
+args = [
+  "--xform=s|^|hyperion.rs/|",
+  "--xform=s|target/release|bin|",
+  "--show-transformed",
+  "-czvf",
+  "hyperion.rs-release.tar.gz",
+  "target/release/hyperiond",
+  "scripts",
+]

@@ -56,6 +56,14 @@ You can run the daemon using the following command:
 The Android app can be used to send commands to this server, which should result
 in updated colors in the output of the daemon.
 
+If you have [cargo-make](https://github.com/sagiegurari/cargo-make) installed,
+you can use this command to build a deployable archive of hyperion.rs:
+
+```bash
+# Build hyperion.rs-release.tar.gz
+cargo make --no-workspace package-release
+```
+
 ## Status
 
 This is still early work: the crate interface will probably change a lot, and no

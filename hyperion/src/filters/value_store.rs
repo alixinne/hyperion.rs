@@ -9,6 +9,8 @@ use circular_queue::CircularQueue;
 pub struct ValueStore<T> {
     /// Circular buffer of samples
     samples: CircularQueue<Sample<T>>,
+    /// Circular buffer of filtered samples
+    filtered_samples: CircularQueue<Sample<T>>,
 }
 
 impl<T: std::fmt::Debug + PartialEq> ValueStore<T> {
@@ -17,12 +19,15 @@ impl<T: std::fmt::Debug + PartialEq> ValueStore<T> {
     /// # Parameters
     ///
     /// * `capacity`: number of samples the store should hold
-    pub fn with_capacity(capacity: usize) -> Self {
+    /// * `filtered_capacity`: number of filtered samples the store should hold
+    pub fn with_capacity((capacity, filtered_capacity): (usize, usize)) -> Self {
         // capacity = 0 makes no sense
         assert!(capacity > 0);
+        assert!(filtered_capacity > 0);
 
         Self {
             samples: CircularQueue::with_capacity(capacity),
+            filtered_samples: CircularQueue::with_capacity(filtered_capacity),
         }
     }
 
@@ -31,29 +36,28 @@ impl<T: std::fmt::Debug + PartialEq> ValueStore<T> {
     /// # Parameters
     ///
     /// * `sample`: sample
-    pub fn push_sample(&mut self, sample: Sample<T>) {
-        if sample.filtered {
-            // Filtered value, replace last filtered value if it was
-            // also filtered
-            if let Some(last_sample) = self.samples.iter_mut().next() {
-                if last_sample.filtered {
-                    *last_sample = sample;
-                    return;
-                }
-            }
+    /// * `filtered`: true if this is a filtered sample
+    pub fn push_sample(&mut self, sample: Sample<T>, filtered: bool) {
+        if filtered {
+            self.filtered_samples.push(sample);
+        } else {
+            self.samples.push(sample);
         }
-
-        // Target value sample, push it
-        self.samples.push(sample);
     }
 
-    /// Iterate values
+    /// Iterate samples
     pub fn iter(&self) -> circular_queue::Iter<Sample<T>> {
         self.samples.iter()
+    }
+
+    /// Iterate filtered samples
+    pub fn iter_filtered(&self) -> circular_queue::Iter<Sample<T>> {
+        self.filtered_samples.iter()
     }
 
     /// Reset the stored values
     pub fn clear(&mut self) {
         self.samples.clear();
+        self.filtered_samples.clear();
     }
 }

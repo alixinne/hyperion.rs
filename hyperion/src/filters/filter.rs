@@ -16,10 +16,12 @@ pub trait Filter<T> {
 
     /// Returns the recommended size for the value store for this temporal filter
     ///
+    /// This is a tuple containing the raw sample size and the filtered sample size.
+    ///
     /// # Parameters
     ///
     /// * `frequency`: update frequency of the device this filter is to be used for
-    fn capacity(&self, frequency: f32) -> usize;
+    fn capacity(&self, frequency: f32) -> (usize, usize);
 }
 
 /// Linear RGB color filter implementation

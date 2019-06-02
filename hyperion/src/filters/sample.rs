@@ -9,8 +9,6 @@ pub struct Sample<T> {
     pub instant: Instant,
     /// Value of the sample
     pub value: T,
-    /// Is it a filtered value
-    pub filtered: bool,
 }
 
 impl<T> Sample<T> {
@@ -20,12 +18,10 @@ impl<T> Sample<T> {
     ///
     /// `instant`: time of the sample
     /// `value`: value of the sample
-    /// `filtered`: true if this sample has been filtered
-    pub fn new(instant: Instant, value: T, filtered: bool) -> Self {
+    pub fn new(instant: Instant, value: T) -> Self {
         Self {
             instant,
             value,
-            filtered,
         }
     }
 }

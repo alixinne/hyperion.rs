@@ -27,7 +27,7 @@ impl LedInstance {
     ///
     /// * `led`: LED specification
     /// * `capacity`: filtering value store capacity
-    pub fn new(led: Led, capacity: usize) -> Self {
+    pub fn new(led: Led, capacity: (usize, usize)) -> Self {
         Self {
             spec: led,
             values: ValueStore::with_capacity(capacity),
@@ -49,7 +49,7 @@ impl LedInstance {
         }
 
         // Update value
-        self.values.push_sample(Sample::new(time, new_color, false));
+        self.values.push_sample(Sample::new(time, new_color), false);
     }
 
     /// Get the current value of the LED using the given filter
@@ -72,7 +72,7 @@ impl LedInstance {
         idle_tracker.update_color(&self.current_color, &new_value);
 
         // Add the value to the store
-        self.values.push_sample(Sample::new(time, new_value, true));
+        self.values.push_sample(Sample::new(time, new_value), true);
 
         // Update stored color
         self.current_color = new_value;

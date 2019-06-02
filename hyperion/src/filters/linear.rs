@@ -48,24 +48,22 @@ impl<
     fn current_value(&self, time: Instant, value_store: &ValueStore<T>) -> T {
         let period = 1.0 / self.frequency;
 
-        if let Some(last_target_sample) = value_store.iter().find(|sample| !sample.filtered) {
+        if let Some(last_target_sample) = value_store.iter().next() {
             let default_sample = Sample::new(
                 time - Duration::from_millis((1000f32 * period) as u64),
                 Default::default(),
-                true,
             );
 
             // We should target last_target_sample, linearly from the current value
-            let current_sample = if let Some(last_filtered_sample) =
-                value_store.iter().find(|sample| sample.filtered)
-            {
-                last_filtered_sample
-            } else {
-                warn!("no filtered value found, consider increasing the value store capacity");
+            let current_sample =
+                if let Some(last_filtered_sample) = value_store.iter_filtered().next() {
+                    last_filtered_sample
+                } else {
+                    warn!("no filtered value found, consider increasing the value store capacity");
 
-                // Alas, we have no clue on the current value of the target, assume 0
-                &default_sample
-            };
+                    // Alas, we have no clue on the current value of the target, assume 0
+                    &default_sample
+                };
 
             // The difference we still have to cover
             let value_diff = last_target_sample.value.clone() - current_sample.value.clone();
@@ -81,16 +79,12 @@ impl<
             }
         } else {
             // No target sample found
-            if let Some(any_sample) = value_store.iter().next() {
-                any_sample.value.clone()
-            } else {
-                // Initial case, no value at all
-                Default::default()
-            }
+            // Initial case, no value at all
+            Default::default()
         }
     }
 
-    fn capacity(&self, frequency: f32) -> usize {
-        std::cmp::max(1, (frequency / self.frequency).ceil() as usize)
+    fn capacity(&self, _frequency: f32) -> (usize, usize) {
+        (1, 1)
     }
 }

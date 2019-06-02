@@ -19,7 +19,7 @@ impl<T: std::fmt::Debug + Default + Clone + PartialEq> Filter<T> for Nearest {
             .unwrap_or_else(Default::default)
     }
 
-    fn capacity(&self, _frequency: f32) -> usize {
-        1
+    fn capacity(&self, _frequency: f32) -> (usize, usize) {
+        (1, 1)
     }
 }

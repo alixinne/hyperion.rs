@@ -204,7 +204,7 @@ mod tests {
 
         let time = Instant::now();
         let filter = ColorFilter::from(Filter::default());
-        let mut leds = vec![LedInstance::new(Led::default(), 1)];
+        let mut leds = vec![LedInstance::new(Led::default(), (1, 1))];
         let mut idle_tracker = IdleTracker::from(IdleSettings::default());
 
         method.write(time, &filter, &mut leds[..], &mut idle_tracker);

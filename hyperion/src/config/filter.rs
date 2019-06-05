@@ -11,7 +11,7 @@ fn default_linear_frequency() -> f32 {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Filter {
-    #[serde(rename = "none")]
+    #[serde(rename = "nearest")]
     /// No filter is used, the last sampled value is used directly
     Nearest,
     #[serde(rename = "linear")]

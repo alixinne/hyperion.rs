@@ -3,6 +3,7 @@
 use std::fmt;
 use std::time::Instant;
 
+use crate::color;
 use crate::config::IdleSettings;
 
 /// RGB LED idle tracker
@@ -157,9 +158,13 @@ impl IdleTracker {
     ///
     /// * `current_color`: current color of the LED being updated
     /// * `new_color`: new color value for the LED
-    pub fn update_color(&mut self, current_color: &palette::LinSrgb, new_color: &palette::LinSrgb) {
-        let (cr, cg, cb) = current_color.into_components();
-        let (nr, ng, nb) = new_color.into_components();
+    pub fn update_color(
+        &mut self,
+        current_color: &color::ColorPoint,
+        new_color: &color::ColorPoint,
+    ) {
+        let (cr, cg, cb) = current_color.as_rgb();
+        let (nr, ng, nb) = new_color.as_rgb();
 
         // Compute color difference
         let diff = (cr - nr).abs() + (cg - ng).abs() + (cb - nb).abs();

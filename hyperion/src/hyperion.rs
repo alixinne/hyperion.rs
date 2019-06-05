@@ -9,6 +9,7 @@ use futures::{Async, Future, Poll, Stream};
 
 use regex::Regex;
 
+use crate::color;
 use crate::config::Configuration;
 use crate::image::Processor;
 use crate::runtime::Devices;
@@ -104,10 +105,10 @@ impl Hyperion {
             StateUpdate::ClearAll => {
                 debug!("clearing all leds");
                 self.devices
-                    .set_all_leds(now, palette::LinSrgb::default(), false);
+                    .set_all_leds(now, color::ColorPoint::default(), false);
             }
             StateUpdate::SolidColor { color } => {
-                debug!("setting all leds to {:?}", color);
+                debug!("setting all leds to {}", color);
                 self.devices.set_all_leds(now, color, false);
             }
             StateUpdate::Image {

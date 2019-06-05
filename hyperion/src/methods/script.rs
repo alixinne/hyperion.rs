@@ -171,7 +171,7 @@ impl Method for Script {
                     let color_data = lua_ctx.create_table()?;
 
                     let current_color = led.next_value(time, &filter, idle_tracker);
-                    let (r, g, b) = current_color.into_components();
+                    let (r, g, b) = current_color.as_rgb();
                     color_data.set("r", r)?;
                     color_data.set("g", g)?;
                     color_data.set("b", b)?;

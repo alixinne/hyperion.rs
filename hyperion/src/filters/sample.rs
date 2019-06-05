@@ -19,9 +19,6 @@ impl<T> Sample<T> {
     /// `instant`: time of the sample
     /// `value`: value of the sample
     pub fn new(instant: Instant, value: T) -> Self {
-        Self {
-            instant,
-            value,
-        }
+        Self { instant, value }
     }
 }

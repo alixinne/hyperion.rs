@@ -4,6 +4,8 @@ use std::time::Instant;
 
 use super::ValueStore;
 
+use crate::color;
+
 /// A generic time-domain filter over values
 pub trait Filter<T> {
     /// Computes the current value using this filter and the stored values
@@ -25,7 +27,7 @@ pub trait Filter<T> {
 }
 
 /// Linear RGB color filter implementation
-pub type ColorFilter = Box<dyn Filter<palette::LinSrgb> + Send>;
+pub type ColorFilter = Box<dyn Filter<color::ColorPoint> + Send>;
 
 /// Filter configuration
 type FilterConfig = crate::config::Filter;

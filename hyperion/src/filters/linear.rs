@@ -36,13 +36,7 @@ fn t(d: Duration) -> f32 {
 use std::fmt::Debug;
 
 impl<
-        T: PartialEq
-            + Debug
-            + Default
-            + Clone
-            + Add<T, Output = T>
-            + Sub<T, Output = T>
-            + Mul<f32, Output = T>,
+        T: Debug + Default + Clone + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T>,
     > Filter<T> for Linear
 {
     fn current_value(&self, time: Instant, value_store: &ValueStore<T>) -> T {

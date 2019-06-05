@@ -69,7 +69,7 @@ impl Method for Udp {
         // Fill buffer with data
         for (i, led) in leds.iter_mut().enumerate() {
             let current_color = led.next_value(time, &filter, idle_tracker);
-            let (r, g, b) = current_color.into_components();
+            let (r, g, b) = current_color.as_rgb();
 
             rgb_buffer[i * 3] = (r * 255.0f32) as u8;
             rgb_buffer[i * 3 + 1] = (g * 255.0f32) as u8;

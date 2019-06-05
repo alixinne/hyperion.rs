@@ -1,5 +1,6 @@
 //! Definition of the Processor type
 
+use crate::color;
 use crate::runtime::LedInstance;
 use std::cmp::min;
 
@@ -31,8 +32,8 @@ impl Pixel {
     }
 
     /// Compute the mean of this pixel
-    pub fn mean(&self) -> palette::LinSrgb {
-        palette::LinSrgb::from_components((
+    pub fn mean(&self) -> color::ColorPoint {
+        color::ColorPoint::from_rgb((
             self.color[0] / self.count as f32,
             self.color[1] / self.count as f32,
             self.color[2] / self.count as f32,
@@ -212,7 +213,7 @@ impl Processor {
     /// # Parameters
     ///
     /// * `led_setter`: callback to update LED colors
-    pub fn update_leds(&self, mut led_setter: impl FnMut((usize, usize), palette::LinSrgb)) {
+    pub fn update_leds(&self, mut led_setter: impl FnMut((usize, usize), color::ColorPoint)) {
         // Compute mean and assign to led instances
         for pixel in self.led_map.iter() {
             for (pixel_idx, device_idx, led_idx) in pixel.iter() {

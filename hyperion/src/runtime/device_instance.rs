@@ -7,6 +7,8 @@ use futures::{Async, Future, Poll, Stream};
 
 use tokio::timer::Interval;
 
+use crate::color;
+
 use crate::methods;
 use crate::methods::Method;
 
@@ -98,7 +100,7 @@ impl DeviceInstance {
     /// * `time`: time of the color update
     /// * `color`: new color to apply to all the LEDs of this device
     /// * `immediate`: apply change immediately (skipping filtering)
-    pub fn set_all_leds(&mut self, time: Instant, color: palette::LinSrgb, immediate: bool) {
+    pub fn set_all_leds(&mut self, time: Instant, color: color::ColorPoint, immediate: bool) {
         for led in self.leds.iter_mut() {
             // Change LED color
             led.update_color(time, color, immediate);
@@ -120,7 +122,7 @@ impl DeviceInstance {
         &mut self,
         time: Instant,
         led_idx: usize,
-        color: palette::LinSrgb,
+        color: color::ColorPoint,
         immediate: bool,
     ) -> Result<(), DeviceError> {
         if led_idx >= self.leds.len() {

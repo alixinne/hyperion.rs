@@ -1,5 +1,7 @@
 //! Definition of the StateUpdate type
 
+use crate::color;
+
 /// State update messages for the Hyperion service
 #[derive(Debug, Clone)]
 pub enum StateUpdate {
@@ -8,7 +10,7 @@ pub enum StateUpdate {
     /// Set all devices to a given color
     SolidColor {
         /// Color to apply to the devices
-        color: palette::LinSrgb,
+        color: color::ColorPoint,
     },
     /// Use given image to set colors
     Image {

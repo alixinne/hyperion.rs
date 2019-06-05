@@ -7,7 +7,9 @@ use tokio::prelude::*;
 
 use tokio::codec::Framed;
 
+use crate::color;
 use crate::hyperion::StateUpdate;
+
 use futures::sync::mpsc;
 
 /// Schema definitions as Serde serializable structures and enums
@@ -67,7 +69,7 @@ pub fn bind(
                         // Update state
                         sender
                             .unbounded_send(StateUpdate::SolidColor {
-                                color: palette::LinSrgb::from_components((
+                                color: color::ColorPoint::from_rgb((
                                     f32::from(color[0]) / 255.0,
                                     f32::from(color[1]) / 255.0,
                                     f32::from(color[2]) / 255.0,

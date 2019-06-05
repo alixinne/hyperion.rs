@@ -13,7 +13,7 @@ pub struct ValueStore<T> {
     filtered_samples: CircularQueue<Sample<T>>,
 }
 
-impl<T: std::fmt::Debug + PartialEq> ValueStore<T> {
+impl<T: std::fmt::Debug> ValueStore<T> {
     /// Create a new value store for `capacity` samples
     ///
     /// # Parameters

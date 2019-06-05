@@ -2,6 +2,7 @@
 
 use std::time::Instant;
 
+use crate::color;
 use crate::config::Led;
 use crate::filters::{ColorFilter, Sample, ValueStore};
 use crate::runtime::IdleTracker;
@@ -15,9 +16,9 @@ pub struct LedInstance {
     /// LED parameters for this instance
     pub spec: Led,
     /// History of values for this LED
-    values: ValueStore<palette::LinSrgb>,
+    values: ValueStore<color::ColorPoint>,
     /// Current (i.e. written) value of the LED
-    current_color: palette::LinSrgb,
+    current_color: color::ColorPoint,
 }
 
 impl LedInstance {
@@ -42,7 +43,7 @@ impl LedInstance {
     /// `time`: time of the update sample
     /// `new_color`: new LED color
     /// `immediate`: force instant update (breaks filtering continuity)
-    pub fn update_color(&mut self, time: Instant, new_color: palette::LinSrgb, immediate: bool) {
+    pub fn update_color(&mut self, time: Instant, new_color: color::ColorPoint, immediate: bool) {
         // Clear buffered values for the filter if in immediate mode
         if immediate {
             self.values.clear();
@@ -64,7 +65,7 @@ impl LedInstance {
         time: Instant,
         filter: &ColorFilter,
         idle_tracker: &mut IdleTracker,
-    ) -> palette::LinSrgb {
+    ) -> color::ColorPoint {
         // Compute new value
         let new_value = filter.current_value(time, &self.values);
 

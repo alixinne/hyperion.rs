@@ -6,6 +6,7 @@ use std::convert::TryFrom;
 
 use futures::{Async, Future, Poll};
 
+use crate::color;
 use crate::config::Device;
 use crate::image::Processor;
 use crate::methods;
@@ -26,7 +27,7 @@ impl Devices {
     /// * `time`: time of the color update
     /// * `color`: new color to apply immediately to all the LEDs of all devices
     /// * `immediate`: apply change immediately (skipping filtering)
-    pub fn set_all_leds(&mut self, time: Instant, color: palette::LinSrgb, immediate: bool) {
+    pub fn set_all_leds(&mut self, time: Instant, color: color::ColorPoint, immediate: bool) {
         for device in self.devices.iter_mut() {
             device.set_all_leds(time, color, immediate);
         }

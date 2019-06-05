@@ -76,7 +76,7 @@ mod ui {
                                     state = GuiMode::SolidColor([0., 0., 0., 1.0]);
                                 }
                                 StateUpdate::SolidColor { color } => {
-                                    let (r, g, b) = color.into_components();
+                                    let (r, g, b) = color.as_rgb();
                                     state = GuiMode::SolidColor([r, g, b, 1.0]);
                                 }
                                 StateUpdate::Image {

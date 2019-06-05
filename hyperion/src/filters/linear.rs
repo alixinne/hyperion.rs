@@ -1,6 +1,6 @@
 //! Definition of the Linear type
 
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul};
 use std::time::{Duration, Instant};
 
 use super::{Filter, Sample, ValueStore};
@@ -35,10 +35,7 @@ fn t(d: Duration) -> f32 {
 
 use std::fmt::Debug;
 
-impl<
-        T: Debug + Default + Clone + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T>,
-    > Filter<T> for Linear
-{
+impl<T: Debug + Default + Clone + Add<T, Output = T> + Mul<f32, Output = T>> Filter<T> for Linear {
     fn current_value(&self, time: Instant, value_store: &ValueStore<T>) -> T {
         let period = 1.0 / self.frequency;
 
@@ -59,8 +56,6 @@ impl<
                     &default_sample
                 };
 
-            // The difference we still have to cover
-            let value_diff = last_target_sample.value.clone() - current_sample.value.clone();
             // The time difference between the current time and the target point
             let time_diff = t(time - last_target_sample.instant);
 
@@ -68,8 +63,12 @@ impl<
                 // Linear filtering period over
                 last_target_sample.value.clone()
             } else {
+                let time_factor = time_diff / period;
+
                 // Linear filtering in effect
-                current_sample.value.clone() + value_diff * (time_diff / period)
+                current_sample.value.clone()
+                    + last_target_sample.value.clone() * time_factor
+                    + current_sample.value.clone() * (-time_factor)
             }
         } else {
             // No target sample found

@@ -4,6 +4,8 @@ use crate::color;
 use crate::runtime::LedInstance;
 use std::cmp::min;
 
+use super::RawImage;
+
 /// Image pixel accumulator
 #[derive(Default, Clone)]
 struct Pixel {
@@ -179,27 +181,19 @@ impl Processor {
     ///
     /// # Parameters
     ///
-    /// * `data`: raw 8-bit RGB image data
-    /// * `width`: width of the image data
-    /// * `height`: height of the image data
-    fn process_image(&mut self, data: &[u8], width: u32, height: u32) {
-        let width = width as usize;
-        let height = height as usize;
-
-        // Check that the image is the right size
-        assert!(width * height * 3 == data.len());
+    /// * `raw_image`: raw RGB image
+    fn process_image(&mut self, raw_image: RawImage) {
+        let (width, height) = raw_image.get_dimensions();
 
         // Reset all colors
         for color in &mut self.color_map {
             color.reset();
         }
 
-        // TODO: check image data ordering
         for j in 0..height {
             for i in 0..width {
-                let map_idx = j * width + i;
-                let image_idx = map_idx * 3;
-                let rgb = (data[image_idx], data[image_idx + 1], data[image_idx + 2]);
+                let map_idx = (j * width + i) as usize;
+                let rgb = raw_image.get_pixel(i, j);
 
                 for (pixel_idx, _device_idx, _led_idx) in &self.led_map[map_idx] {
                     self.color_map[*pixel_idx].sample(rgb);
@@ -228,16 +222,16 @@ impl<'p, 'a, I: Iterator<Item = (usize, &'a LedInstance, usize)>> ProcessorWithD
     ///
     /// # Parameters
     ///
-    /// * `data`: raw 8-bit RGB image data
-    /// * `width`: width of the image data
-    /// * `height`: height of the image data
-    pub fn process_image(self, data: &[u8], width: u32, height: u32) -> &'p mut Processor {
+    /// * `raw_image`: raw RGB image
+    pub fn process_image(self, raw_image: RawImage) -> &'p mut Processor {
+        let (width, height) = raw_image.get_dimensions();
+
         // Check that this processor has the right size
         if !self.processor.matches(width, height) {
             self.processor.alloc(width, height, self.leds);
         }
 
-        self.processor.process_image(data, width, height);
+        self.processor.process_image(raw_image);
         self.processor
     }
 }

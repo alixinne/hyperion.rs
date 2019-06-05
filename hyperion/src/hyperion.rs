@@ -111,20 +111,12 @@ impl Hyperion {
                 debug!("setting all leds to {}", color);
                 self.devices.set_all_leds(now, color, false);
             }
-            StateUpdate::Image {
-                data,
-                width,
-                height,
-            } => {
+            StateUpdate::Image(raw_image) => {
+                let (width, height) = raw_image.get_dimensions();
                 debug!("incoming {}x{} image", width, height);
-                self.devices.set_from_image(
-                    now,
-                    &mut self.image_processor,
-                    data,
-                    width,
-                    height,
-                    false,
-                );
+
+                self.devices
+                    .set_from_image(now, &mut self.image_processor, raw_image, false);
             }
         }
     }

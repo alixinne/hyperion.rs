@@ -1,5 +1,6 @@
 //! JSON protocol server implementation
 
+use std::convert::TryFrom;
 use std::net::SocketAddr;
 
 use tokio::net::TcpListener;
@@ -9,6 +10,7 @@ use tokio::codec::Framed;
 
 use crate::color;
 use crate::hyperion::StateUpdate;
+use crate::image::RawImage;
 
 use futures::sync::mpsc;
 
@@ -87,16 +89,30 @@ pub fn bind(
                     } => {
                         // TODO: image: handle priority and duration
 
-                        // Update state
-                        sender
-                            .unbounded_send(StateUpdate::Image {
-                                data: imagedata,
-                                width: imagewidth as u32,
-                                height: imageheight as u32,
+                        // Try to convert sizes to unsigned fields
+                        u32::try_from(imagewidth)
+                            .and_then(|imagewidth| {
+                                u32::try_from(imageheight)
+                                    .map(|imageheight| (imagewidth, imageheight))
                             })
-                            .unwrap();
+                            .map_err(|_| "invalid size".to_owned())
+                            .and_then(|(imagewidth, imageheight)| {
+                                // Try to create image from raw data and given size
+                                RawImage::try_from((imagedata, imagewidth, imageheight))
+                                    .map(|raw_image| {
+                                        // Update state
+                                        sender
+                                            .unbounded_send(StateUpdate::Image(raw_image))
+                                            .unwrap();
 
-                        HyperionResponse::SuccessResponse { success: true }
+                                        HyperionResponse::SuccessResponse { success: true }
+                                    })
+                                    .map_err(|error| error.to_string())
+                            })
+                            .unwrap_or_else(|error| HyperionResponse::ErrorResponse {
+                                success: false,
+                                error,
+                            })
                     }
                     _ => HyperionResponse::ErrorResponse {
                         success: false,

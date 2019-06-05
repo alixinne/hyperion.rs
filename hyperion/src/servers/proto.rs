@@ -1,5 +1,6 @@
 //! protobuf protocol server implementation
 
+use std::convert::TryFrom;
 use std::net::SocketAddr;
 
 use tokio::net::TcpListener;
@@ -9,6 +10,7 @@ use tokio::codec::Framed;
 
 use crate::color;
 use crate::hyperion::StateUpdate;
+use crate::image::RawImage;
 
 use futures::sync::mpsc;
 
@@ -100,21 +102,31 @@ pub fn bind(
                     }
                     HyperionRequest::ImageRequest(image_request) => {
                         let data = image_request.imagedata;
-                        let width = image_request.imagewidth as u32;
-                        let height = image_request.imageheight as u32;
+                        let width = image_request.imagewidth;
+                        let height = image_request.imageheight;
 
                         // TODO: image: handle priority and duration
 
-                        // Update state
-                        sender
-                            .unbounded_send(StateUpdate::Image {
-                                data,
-                                width,
-                                height,
+                        // Try to convert sizes to unsigned fields
+                        u32::try_from(width)
+                            .and_then(|imagewidth| {
+                                u32::try_from(height).map(|imageheight| (imagewidth, imageheight))
                             })
-                            .unwrap();
+                            .map_err(|_| "invalid size".to_owned())
+                            .and_then(|(imagewidth, imageheight)| {
+                                // Try to create image from raw data and given size
+                                RawImage::try_from((data, imagewidth, imageheight))
+                                    .map(|raw_image| {
+                                        // Update state
+                                        sender
+                                            .unbounded_send(StateUpdate::Image(raw_image))
+                                            .unwrap();
 
-                        success_response(true)
+                                        success_response(true)
+                                    })
+                                    .map_err(|error| error.to_string())
+                            })
+                            .unwrap_or_else(|_error| success_response(false))
                     }
                 };
 

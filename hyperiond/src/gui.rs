@@ -79,11 +79,9 @@ mod ui {
                                     let (r, g, b) = color.as_rgb();
                                     state = GuiMode::SolidColor([r, g, b, 1.0]);
                                 }
-                                StateUpdate::Image {
-                                    data,
-                                    width,
-                                    height,
-                                } => {
+                                StateUpdate::Image(raw_image) => {
+                                    let (data, width, height) = raw_image.into_raw();
+
                                     let image_buffer =
                                         RgbImage::from_raw(width, height, data).unwrap();
 

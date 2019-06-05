@@ -8,7 +8,7 @@ use futures::{Async, Future, Poll};
 
 use crate::color;
 use crate::config::Device;
-use crate::image::Processor;
+use crate::image::*;
 use crate::methods;
 
 use super::DeviceInstance;
@@ -39,17 +39,13 @@ impl Devices {
     ///
     /// * `time`: time of the color update
     /// * `image_processor`: image processor instance
-    /// * `data`: raw RGB image
-    /// * `width`: width of the raw RGB image
-    /// * `height`: height of the raw RGB image
+    /// * `raw_image`: raw RGB image
     /// * `immediate`: apply change immediately (skipping filtering)
     pub fn set_from_image(
         &mut self,
         time: Instant,
         image_processor: &mut Processor,
-        data: Vec<u8>,
-        width: u32,
-        height: u32,
+        raw_image: RawImage,
         immediate: bool,
     ) {
         // Update stored image
@@ -64,7 +60,7 @@ impl Devices {
                             .map(move |(led_idx, led)| (device_idx, led, led_idx))
                     }),
             )
-            .process_image(&data[..], width, height);
+            .process_image(raw_image);
 
         // Update LEDs with computed colors
         image_processor.update_leds(|(device_idx, led_idx), color| {

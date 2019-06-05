@@ -31,6 +31,24 @@ impl ColorPoint {
     pub fn as_rgb(&self) -> (f32, f32, f32) {
         palette::LinSrgb::from(self.value).into_components()
     }
+
+    /// Return a number indicating the difference between the this color and the other
+    ///
+    /// # Parameters
+    ///
+    /// * `other`: other color to compare
+    pub fn diff(&self, other: &Self) -> f32 {
+        let (cr, cg, cb) = self.as_rgb();
+        let (nr, ng, nb) = other.as_rgb();
+
+        // Compute color difference
+        (cr - nr).abs() + (cg - ng).abs() + (cb - nb).abs()
+    }
+
+    /// Return true if this color is pure black
+    pub fn is_black(&self) -> bool {
+        ulps_eq!(self.value, palette::Color::default())
+    }
 }
 
 impl fmt::Display for ColorPoint {

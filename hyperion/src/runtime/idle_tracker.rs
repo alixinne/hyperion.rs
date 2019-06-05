@@ -163,11 +163,7 @@ impl IdleTracker {
         current_color: &color::ColorPoint,
         new_color: &color::ColorPoint,
     ) {
-        let (cr, cg, cb) = current_color.as_rgb();
-        let (nr, ng, nb) = new_color.as_rgb();
-
-        // Compute color difference
-        let diff = (cr - nr).abs() + (cg - ng).abs() + (cb - nb).abs();
+        let diff = current_color.diff(new_color);
 
         // Add up total color difference
         if diff > 0.0 {
@@ -175,7 +171,7 @@ impl IdleTracker {
         }
 
         // Check if everything is black
-        if nr != 0.0 || ng != 0.0 || nb != 0.0 {
+        if !new_color.is_black() {
             self.nonzero_color_count += 1;
         }
     }

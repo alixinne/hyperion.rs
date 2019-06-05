@@ -26,6 +26,8 @@
 #![deny(clippy::missing_docs_in_private_items)]
 
 #[macro_use]
+extern crate approx;
+#[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate futures;

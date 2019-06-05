@@ -12,7 +12,7 @@ use crate::color;
 use crate::methods;
 use crate::methods::Method;
 
-use crate::config::Device;
+use crate::config::{ColorFormat, Device};
 
 use super::{IdleTracker, LedInstance};
 use crate::filters::ColorFilter;
@@ -23,6 +23,8 @@ use crate::filters::ColorFilter;
 pub struct DeviceInstance {
     /// Name of the device
     name: String,
+    /// Color format
+    format: ColorFormat,
     /// Communication method
     method: Box<dyn Method + Send>,
     /// Updater future
@@ -66,6 +68,7 @@ impl TryFrom<Device> for DeviceInstance {
 
         Ok(DeviceInstance {
             name: device.name.clone(),
+            format: device.format,
             method: methods::from_endpoint(&device.endpoint)?,
             updater: Interval::new_interval(update_duration),
             idle_tracker: IdleTracker::from(device.idle),
@@ -174,6 +177,7 @@ impl Future for DeviceInstance {
                     &self.filter,
                     &mut self.leds[..],
                     &mut self.idle_tracker,
+                    &self.format,
                 );
                 self.idle_tracker.end_pass();
             }

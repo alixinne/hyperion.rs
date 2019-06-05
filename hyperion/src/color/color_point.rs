@@ -5,6 +5,9 @@ use std::ops::{Add, Mul};
 
 use palette::Blend;
 
+use super::DeviceColor;
+use crate::config;
+
 /// Represents a color in an arbitrary color space
 ///
 /// Operations that require specific spaces will automatically convert this color to the right
@@ -48,6 +51,28 @@ impl ColorPoint {
     /// Return true if this color is pure black
     pub fn is_black(&self) -> bool {
         ulps_eq!(self.value, palette::Color::default())
+    }
+
+    /// Convert this color point to a device color
+    ///
+    /// # Parameters
+    ///
+    /// * `format`: color format to convert to
+    pub fn to_device(&self, format: &config::ColorFormat) -> DeviceColor {
+        let (r, g, b) = self.as_rgb();
+
+        // TODO: support other variants
+        match format {
+            config::ColorFormat::Rgb { .. } => DeviceColor::Rgb { r, g, b },
+            config::ColorFormat::Rgbw { .. } => DeviceColor::Rgbw { r, g, b, w: 0. },
+            config::ColorFormat::Rgbcw { .. } => DeviceColor::Rgbcw {
+                r,
+                g,
+                b,
+                c: 0.,
+                w: 0.,
+            },
+        }
     }
 }
 

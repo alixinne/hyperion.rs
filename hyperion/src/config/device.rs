@@ -38,6 +38,9 @@ pub struct Device {
     /// Filtering method
     #[serde(default)]
     pub filter: Filter,
+    /// Color format
+    #[serde(default)]
+    pub format: ColorFormat,
 }
 
 impl Device {

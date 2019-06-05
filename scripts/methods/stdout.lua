@@ -13,6 +13,11 @@ end
 
 function write(leds)
 	for k,v in pairs(leds) do
-		pinfo("LED" .. tostring(k - 1) .. " r=" .. tostring(tobits(v.r)) .. " g=" .. tostring(tobits(v.g)) .. " b=" .. tostring(tobits(v.b)))
+		local msg = ""
+		for i,q in pairs(v) do
+			msg = msg .. " " .. tostring(i - 1) .. "=" .. tostring(tobits(q))
+		end
+
+		pinfo("LED" .. tostring(k - 1) .. msg)
 	end
 end

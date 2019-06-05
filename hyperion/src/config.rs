@@ -1,5 +1,8 @@
 //! Configuration model definitions
 
+mod color_format;
+pub use color_format::*;
+
 mod configuration;
 pub use configuration::*;
 
@@ -30,6 +33,7 @@ mod tests {
     fn sanitize_frequency() {
         let mut device = Device {
             name: "test".into(),
+            format: ColorFormat::default(),
             endpoint: Endpoint::Stdout { bits: 8 },
             leds: Vec::new(),
             frequency: -2.0,
@@ -45,6 +49,7 @@ mod tests {
     fn sanitize_idle() {
         let mut device = Device {
             name: "test".into(),
+            format: ColorFormat::default(),
             endpoint: Endpoint::Stdout { bits: 8 },
             leds: Vec::new(),
             frequency: 1.0,

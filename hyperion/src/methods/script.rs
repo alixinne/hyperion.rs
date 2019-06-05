@@ -12,6 +12,7 @@ use std::collections::BTreeMap as Map;
 
 use super::{LedInstance, Method};
 
+use crate::config::ColorFormat;
 use crate::filters::ColorFilter;
 use crate::runtime::IdleTracker;
 
@@ -159,6 +160,7 @@ impl Method for Script {
         filter: &ColorFilter,
         leds: &mut [LedInstance],
         idle_tracker: &mut IdleTracker,
+        format: &ColorFormat,
     ) {
         self.lua
             .context(|lua_ctx| -> std::result::Result<(), ScriptError> {
@@ -171,10 +173,12 @@ impl Method for Script {
                     let color_data = lua_ctx.create_table()?;
 
                     let current_color = led.next_value(time, &filter, idle_tracker);
-                    let (r, g, b) = current_color.as_rgb();
-                    color_data.set("r", r)?;
-                    color_data.set("g", g)?;
-                    color_data.set("b", b)?;
+                    let device_color = current_color.to_device(format);
+                    let formatted = device_color.format(format);
+
+                    for (idx, comp) in formatted.into_iter().enumerate() {
+                        color_data.set(idx + 1, comp)?;
+                    }
 
                     led_table.set(i + 1, color_data)?;
                 }
@@ -193,7 +197,7 @@ mod tests {
 
     use std::time::Instant;
 
-    use crate::config::{Filter, IdleSettings, Led};
+    use crate::config::{ColorFormat, Filter, IdleSettings, Led};
     use crate::filters::ColorFilter;
     use crate::runtime::IdleTracker;
 
@@ -206,7 +210,8 @@ mod tests {
         let filter = ColorFilter::from(Filter::default());
         let mut leds = vec![LedInstance::new(Led::default(), (1, 1))];
         let mut idle_tracker = IdleTracker::from(IdleSettings::default());
+        let format = ColorFormat::default();
 
-        method.write(time, &filter, &mut leds[..], &mut idle_tracker);
+        method.write(time, &filter, &mut leds[..], &mut idle_tracker, &format);
     }
 }

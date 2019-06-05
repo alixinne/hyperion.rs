@@ -2,7 +2,7 @@
 
 use std::time::Instant;
 
-use crate::config::Endpoint;
+use crate::config::{ColorFormat, Endpoint};
 use crate::filters::ColorFilter;
 use crate::runtime::{IdleTracker, LedInstance};
 
@@ -16,12 +16,14 @@ pub trait Method {
     /// * `filter`: filter to interpolate LED values
     /// * `leds`: reference to the LED state
     /// * `idle_tracker`: idle state tracker
+    /// * `format`: device color format
     fn write(
         &self,
         time: Instant,
         filter: &ColorFilter,
         leds: &mut [LedInstance],
         idle_tracker: &mut IdleTracker,
+        format: &ColorFormat,
     );
 }
 

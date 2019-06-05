@@ -9,6 +9,7 @@ use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
 use super::{LedInstance, Method};
 
+use crate::config::ColorFormat;
 use crate::filters::ColorFilter;
 use crate::runtime::IdleTracker;
 
@@ -59,21 +60,26 @@ impl Method for Udp {
         filter: &ColorFilter,
         leds: &mut [LedInstance],
         idle_tracker: &mut IdleTracker,
+        format: &ColorFormat,
     ) {
         // Get reference to buffer for UDP data
         let mut rgb_buffer = self.rgb_buffer.borrow_mut();
 
+        // Number of components per LED
+        let components = format.components();
+
         // Set correct buffer size
-        rgb_buffer.resize(leds.len() * 3usize, 0);
+        rgb_buffer.resize(leds.len() * components, 0);
 
         // Fill buffer with data
         for (i, led) in leds.iter_mut().enumerate() {
             let current_color = led.next_value(time, &filter, idle_tracker);
-            let (r, g, b) = current_color.as_rgb();
+            let device_color = current_color.to_device(format);
+            let formatted = device_color.format(format);
 
-            rgb_buffer[i * 3] = (r * 255.0f32) as u8;
-            rgb_buffer[i * 3 + 1] = (g * 255.0f32) as u8;
-            rgb_buffer[i * 3 + 2] = (b * 255.0f32) as u8;
+            for (idx, comp) in formatted.into_iter().enumerate() {
+                rgb_buffer[i * components + idx] = (comp * 255.0f32) as u8;
+            }
         }
 
         self.socket

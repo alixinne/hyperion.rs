@@ -34,7 +34,7 @@ devices:
       holds: true # This device holds the last command forever
       retries: 3  # Unreliable device, retry sending packets 3 times during idle updates
     endpoint:
-      type: upd
+      type: udp
       address: 192.168.0.27:19446 # Can also use hostnames, e.g. device.local:19446
     leds:
       # When facing the screen

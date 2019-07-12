@@ -15,6 +15,11 @@ fn default_rgbcw_order() -> String {
     "rgbcw".to_owned()
 }
 
+/// Default RGB white temperature
+fn default_rgb() -> f32 {
+    6800.
+}
+
 /// Default RGBW white temperature
 fn default_rgbw_white() -> f32 {
     6500.
@@ -40,6 +45,9 @@ pub enum ColorFormat {
         /// LED order string
         #[serde(default = "default_rgb_order")]
         order: String,
+        /// RGB White temperature
+        #[serde(default = "default_rgb")]
+        rgb: f32,
     },
     /// RGB + White
     #[serde(rename = "rgbw")]
@@ -47,6 +55,9 @@ pub enum ColorFormat {
         /// LED order string
         #[serde(default = "default_rgbw_order")]
         order: String,
+        /// RGB White temperature
+        #[serde(default = "default_rgb")]
+        rgb: f32,
         /// White temperature (Kelvin)
         #[serde(default = "default_rgbw_white")]
         white: f32,
@@ -57,6 +68,9 @@ pub enum ColorFormat {
         /// LED order string
         #[serde(default = "default_rgbcw_order")]
         order: String,
+        /// RGB White temperature
+        #[serde(default = "default_rgb")]
+        rgb: f32,
         /// Cold white temperature (Kelvin)
         #[serde(default = "default_rgbcw_cold_white")]
         cold_white: f32,
@@ -90,6 +104,7 @@ impl Default for ColorFormat {
     fn default() -> Self {
         ColorFormat::Rgb {
             order: default_rgb_order(),
+            rgb: default_rgb(),
         }
     }
 }

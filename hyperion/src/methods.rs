@@ -18,7 +18,7 @@ pub trait Method {
     /// * `idle_tracker`: idle state tracker
     /// * `format`: device color format
     fn write(
-        &self,
+        &mut self,
         time: Instant,
         filter: &ColorFilter,
         leds: &mut [LedInstance],

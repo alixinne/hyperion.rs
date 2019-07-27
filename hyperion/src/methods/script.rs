@@ -155,7 +155,7 @@ impl Script {
 
 impl Method for Script {
     fn write(
-        &self,
+        &mut self,
         time: Instant,
         filter: &ColorFilter,
         leds: &mut [LedInstance],
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn script_method() {
-        let method: Box<dyn Method> =
+        let mut method: Box<dyn Method> =
             Box::new(Script::new(&"../scripts/methods/stdout.lua", Map::new()).unwrap());
 
         let time = Instant::now();

@@ -7,15 +7,15 @@ edition = "2018"
 [dependencies]
 clap = { version = "2.33.0", features = ["yaml"] }
 failure = "0.1.5"
-futures = "0.1.27"
+futures = "0.1.28"
 stream-cancel = "0.4.4"
 hyperion = { path = "../hyperion" }
-log = "0.4.6"
-tokio = "0.1.20"
+log = "0.4.7"
+tokio = "0.1.22"
 tokio-signal = "0.2.7"
-regex = "1.1.6"
+regex = "1.2.0"
 serde_yaml = "0.8.9"
-env_logger = "0.6.1"
+env_logger = "0.6.2"
 
 piston_window = { version = "0.93.0", optional = true }
 image = { version = "0.21.1", optional = true }

@@ -88,6 +88,17 @@ This list details which devices are supported currently for outputting color dat
 * Raw 8-bit RGB UDP
 * Stdout (for debugging)
 
+Currently, both RGB and RGB+W LED arrangements are supported. The white component
+is computed from the RGB commands sent to the daemon, based on the white point
+(color temperature) of both the devices' RGB and W LEDs. This means that the W
+LED will be used to produce as much as possible of its "target" white, while the
+RGB LED will be used for colors, while also having its white point corrected.
+This requires estimating (or getting from the specs) the color temperature of
+the various LEDs in the device.
+
+RGBCW (RGB + Cold white + Warm white) is not supported yet and only the RGB LED
+will be used.
+
 ### Endpoint command status
 
 This table summarizes the commands supported by the JSON and Protobuf interfaces

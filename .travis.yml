@@ -12,6 +12,10 @@ cache: cargo
 script:
   - hash cargo-make || cargo install cargo-make
   - cargo make workspace-ci-flow --no-workspace
+  - |
+    if [ $TRAVIS_RUST_VERSION = stable ]; then
+      cargo make --no-workspace package-release
+    fi
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&
   [ $TRAVIS_PULL_REQUEST = false ] &&
@@ -25,3 +29,15 @@ after_success: |
 env:
   global:
     secure: XX0fboFSk93CUrHteI6+/a0h4A5MYQKbpYcjA6EvHX0zCgleYSGVdf6y8Q14KHwXyoZSbjpDLwK9QeG24072vwAfYrOMWxgHXs0e9drG9Pq6Nc7HO8NdYF4X/BXF6AcDemhHryhkORJwqHR78J6a7JCF259gqDTM3xehETfFmVTch+rKzTE2PseKPmqwc2ZYa4/UAFMDjxt6Us4tP+AthArNA9+0VNv73xpcvr25RdDWtFnBo5CWxLnJcVq9f7LSnfYEDWWJEpbs4MAraanjhHkzjoWk3ybGtwtgXJhYFlTPMK7VUuOE5AFZZHbsgFhAMkBoXAsJmpKmXmE8n1acGqpFQeTMRjwRg26niA6dLRIi+rjywJa7Pr+b94zuIqv8qBNjuckwI700KHWV0I/9t4AEl2Prfr6YoL10n+FVqGh9EJSkAmYHOK5I4AEFV+LQQHfaVxQ4OZ8U/4oZVWOLji1sM+YsDUPsPP9Wj3eDcKfxk6T+lCyJ2ZsazYY9u4uStO+8H0JfrRss+8QBqFY6Aq8aa6MxY2k08TGGlLw857WmZm20U5mqHxYoxAhSeAq+zTaFMSdeNafTqT/yDwuY/XXSnckusHNpgueeXG8svkkP+I+Ami8wXT7XXDpEPMdzUqNMMKiszVEgugtwfzya+H6UIG5XQImR7MsNnHw5yV4=
+deploy:
+  provider: releases
+  draft: true
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
+  api_key:
+    secure: OpkNCQSn4kM8bFE6W/JCfj5Nk4wYBGmUyB+DoBMhAAQNHUqPPJhu1p5LdnN7TUBn4GwYC8sO4FRel0xT3ROwESZdyFZoEvMaOG6nR8d1D90GALPGu48MDtFS5NZyncctQueanUgvRoSV0wd6sxroFm01etZ7EBSvEZ/FfBnwTb1oh2VyIXQxZYsmExD5sDt7Q81cIvdpZs+6Itjr1/pCgv+lp0iI7reOTJjIlN4/hTbz9uNkl1Vm7fQ7HAHSH9xO4p1zxmCUh8EqKPdqki0BewO2FxPkXIl8L+fj7WCja38gK9w48+ClSxcmMiNSPo9PexCgZbkMLN6QnM9bT/vP7Zv3VS87wDAydSlmm7FjJP/2TTB1FowUiTH8VcceEdsyH3P3kgJ6bmE4xuUwFjoanLd/nWfI2AihPDAw2zc6Y3CAJobfqaZJfzZlaIPW39QgvH7L+3TARwtF3bg3zIwe/F4bvYAjD8Z8cn7ZSqdyq0k2p24RD1F7MmKgdxx7GMSEsefPrRDf+hSHy12YclErzo7NoCqfiao1/1Hd8z2KbQOyLruXXIFeFj/LbPeWVqNSk/DL1bvCPfzJ7NqiSh5RRtVbMvrRWLLqkK+pJTineWIjc7u7qZFpSrCk9l6kq56JghiXUzfftzVgR9qgJXe1g8yBMQ5Mn+J1LckO6bUQzMM=
+  file: hyperion.rs-release.tar.gz
+  on:
+    repo: vtavernier/hyperion.rs
+    tags: true

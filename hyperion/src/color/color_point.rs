@@ -132,7 +132,7 @@ impl ColorPoint {
     /// * `format`: color format to convert to
     pub fn to_device(&self, format: &config::ColorFormat) -> DeviceColor {
         match format {
-            config::ColorFormat::Rgb { rgb, .. } => {
+            config::ColorFormat::Rgb { rgb, gamma, .. } => {
                 // Whitebalance the RGB white
                 let (r, g, b) = whitebalance(
                     LinSrgb::from(self.value),
@@ -141,9 +141,13 @@ impl ColorPoint {
                 )
                 .into_components();
 
-                DeviceColor::Rgb { r, g, b }
+                DeviceColor::Rgb {
+                    r: r.powf(gamma.r),
+                    g: g.powf(gamma.g),
+                    b: b.powf(gamma.b),
+                }
             }
-            config::ColorFormat::Rgbw { rgb, white, .. } => {
+            config::ColorFormat::Rgbw { rgb, white, gamma, .. } => {
                 let rgb_value = LinSrgb::from(self.value);
                 let dest_white = get_whitepoint(*white);
 
@@ -160,9 +164,14 @@ impl ColorPoint {
                 let (r, g, b) =
                     whitebalance(rgb_value, dest_white, get_whitepoint(*rgb)).into_components();
 
-                DeviceColor::Rgbw { r, g, b, w }
+                DeviceColor::Rgbw {
+                    r: r.powf(gamma.r),
+                    g: g.powf(gamma.g),
+                    b: b.powf(gamma.b),
+                    w: w.powf(gamma.w),
+                }
             }
-            config::ColorFormat::Rgbcw { rgb, .. } => {
+            config::ColorFormat::Rgbcw { rgb, gamma, .. } => {
                 // Whitebalance the RGB white
                 let (r, g, b) = whitebalance(
                     LinSrgb::from(self.value),
@@ -173,11 +182,11 @@ impl ColorPoint {
 
                 // TODO: Implement RGBCW
                 DeviceColor::Rgbcw {
-                    r,
-                    g,
-                    b,
-                    c: 0.,
-                    w: 0.,
+                    r: r.powf(gamma.r),
+                    g: g.powf(gamma.g),
+                    b: b.powf(gamma.b),
+                    c: 0.0f32.powf(gamma.c),
+                    w: 0.0f32.powf(gamma.w),
                 }
             }
         }

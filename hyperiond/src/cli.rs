@@ -98,7 +98,7 @@ pub fn run() -> Result<(), failure::Error> {
         };
 
         let (hyperion, sender) =
-            hyperion::hyperion::Hyperion::new(configuration, disable_devices, debug_listener)?;
+            hyperion::hyperion::Service::new(configuration, disable_devices, debug_listener)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,

@@ -10,11 +10,10 @@ use rlua::{Function, Lua};
 use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
 
-use super::{LedInstance, Method};
-
 use crate::config::ColorFormat;
 use crate::filters::ColorFilter;
-use crate::runtime::IdleTracker;
+use crate::methods::Method;
+use crate::runtime::{IdleTracker, LedInstance};
 
 /// Dummy LED device which outputs updates to the standard output
 pub struct Script {

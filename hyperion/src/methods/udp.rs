@@ -13,11 +13,10 @@ use tokio::net::udp::UdpSocket;
 
 use futures::Future;
 
-use super::{LedInstance, Method};
-
 use crate::config::ColorFormat;
 use crate::filters::ColorFilter;
-use crate::runtime::IdleTracker;
+use crate::methods::Method;
+use crate::runtime::{IdleTracker, LedInstance};
 
 /// State of the UDP socket in the async runtime
 #[derive(Debug)]

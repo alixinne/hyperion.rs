@@ -18,6 +18,44 @@ pub struct ColorPoint {
     value: palette::Color,
 }
 
+/// Min value
+macro_rules! min {
+    ($x: expr) => ($x);
+    ($x: expr, $($z: expr),+) => {{
+        let y = min!($($z),*);
+        if $x < y {
+            $x
+        } else {
+            y
+        }
+    }}
+}
+
+/// Get the min value of all channels
+fn color_min(c: LinSrgb) -> f32 {
+    let (r, g, b) = c.into_components();
+    min!(r, g, b)
+}
+
+/// Max value
+macro_rules! max {
+    ($x: expr) => ($x);
+    ($x: expr, $($z: expr),+) => {{
+        let y = max!($($z),*);
+        if $x > y {
+            $x
+        } else {
+            y
+        }
+    }}
+}
+
+/// Get the max value of all channels
+fn color_max(c: LinSrgb) -> f32 {
+    let (r, g, b) = c.into_components();
+    max!(r, g, b)
+}
+
 /// Return the whitepoint for a given temperature
 ///
 /// # Parameters
@@ -65,31 +103,12 @@ fn get_whitepoint(t: f32) -> LinSrgb {
 /// Transforms the given color to fix its white balance
 fn whitebalance(c: LinSrgb, src_white: LinSrgb, dst_white: LinSrgb) -> LinSrgb {
     let corr = dst_white / src_white;
-    c * corr
+    c * corr / color_max(corr)
 }
 
 /// Get the LinSrgb white
 fn srgb_white() -> LinSrgb {
     LinSrgb::from_components((1.0, 1.0, 1.0))
-}
-
-/// Min value
-macro_rules! min {
-    ($x: expr) => ($x);
-    ($x: expr, $($z: expr),+) => {{
-        let y = min!($($z),*);
-        if $x < y {
-            $x
-        } else {
-            y
-        }
-    }}
-}
-
-/// Get the min value of all channels
-fn color_min(c: LinSrgb) -> f32 {
-    let (r, g, b) = c.into_components();
-    min!(r, g, b)
 }
 
 impl ColorPoint {
@@ -138,8 +157,8 @@ impl ColorPoint {
                 // Whitebalance the RGB white
                 let (r, g, b) = whitebalance(
                     LinSrgb::from(self.value),
-                    srgb_white(),
                     get_whitepoint(*rgb),
+                    srgb_white(),
                 )
                 .into_components();
 
@@ -156,7 +175,7 @@ impl ColorPoint {
                 let dest_white = get_whitepoint(*white);
 
                 // Move RGB value to white space
-                let white_rgb = whitebalance(rgb_value, srgb_white(), dest_white);
+                let white_rgb = whitebalance(rgb_value, dest_white, srgb_white());
 
                 // Get white value
                 let w = color_min(white_rgb);
@@ -166,7 +185,7 @@ impl ColorPoint {
 
                 // Whitebalance the RGB white
                 let (r, g, b) =
-                    whitebalance(rgb_value, dest_white, get_whitepoint(*rgb)).into_components();
+                    whitebalance(rgb_value, get_whitepoint(*rgb), dest_white).into_components();
 
                 DeviceColor::Rgbw {
                     r: r.powf(gamma.r),
@@ -179,8 +198,8 @@ impl ColorPoint {
                 // Whitebalance the RGB white
                 let (r, g, b) = whitebalance(
                     LinSrgb::from(self.value),
-                    srgb_white(),
                     get_whitepoint(*rgb),
+                    srgb_white(),
                 )
                 .into_components();
 

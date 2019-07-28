@@ -123,10 +123,7 @@ impl Future for Service {
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         // Poll channel for state updates
-        while let Async::Ready(value) = self
-            .priority_muxer
-            .poll()?
-        {
+        while let Async::Ready(value) = self.priority_muxer.poll()? {
             if let Some(state_update) = value {
                 self.handle_update(state_update);
             } else {

@@ -149,7 +149,9 @@ impl ColorPoint {
                     b: b.powf(gamma.b),
                 }
             }
-            config::ColorFormat::Rgbw { rgb, white, gamma, .. } => {
+            config::ColorFormat::Rgbw {
+                rgb, white, gamma, ..
+            } => {
                 let rgb_value = LinSrgb::from(self.value);
                 let dest_white = get_whitepoint(*white);
 

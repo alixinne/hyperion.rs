@@ -86,8 +86,12 @@ impl Input {
     /// * `duration`: duration of the update
     pub fn from_full(update: StateUpdate, priority: i32, duration: Option<i32>) -> Self {
         match duration {
-            Some(duration) if duration > 0 => Input::Full { update, priority, duration: Duration::from_millis(duration.try_into().unwrap()) },
-            _ => Input::Priority { update, priority }
+            Some(duration) if duration > 0 => Input::Full {
+                update,
+                priority,
+                duration: Duration::from_millis(duration.try_into().unwrap()),
+            },
+            _ => Input::Priority { update, priority },
         }
     }
 }

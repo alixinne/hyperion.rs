@@ -552,7 +552,7 @@ dependencies = [
 
 [[package]]
 name = "hyperion"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "approx 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -578,13 +578,13 @@ dependencies = [
 
 [[package]]
 name = "hyperiond"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyperion 0.1.0",
+ "hyperion 0.1.1",
  "image 0.21.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "piston_window 0.93.0 (registry+https://github.com/rust-lang/crates.io-index)",

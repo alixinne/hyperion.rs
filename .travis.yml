@@ -37,7 +37,7 @@ deploy:
   skip_cleanup: true
   api_key:
     secure: OpkNCQSn4kM8bFE6W/JCfj5Nk4wYBGmUyB+DoBMhAAQNHUqPPJhu1p5LdnN7TUBn4GwYC8sO4FRel0xT3ROwESZdyFZoEvMaOG6nR8d1D90GALPGu48MDtFS5NZyncctQueanUgvRoSV0wd6sxroFm01etZ7EBSvEZ/FfBnwTb1oh2VyIXQxZYsmExD5sDt7Q81cIvdpZs+6Itjr1/pCgv+lp0iI7reOTJjIlN4/hTbz9uNkl1Vm7fQ7HAHSH9xO4p1zxmCUh8EqKPdqki0BewO2FxPkXIl8L+fj7WCja38gK9w48+ClSxcmMiNSPo9PexCgZbkMLN6QnM9bT/vP7Zv3VS87wDAydSlmm7FjJP/2TTB1FowUiTH8VcceEdsyH3P3kgJ6bmE4xuUwFjoanLd/nWfI2AihPDAw2zc6Y3CAJobfqaZJfzZlaIPW39QgvH7L+3TARwtF3bg3zIwe/F4bvYAjD8Z8cn7ZSqdyq0k2p24RD1F7MmKgdxx7GMSEsefPrRDf+hSHy12YclErzo7NoCqfiao1/1Hd8z2KbQOyLruXXIFeFj/LbPeWVqNSk/DL1bvCPfzJ7NqiSh5RRtVbMvrRWLLqkK+pJTineWIjc7u7qZFpSrCk9l6kq56JghiXUzfftzVgR9qgJXe1g8yBMQ5Mn+J1LckO6bUQzMM=
-  file: hyperion.rs-release.tar.gz
+  file: "hyperion.rs-*.tar.gz"
   on:
     repo: vtavernier/hyperion.rs
     tags: true

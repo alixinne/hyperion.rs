@@ -24,6 +24,8 @@ pub struct ColorPoint {
 ///
 /// * `t`: temperature in Kelvin
 fn get_whitepoint(t: f32) -> LinSrgb {
+    let t = f64::from(t);
+
     // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
     //
     // Check bounds on temperature
@@ -36,13 +38,13 @@ fn get_whitepoint(t: f32) -> LinSrgb {
     let r = if t <= 66.0 {
         255.0
     } else {
-        329.698727446 * (t - 60.0).powf(-0.1332047592)
+        329.698_727_446 * (t - 60.0).powf(-0.133_204_759_2)
     };
 
     let g = if t <= 66.0 {
-        99.4708025861 * t.ln() - 161.1195681661
+        99.470_802_586_1 * t.ln() - 161.119_568_166_1
     } else {
-        288.1221695283 * (t - 60.0).powf(-0.0755148492)
+        288.122_169_528_3 * (t - 60.0).powf(-0.075_514_849_2)
     };
 
     let b = if t >= 66.0 {
@@ -50,14 +52,14 @@ fn get_whitepoint(t: f32) -> LinSrgb {
     } else if t <= 19.0 {
         0.0
     } else {
-        138.5177312231 * (t - 10.0).ln() - 305.0447927307
+        138.517_731_223_1 * (t - 10.0).ln() - 305.044_792_730_7
     };
 
     let r = if r > 255.0 { 255.0 } else { r };
     let g = if g > 255.0 { 255.0 } else { g };
     let b = if b > 255.0 { 255.0 } else { b };
 
-    LinSrgb::from_components((r / 255.0, g / 255.0, b / 255.0))
+    LinSrgb::from_components(((r / 255.0) as f32, (g / 255.0) as f32, (b / 255.0) as f32))
 }
 
 /// Transforms the given color to fix its white balance

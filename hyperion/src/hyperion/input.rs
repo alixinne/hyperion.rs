@@ -35,7 +35,7 @@ impl Input {
     pub fn get_duration(&self) -> Duration {
         match self {
             Input::Full { duration, .. } => *duration,
-            _ => Duration::from_millis(std::u32::MAX as u64),
+            _ => Duration::from_millis(u64::from(std::u32::MAX)),
         }
     }
 

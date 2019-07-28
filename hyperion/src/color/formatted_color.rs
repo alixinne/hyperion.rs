@@ -38,7 +38,9 @@ impl<'a> IntoIterator for FormattedColor<'a> {
 
 /// Formatted color component iterator
 pub struct FormattedColorIter<'a> {
+    /// Currently formatted color
     formatted_color: FormattedColor<'a>,
+    /// Position in the iteration of the components
     pos: usize,
 }
 
@@ -63,8 +65,7 @@ impl<'a> Iterator for FormattedColorIter<'a> {
                 .format
                 .order()
                 .chars()
-                .skip(pos)
-                .next()
+                .nth(pos)
                 .map(|ch| self.formatted_color.color.get_component(ch))
                 .unwrap_or(None) // If string too short
                 .unwrap_or(0.), // If component not found

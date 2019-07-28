@@ -9,7 +9,7 @@ use tokio::prelude::*;
 use tokio::codec::Framed;
 
 use crate::color;
-use crate::hyperion::StateUpdate;
+use crate::hyperion::{Input, StateUpdate};
 use crate::image::RawImage;
 
 use futures::sync::mpsc;
@@ -36,7 +36,7 @@ use codec::*;
 /// * When the server can't be bound to the given address
 pub fn bind(
     address: &SocketAddr,
-    sender: mpsc::UnboundedSender<StateUpdate>,
+    sender: mpsc::UnboundedSender<Input>,
     tripwire: stream_cancel::Tripwire,
 ) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
     let listener = TcpListener::bind(&address)?;
@@ -57,38 +57,49 @@ pub fn bind(
                 trace!("processing request: {:?}", request);
 
                 let reply = match request {
-                    HyperionMessage::ClearAll | HyperionMessage::Clear { .. } => {
-                        // TODO: clear: handle priority
-
+                    HyperionMessage::ClearAll => {
                         // Update state
-                        sender.unbounded_send(StateUpdate::ClearAll).unwrap();
+                        sender
+                            .unbounded_send(Input::new(StateUpdate::Clear))
+                            .unwrap();
 
                         HyperionResponse::SuccessResponse { success: true }
                     }
-                    HyperionMessage::Color { color, .. } => {
-                        // TODO: color: handle priority and duration
+                    HyperionMessage::Clear { priority } => {
+                        // Update state
+                        sender
+                            .unbounded_send(Input::from_priority(StateUpdate::Clear, priority))
+                            .unwrap();
+
+                        HyperionResponse::SuccessResponse { success: true }
+                    }
+                    HyperionMessage::Color {
+                        priority,
+                        duration,
+                        color,
+                    } => {
+                        let update = StateUpdate::SolidColor {
+                            color: color::ColorPoint::from_rgb((
+                                f32::from(color[0]) / 255.0,
+                                f32::from(color[1]) / 255.0,
+                                f32::from(color[2]) / 255.0,
+                            )),
+                        };
 
                         // Update state
                         sender
-                            .unbounded_send(StateUpdate::SolidColor {
-                                color: color::ColorPoint::from_rgb((
-                                    f32::from(color[0]) / 255.0,
-                                    f32::from(color[1]) / 255.0,
-                                    f32::from(color[2]) / 255.0,
-                                )),
-                            })
+                            .unbounded_send(Input::from_full(update, priority, duration))
                             .unwrap();
 
                         HyperionResponse::SuccessResponse { success: true }
                     }
                     HyperionMessage::Image {
+                        priority,
+                        duration,
                         imagewidth,
                         imageheight,
                         imagedata,
-                        ..
                     } => {
-                        // TODO: image: handle priority and duration
-
                         // Try to convert sizes to unsigned fields
                         u32::try_from(imagewidth)
                             .and_then(|imagewidth| {
@@ -102,7 +113,11 @@ pub fn bind(
                                     .map(|raw_image| {
                                         // Update state
                                         sender
-                                            .unbounded_send(StateUpdate::Image(raw_image))
+                                            .unbounded_send(Input::from_full(
+                                                StateUpdate::Image(raw_image),
+                                                priority,
+                                                duration,
+                                            ))
                                             .unwrap();
 
                                         HyperionResponse::SuccessResponse { success: true }

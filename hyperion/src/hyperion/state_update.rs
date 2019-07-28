@@ -7,7 +7,7 @@ use crate::image;
 #[derive(Debug, Clone)]
 pub enum StateUpdate {
     /// Clear all devices
-    ClearAll,
+    Clear,
     /// Set all devices to a given color
     SolidColor {
         /// Color to apply to the devices

@@ -72,7 +72,7 @@ mod ui {
                         // Debug message
                         match debug_msg {
                             DebugMessage::StateUpdate(state_update) => match state_update {
-                                StateUpdate::ClearAll => {
+                                StateUpdate::Clear => {
                                     state = GuiMode::SolidColor([0., 0., 0., 1.0]);
                                 }
                                 StateUpdate::SolidColor { color } => {

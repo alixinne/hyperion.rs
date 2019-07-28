@@ -12,7 +12,7 @@ use regex::Regex;
 use crate::color;
 use crate::config::Configuration;
 use crate::image::Processor;
-use crate::runtime::Devices;
+use crate::runtime::{Devices, PriorityMuxer};
 
 mod debug_message;
 pub use debug_message::*;
@@ -20,13 +20,16 @@ pub use debug_message::*;
 mod hyperion_error;
 pub use hyperion_error::*;
 
+mod input;
+pub use input::*;
+
 mod state_update;
 pub use state_update::*;
 
 /// Hyperion service state
 pub struct Hyperion {
-    /// Receiver for update messages
-    receiver: mpsc::UnboundedReceiver<StateUpdate>,
+    /// Priority muxer
+    priority_muxer: PriorityMuxer,
     /// Device runtime data
     devices: Devices,
     /// Image processor
@@ -48,7 +51,7 @@ impl Hyperion {
         mut configuration: Configuration,
         disable_devices: Option<Regex>,
         debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
-    ) -> Result<(Self, mpsc::UnboundedSender<StateUpdate>), HyperionError> {
+    ) -> Result<(Self, mpsc::UnboundedSender<Input>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
 
@@ -72,9 +75,11 @@ impl Hyperion {
 
         let devices = Devices::try_from(devices).map_err(HyperionError::from)?;
 
+        let priority_muxer = PriorityMuxer::new(receiver);
+
         Ok((
             Self {
-                receiver,
+                priority_muxer,
                 devices,
                 image_processor: Default::default(),
                 debug_listener,
@@ -102,7 +107,7 @@ impl Hyperion {
         let now = Instant::now();
 
         match update {
-            StateUpdate::ClearAll => {
+            StateUpdate::Clear => {
                 debug!("clearing all leds");
                 self.devices
                     .set_all_leds(now, color::ColorPoint::default(), false);
@@ -129,12 +134,10 @@ impl Future for Hyperion {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         // Poll channel for state updates
         while let Async::Ready(value) = self
-            .receiver
-            .poll()
-            .map_err(|_| HyperionError::ChannelReceiveFailed)?
+            .priority_muxer
+            .poll()?
         {
             if let Some(state_update) = value {
-                trace!("got state update: {:?}", state_update);
                 self.handle_update(state_update);
             } else {
                 return Ok(Async::Ready(()));

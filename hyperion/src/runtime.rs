@@ -11,3 +11,6 @@ pub use idle_tracker::*;
 
 mod led_instance;
 pub use led_instance::*;
+
+mod priority_muxer;
+pub use priority_muxer::*;

@@ -9,7 +9,7 @@ use tokio::prelude::*;
 use tokio::codec::Framed;
 
 use crate::color;
-use crate::hyperion::StateUpdate;
+use crate::hyperion::{Input, StateUpdate};
 use crate::image::RawImage;
 
 use futures::sync::mpsc;
@@ -48,7 +48,7 @@ fn success_response(success: bool) -> message::HyperionReply {
 /// * When the server can't be bound to the given address
 pub fn bind(
     address: &SocketAddr,
-    sender: mpsc::UnboundedSender<StateUpdate>,
+    sender: mpsc::UnboundedSender<Input>,
     tripwire: stream_cancel::Tripwire,
 ) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
     let listener = TcpListener::bind(&address)?;
@@ -69,11 +69,22 @@ pub fn bind(
                 trace!("got request: {:?}", request);
 
                 let reply = match request {
-                    HyperionRequest::ClearAllRequest(_) | HyperionRequest::ClearRequest(_) => {
+                    HyperionRequest::ClearAllRequest(_) => {
                         // Update state
-                        sender.unbounded_send(StateUpdate::ClearAll).unwrap();
+                        sender
+                            .unbounded_send(Input::new(StateUpdate::Clear))
+                            .unwrap();
 
-                        // TODO: clear: handle priority
+                        success_response(true)
+                    }
+                    HyperionRequest::ClearRequest(clear_request) => {
+                        // Update state
+                        sender
+                            .unbounded_send(Input::from_priority(
+                                StateUpdate::Clear,
+                                clear_request.priority,
+                            ))
+                            .unwrap();
 
                         success_response(true)
                     }
@@ -85,17 +96,19 @@ pub fn bind(
                             (color & 0x00FF_0000) >> 16,
                         );
 
-                        // TODO: color: handle priority and duration
-
                         // Update state
                         sender
-                            .unbounded_send(StateUpdate::SolidColor {
-                                color: color::ColorPoint::from_rgb((
-                                    color.0 as f32 / 255.0,
-                                    color.1 as f32 / 255.0,
-                                    color.2 as f32 / 255.0,
-                                )),
-                            })
+                            .unbounded_send(Input::from_full(
+                                StateUpdate::SolidColor {
+                                    color: color::ColorPoint::from_rgb((
+                                        color.0 as f32 / 255.0,
+                                        color.1 as f32 / 255.0,
+                                        color.2 as f32 / 255.0,
+                                    )),
+                                },
+                                color_request.priority,
+                                color_request.duration,
+                            ))
                             .unwrap();
 
                         success_response(true)
@@ -104,8 +117,8 @@ pub fn bind(
                         let data = image_request.imagedata;
                         let width = image_request.imagewidth;
                         let height = image_request.imageheight;
-
-                        // TODO: image: handle priority and duration
+                        let priority = image_request.priority;
+                        let duration = image_request.duration;
 
                         // Try to convert sizes to unsigned fields
                         u32::try_from(width)
@@ -119,7 +132,11 @@ pub fn bind(
                                     .map(|raw_image| {
                                         // Update state
                                         sender
-                                            .unbounded_send(StateUpdate::Image(raw_image))
+                                            .unbounded_send(Input::from_full(
+                                                StateUpdate::Image(raw_image),
+                                                priority,
+                                                duration,
+                                            ))
                                             .unwrap();
 
                                         success_response(true)

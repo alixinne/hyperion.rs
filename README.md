@@ -113,18 +113,16 @@ to the Hyperion server.
 | Command     | JSON  | Protobuf |
 | ----------- | ----- | -------- |
 | Adjustment  | ❌     | N.A.     |
-| Clear       | ✔ (1) | ✔ (1)    |
+| Clear       | ✔     | ✔        |
 | ClearAll    | ✔     | ✔        |
-| Color       | ✔ (2) | ✔ (2)    |
+| Color       | ✔     | ✔        |
 | Correction  | ❌     | N.A.     |
 | Effect      | ❌     | N.A.     |
-| Image       | ✔ (2) | ✔ (2)    |
+| Image       | ✔     | ✔        |
 | ServerInfo  | ❌     | N.A.     |
 | Temperature | ❌     | N.A.     |
 | Transform   | ❌     | N.A.     |
 
-* (1): no support for the priority field
-* (2): no support for the priority and duration fields
 * N.A.: not defined for the protocol
 
 ### Image processing

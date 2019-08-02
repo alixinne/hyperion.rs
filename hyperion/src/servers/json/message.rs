@@ -1,5 +1,3 @@
-use std::fmt;
-
 /// Change color adjustement values
 #[derive(Debug, Deserialize)]
 pub struct Adjustment {

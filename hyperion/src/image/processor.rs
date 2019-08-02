@@ -35,7 +35,7 @@ impl Pixel {
 
     /// Compute the mean of this pixel
     pub fn mean(&self) -> color::ColorPoint {
-        color::ColorPoint::from_rgb((
+        color::ColorPoint::from((
             self.color[0] / self.count as f32,
             self.color[1] / self.count as f32,
             self.color[2] / self.count as f32,

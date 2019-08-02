@@ -79,7 +79,7 @@ pub fn bind(
                         color,
                     } => {
                         let update = StateUpdate::SolidColor {
-                            color: color::ColorPoint::from_rgb((
+                            color: color::ColorPoint::from((
                                 f32::from(color[0]) / 255.0,
                                 f32::from(color[1]) / 255.0,
                                 f32::from(color[2]) / 255.0,

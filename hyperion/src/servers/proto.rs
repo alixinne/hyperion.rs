@@ -91,19 +91,19 @@ pub fn bind(
                     HyperionRequest::ColorRequest(color_request) => {
                         let color = color_request.rgb_color;
                         let color = (
-                            color & 0x000_000FF,
-                            (color & 0x0000_FF00) >> 8,
-                            (color & 0x00FF_0000) >> 16,
+                            (color & 0x000_000FF) as u8,
+                            ((color & 0x0000_FF00) >> 8) as u8,
+                            ((color & 0x00FF_0000) >> 16) as u8,
                         );
 
                         // Update state
                         sender
                             .unbounded_send(Input::from_full(
                                 StateUpdate::SolidColor {
-                                    color: color::ColorPoint::from_rgb((
-                                        color.0 as f32 / 255.0,
-                                        color.1 as f32 / 255.0,
-                                        color.2 as f32 / 255.0,
+                                    color: color::ColorPoint::from((
+                                        color.0,
+                                        color.1,
+                                        color.2,
                                     )),
                                 },
                                 color_request.priority,

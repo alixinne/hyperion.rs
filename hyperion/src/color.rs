@@ -8,3 +8,6 @@ pub use device_color::*;
 
 mod formatted_color;
 pub use formatted_color::*;
+
+mod utils;
+pub use utils::*;

@@ -1,5 +1,7 @@
 //! Definition of the ColorFormat type
 
+use crate::color::ColorPoint;
+
 /// Default RGB LED order
 fn default_rgb_order() -> String {
     "rgb".to_owned()
@@ -16,23 +18,23 @@ fn default_rgbcw_order() -> String {
 }
 
 /// Default RGB white temperature
-fn default_rgb() -> f32 {
-    6800.
+fn default_rgb() -> ColorPoint {
+    ColorPoint::srgb_white()
 }
 
 /// Default RGBW white temperature
-fn default_rgbw_white() -> f32 {
-    6500.
+fn default_rgbw_white() -> ColorPoint {
+    ColorPoint::from_kelvin(6500.)
 }
 
 /// Default RGBCW cold white temperature
-fn default_rgbcw_cold_white() -> f32 {
-    6500.
+fn default_rgbcw_cold_white() -> ColorPoint {
+    ColorPoint::from_kelvin(6500.)
 }
 
 /// Default RGBCW warm white temperature
-fn default_rgbcw_warm_white() -> f32 {
-    2800.
+fn default_rgbcw_warm_white() -> ColorPoint {
+    ColorPoint::from_kelvin(2800.)
 }
 
 /// Default gamma value
@@ -134,9 +136,9 @@ pub enum ColorFormat {
         /// LED order string
         #[serde(default = "default_rgb_order")]
         order: String,
-        /// RGB White temperature
+        /// RGB White point
         #[serde(default = "default_rgb")]
-        rgb: f32,
+        rgb: ColorPoint,
         /// Gamma values
         #[serde(default)]
         gamma: RgbGamma,
@@ -149,10 +151,10 @@ pub enum ColorFormat {
         order: String,
         /// RGB White temperature
         #[serde(default = "default_rgb")]
-        rgb: f32,
+        rgb: ColorPoint,
         /// White temperature (Kelvin)
         #[serde(default = "default_rgbw_white")]
-        white: f32,
+        white: ColorPoint,
         /// Gamma values
         #[serde(default)]
         gamma: RgbwGamma,
@@ -165,13 +167,13 @@ pub enum ColorFormat {
         order: String,
         /// RGB White temperature
         #[serde(default = "default_rgb")]
-        rgb: f32,
+        rgb: ColorPoint,
         /// Cold white temperature (Kelvin)
         #[serde(default = "default_rgbcw_cold_white")]
-        cold_white: f32,
+        cold_white: ColorPoint,
         /// Warm white temperature (Kelvin)
         #[serde(default = "default_rgbcw_warm_white")]
-        warm_white: f32,
+        warm_white: ColorPoint,
         /// Gamma values
         #[serde(default)]
         gamma: RgbcwGamma,

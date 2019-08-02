@@ -6,6 +6,9 @@ use std::convert::TryFrom;
 
 use futures::{Async, Future, Poll};
 
+use num_traits::Float;
+use std::ops::AddAssign;
+
 use crate::color;
 use crate::config::{Correction, Device};
 use crate::image::*;
@@ -43,10 +46,10 @@ impl Devices {
     /// * `image_processor`: image processor instance
     /// * `raw_image`: raw RGB image
     /// * `immediate`: apply change immediately (skipping filtering)
-    pub fn set_from_image(
+    pub fn set_from_image<T: Float + AddAssign + Default>(
         &mut self,
         time: Instant,
-        image_processor: &mut Processor,
+        image_processor: &mut Processor<T>,
         raw_image: RawImage,
         immediate: bool,
     ) {

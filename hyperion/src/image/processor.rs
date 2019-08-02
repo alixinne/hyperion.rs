@@ -4,18 +4,21 @@ use crate::color;
 use crate::runtime::LedInstance;
 use std::cmp::min;
 
+use num_traits::Float;
+use std::ops::AddAssign;
+
 use super::RawImage;
 
 /// Image pixel accumulator
 #[derive(Default, Clone)]
-struct Pixel {
+struct Pixel<T: Float + AddAssign + Default> {
     /// Accumulated color
-    color: [f32; 3],
+    color: [T; 3],
     /// Number of samples
-    count: usize,
+    count: T,
 }
 
-impl Pixel {
+impl<T: Float + AddAssign + Default> Pixel<T> {
     /// Reset this pixels' value and sample count
     pub fn reset(&mut self) {
         *self = Self::default();
@@ -26,45 +29,62 @@ impl Pixel {
     /// # Parameters
     ///
     /// * `(r, g, b)`: sampled RGB values
-    pub fn sample(&mut self, (r, g, b): (u8, u8, u8)) {
-        self.color[0] += f32::from(r) / 255.0;
-        self.color[1] += f32::from(g) / 255.0;
-        self.color[2] += f32::from(b) / 255.0;
-        self.count += 1;
+    /// * `area_factor`: weight of the current sample. 1.0 is the weight of a sample which covers
+    /// the entire matching LED area.
+    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), area_factor: T) {
+        use num_traits::NumCast;
+
+        if area_factor < NumCast::from(0.0).unwrap() || area_factor > NumCast::from(1.0).unwrap() {
+            panic!("area_factor out of range");
+        }
+
+        self.color[0] += area_factor * T::from(r).unwrap() / NumCast::from(255.0).unwrap();
+        self.color[1] += area_factor * T::from(g).unwrap() / NumCast::from(255.0).unwrap();
+        self.color[2] += area_factor * T::from(b).unwrap() / NumCast::from(255.0).unwrap();
+        self.count += area_factor;
     }
 
     /// Compute the mean of this pixel
     pub fn mean(&self) -> color::ColorPoint {
-        color::ColorPoint::from((
-            self.color[0] / self.count as f32,
-            self.color[1] / self.count as f32,
-            self.color[2] / self.count as f32,
-        ))
+        use num_traits::NumCast;
+
+        let rgb: (f32, f32, f32) = (
+            NumCast::from(self.color[0] / self.count).unwrap(),
+            NumCast::from(self.color[1] / self.count).unwrap(),
+            NumCast::from(self.color[2] / self.count).unwrap(),
+        );
+
+        color::ColorPoint::from(rgb)
     }
 }
 
 /// Raw image data processor
 #[derive(Default)]
-pub struct Processor {
+pub struct Processor<T: Float + AddAssign + Default> {
     /// Width of the LED map
     width: usize,
     /// Height of the LED map
     height: usize,
-    /// 2D row-major list of (color_idx, device_idx, led_idx)
-    led_map: Vec<Vec<(usize, usize, usize)>>,
+    /// 2D row-major list of (color_idx, device_idx, led_idx, area_factor)
+    led_map: Vec<Vec<(usize, usize, usize, T)>>,
     /// Color storage for every known LED
-    color_map: Vec<Pixel>,
+    color_map: Vec<Pixel<T>>,
 }
 
 /// Image processor reference with LED details
-pub struct ProcessorWithDevices<'p, 'a, I: Iterator<Item = (usize, &'a LedInstance, usize)>> {
+pub struct ProcessorWithDevices<
+    'p,
+    'a,
+    I: Iterator<Item = (usize, &'a LedInstance, usize)>,
+    T: Float + AddAssign + Default,
+> {
     /// Image processor
-    processor: &'p mut Processor,
+    processor: &'p mut Processor<T>,
     /// Device LEDs iterator
     leds: I,
 }
 
-impl Processor {
+impl<T: Float + AddAssign + Default> Processor<T> {
     /// Allocates the image processor working memory
     ///
     /// # Parameters
@@ -120,7 +140,16 @@ impl Processor {
                         && led.1.spec.vscan.min < y_max
                         && led.1.spec.vscan.max >= y_min
                     {
-                        led_map[map_index].push((index, led.0, led.2));
+                        // Compute area of pixel covered by scan parameter
+                        let x_range =
+                            x_max.min(led.1.spec.hscan.max) - x_min.max(led.1.spec.hscan.min);
+                        let y_range =
+                            y_max.min(led.1.spec.vscan.max) - y_min.max(led.1.spec.vscan.min);
+                        let area = x_range * y_range;
+                        let factor = T::from(area).unwrap()
+                            / (T::from(1.0).unwrap() / T::from(width * height).unwrap());
+
+                        led_map[map_index].push((index, led.0, led.2, factor));
                     }
                 }
             }
@@ -167,7 +196,7 @@ impl Processor {
     pub fn with_devices<'p, 'a, I: Iterator<Item = (usize, &'a LedInstance, usize)>>(
         &'p mut self,
         leds: I,
-    ) -> ProcessorWithDevices<'p, 'a, I> {
+    ) -> ProcessorWithDevices<'p, 'a, I, T> {
         ProcessorWithDevices {
             processor: self,
             leds,
@@ -195,8 +224,8 @@ impl Processor {
                 let map_idx = (j * width + i) as usize;
                 let rgb = raw_image.get_pixel(i, j);
 
-                for (pixel_idx, _device_idx, _led_idx) in &self.led_map[map_idx] {
-                    self.color_map[*pixel_idx].sample(rgb);
+                for (pixel_idx, _device_idx, _led_idx, area_factor) in &self.led_map[map_idx] {
+                    self.color_map[*pixel_idx].sample(rgb, *area_factor);
                 }
             }
         }
@@ -210,20 +239,26 @@ impl Processor {
     pub fn update_leds(&self, mut led_setter: impl FnMut((usize, usize), color::ColorPoint)) {
         // Compute mean and assign to led instances
         for pixel in self.led_map.iter() {
-            for (pixel_idx, device_idx, led_idx) in pixel.iter() {
+            for (pixel_idx, device_idx, led_idx, _area_factor) in pixel.iter() {
                 led_setter((*device_idx, *led_idx), self.color_map[*pixel_idx].mean());
             }
         }
     }
 }
 
-impl<'p, 'a, I: Iterator<Item = (usize, &'a LedInstance, usize)>> ProcessorWithDevices<'p, 'a, I> {
+impl<
+        'p,
+        'a,
+        I: Iterator<Item = (usize, &'a LedInstance, usize)>,
+        T: Float + AddAssign + Default,
+    > ProcessorWithDevices<'p, 'a, I, T>
+{
     /// Process incoming image data into led colors
     ///
     /// # Parameters
     ///
     /// * `raw_image`: raw RGB image
-    pub fn process_image(self, raw_image: RawImage) -> &'p mut Processor {
+    pub fn process_image(self, raw_image: RawImage) -> &'p mut Processor<T> {
         let (width, height) = raw_image.get_dimensions();
 
         // Check that this processor has the right size

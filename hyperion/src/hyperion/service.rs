@@ -23,7 +23,7 @@ pub struct Service {
     /// Device runtime data
     devices: Devices,
     /// Image processor
-    image_processor: Processor,
+    image_processor: Processor<f32>,
     /// Debug listener
     debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
 }

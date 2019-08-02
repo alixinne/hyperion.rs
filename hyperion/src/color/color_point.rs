@@ -63,7 +63,11 @@ impl ColorPoint {
         ulps_eq!(self.value, palette::Color::default())
     }
 
-    /// Apply a saturation and lightness gain
+    /// Apply a saturation and lightness power gain
+    ///
+    /// Let X be the saturation or lightness and G the gain. The output value is computed as `X ^
+    /// (1.0 / G)`. Values of G higher than 1 will map lower values of X in the [0, 1] range to
+    /// higher values in that same range, while values lower than 1 will map them to lower values.
     ///
     /// # Parameters
     ///
@@ -73,7 +77,11 @@ impl ColorPoint {
         let (h, s, l) = Hsl::from(self.value).into_components();
 
         Self {
-            value: palette::Color::from(Hsl::from_components((h, s * saturation, l * lightness))),
+            value: palette::Color::from(Hsl::from_components((
+                h,
+                s.powf(1.0 / saturation),
+                l.powf(1.0 / lightness),
+            ))),
         }
     }
 

@@ -1,12 +1,15 @@
 //! Definition of the Configuration type
 
-use super::Device;
+use super::{Correction, Device};
 
 /// Configuration for an Hyperion instance
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Configuration {
     /// List of devices for this configuration
     pub devices: Vec<Device>,
+    /// Image color correction
+    #[serde(default)]
+    pub color: Correction,
 }
 
 impl Configuration {

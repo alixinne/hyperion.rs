@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 use futures::{Async, Future, Poll};
 
 use crate::color;
-use crate::config::Device;
+use crate::config::{Correction, Device};
 use crate::image::*;
 use crate::methods;
 
@@ -17,6 +17,8 @@ use super::DeviceInstance;
 pub struct Devices {
     /// List of device instances
     devices: Vec<DeviceInstance>,
+    /// Image color correction
+    correction: Correction,
 }
 
 impl Devices {
@@ -66,7 +68,7 @@ impl Devices {
         image_processor.update_leds(|(device_idx, led_idx), color| {
             // Should never fail, we only consider valid LEDs
             self.devices[device_idx]
-                .set_led(time, led_idx, color, immediate)
+                .set_led(time, led_idx, self.correction.process(color), immediate)
                 .unwrap();
         });
     }
@@ -74,16 +76,17 @@ impl Devices {
 
 // Note: can't use a blanket implementation for IntoIterator<Item = Device>
 // See #50133
-impl TryFrom<Vec<Device>> for Devices {
+impl TryFrom<(Vec<Device>, Correction)> for Devices {
     // Can't use TryFrom<Device>::Error, see #38078
     type Error = methods::MethodError;
 
-    fn try_from(devices: Vec<Device>) -> Result<Self, Self::Error> {
+    fn try_from((devices, correction): (Vec<Device>, Correction)) -> Result<Self, Self::Error> {
         Ok(Self {
             devices: devices
                 .into_iter()
                 .map(DeviceInstance::try_from)
                 .collect::<Result<Vec<_>, _>>()?,
+            correction,
         })
     }
 }

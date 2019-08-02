@@ -58,11 +58,11 @@ pub struct Transform {
     #[serde(rename = "saturationLGain")]
     saturation_lgain: Option<f32>,
     /// HSV Luminance gain
-    #[serde(rename = "luminanceGain")]
-    luminance_gain: Option<f32>,
-    /// Minimum luminance
-    #[serde(rename = "luminanceMinimum")]
-    luminance_minimum: Option<f32>,
+    #[serde(rename = "lightnessGain")]
+    lightness_gain: Option<f32>,
+    /// Minimum lightness
+    #[serde(rename = "lightnessMinimum")]
+    lightness_minimum: Option<f32>,
     /// Transform threshold
     threshold: Option<[f32; 3]>,
     /// Transform gamma

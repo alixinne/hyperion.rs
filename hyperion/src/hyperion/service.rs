@@ -63,7 +63,9 @@ impl Service {
             })
             .collect();
 
-        let devices = Devices::try_from(devices).map_err(HyperionError::from)?;
+        let correction = configuration.color;
+
+        let devices = Devices::try_from((devices, correction)).map_err(HyperionError::from)?;
 
         let priority_muxer = PriorityMuxer::new(receiver);
 

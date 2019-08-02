@@ -135,15 +135,23 @@ The Hyperion daemon is responsible for processing the incoming image data into
 LED colors. This requires processing and transforming colors. The following parts
 of the color processing pipeline have been implemented:
 
-_(none)_
+* Transform (saturation gain, lightness gain, lightness minimum + RGB per-channel
+  and gamma)
 
 The following parts have to be implemented (they are listed in order of application
 in the computation):
 
-* Transform (saturation gain, luminance gain, luminance minimum + RGB per-channel
-  threshold and gamma)
+* Transform (RGB per-channel threshold)
 * Adjustment (RGB -> RGB mapping matrix)
 * Temperature (RGB per-channel multiplication)
+
+In hyperion.rs, color processing is divided into two parts:
+
+* Image color processing: this is only applied to colors obtained from input images,
+  not solid colors sent by the remote. This is independent of the target device.
+* Device color processing: these are adjustments meant to fix the color disparities
+  in devices. The parameters for these corrections are specified in the `format` key
+  of a device's configuration.
 
 ### Effects
 

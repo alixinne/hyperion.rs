@@ -6,7 +6,7 @@ use std::ops::{Add, Mul};
 use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
 
-use palette::{Blend, LinSrgb};
+use palette::{Blend, Hsl, LinSrgb};
 
 use super::*;
 use crate::config;
@@ -61,6 +61,55 @@ impl ColorPoint {
     /// Return true if this color is pure black
     pub fn is_black(&self) -> bool {
         ulps_eq!(self.value, palette::Color::default())
+    }
+
+    /// Apply a saturation and lightness gain
+    ///
+    /// # Parameters
+    ///
+    /// * `saturation`: saturation gain
+    /// * `lightness`: lightness gain
+    pub fn sl_gain(self, saturation: f32, lightness: f32) -> Self {
+        let (h, s, l) = Hsl::from(self.value).into_components();
+
+        Self {
+            value: palette::Color::from(Hsl::from_components((h, s * saturation, l * lightness))),
+        }
+    }
+
+    /// Apply a lightness threshold
+    ///
+    /// # Parameters
+    ///
+    /// * `threshold`: lightness threshold
+    pub fn l_threshold(self, threshold: f32) -> Self {
+        let (h, s, mut l) = Hsl::from(self.value).into_components();
+
+        if l < threshold {
+            l = 0.0;
+        }
+
+        Self {
+            value: palette::Color::from(Hsl::from_components((h, s, l))),
+        }
+    }
+
+    /// Apply an RGB gamma
+    ///
+    /// # Parameters
+    ///
+    /// * `gamma`: gamma values for each channel
+    pub fn rgb_gamma(self, gamma: ColorPoint) -> Self {
+        let (mut r, mut g, mut b) = LinSrgb::from(self.value).into_components();
+        let (gr, gg, gb) = gamma.as_rgb();
+
+        r = r.powf(gr);
+        g = g.powf(gg);
+        b = b.powf(gb);
+
+        Self {
+            value: palette::Color::from(LinSrgb::from_components((r, g, b))),
+        }
     }
 
     /// Convert this color point to a device color

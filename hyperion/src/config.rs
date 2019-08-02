@@ -6,6 +6,9 @@ pub use color_format::*;
 mod configuration;
 pub use configuration::*;
 
+mod correction;
+pub use correction::*;
+
 mod device;
 pub use device::*;
 

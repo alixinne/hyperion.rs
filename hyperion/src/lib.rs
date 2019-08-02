@@ -43,4 +43,5 @@ pub mod hyperion;
 pub mod image;
 pub mod methods;
 pub mod runtime;
+pub mod serde;
 pub mod servers;

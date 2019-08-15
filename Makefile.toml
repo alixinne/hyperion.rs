@@ -15,6 +15,12 @@ args = [
   "scripts",
 ]
 
+[tasks.package-ci-flow]
+dependencies = [
+  "workspace-ci-flow",
+  "package-release",
+]
+
 [tasks.coverage-tarpaulin.linux]
 category = "Test"
 command = "cargo"

@@ -1,5 +1,9 @@
 language: rust
 sudo: true
+addons:
+  apt:
+    packages:
+      - p7zip-full
 rust:
   - stable
   - beta
@@ -10,15 +14,26 @@ matrix:
   fast_finish: true
 cache: cargo
 script:
-  - hash cargo-make || cargo install cargo-make
   - |
+    # Download cargo-make binary release
+    export CARGO_MAKE_VERSION=0.22.0
+    if [ "$(cargo make -V)" != "cargo-make $CARGO_MAKE_VERSION" ]; then
+      export CARGO_MAKE_ZIP=$(mktemp --suffix .zip)
+      wget -qO${CARGO_MAKE_ZIP} https://github.com/sagiegurari/cargo-make/releases/download/${CARGO_MAKE_VERSION}/cargo-make-v${CARGO_MAKE_VERSION}-x86_64-unknown-linux-musl.zip
+      7z e -y ${CARGO_MAKE_ZIP} -o${HOME}/.cargo/bin '*/cargo-make'
+    fi
+  - |
+    # Install tarpaulin binary release
     if [ $TRAVIS_RUST_VERSION = stable ]; then
       export CARGO_MAKE_RUN_CODECOV=true
+      bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
     fi
-  - cargo make workspace-ci-flow --no-workspace
   - |
+    # Build project
     if [ $TRAVIS_RUST_VERSION = stable ]; then
-      cargo make --no-workspace package-release
+      cargo make --no-workspace package-ci-flow
+    else
+      cargo make --no-workspace workspace-ci-flow
     fi
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&

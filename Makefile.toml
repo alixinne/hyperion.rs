@@ -1,4 +1,5 @@
 [env]
+CARGO_MAKE_COVERAGE_PROVIDER = "tarpaulin"
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
 
 [tasks.package-release]
@@ -13,3 +14,8 @@ args = [
   "target/release/hyperiond",
   "scripts",
 ]
+
+[tasks.coverage-tarpaulin.linux]
+category = "Test"
+command = "cargo"
+args = ["tarpaulin", "--out", "Xml"]

@@ -11,6 +11,10 @@ matrix:
 cache: cargo
 script:
   - hash cargo-make || cargo install cargo-make
+  - |
+    if [ $TRAVIS_RUST_VERSION = stable ]; then
+      export CARGO_MAKE_RUN_CODECOV=true
+    fi
   - cargo make workspace-ci-flow --no-workspace
   - |
     if [ $TRAVIS_RUST_VERSION = stable ]; then

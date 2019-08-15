@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.com/vtavernier/hyperion.rs.svg)](http://travis-ci.com/vtavernier/hyperion.rs)
 [![GitHub release](https://img.shields.io/github/release/vtavernier/hyperion.rs)](https://github.com/vtavernier/hyperion.rs/releases)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/9a0bff1adfc84e1d8c72fcc136328629)](https://www.codacy.com/app/vtavernier/hyperion.rs?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vtavernier/hyperion.rs&amp;utm_campaign=Badge_Grade)
+[![codecov](https://codecov.io/gh/vtavernier/hyperion.rs/branch/master/graph/badge.svg)](https://codecov.io/gh/vtavernier/hyperion.rs)
 [![Documentation](https://img.shields.io/badge/docs-master-blue.svg)](https://vtavernier.github.io/hyperion.rs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Libraries.io for GitHub](https://img.shields.io/librariesio/github/vtavernier/hyperion.rs.svg)](https://libraries.io/github/vtavernier/hyperion.rs)

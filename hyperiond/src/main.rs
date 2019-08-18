@@ -11,10 +11,9 @@
 //!     Starts the server daemon
 //!     
 //!     USAGE:
-//!         hyperiond --config <FILE> server [FLAGS] [OPTIONS] --bind <ADDRESS> --json-port <PORT> --proto-port <PORT>
+//!         hyperiond --config <FILE> server [OPTIONS] --bind <ADDRESS> --json-port <PORT> --proto-port <PORT>
 //!     
 //!     FLAGS:
-//!             --gui     Show the debug interface
 //!         -h, --help    Prints help information
 //!     
 //!     OPTIONS:
@@ -57,8 +56,6 @@ extern crate log;
 use env_logger::Env;
 
 mod cli;
-
-mod gui;
 
 /// Entry point of the hyperion binary
 fn main() {

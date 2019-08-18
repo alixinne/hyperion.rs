@@ -85,6 +85,12 @@ pub fn run() -> Result<(), failure::Error> {
                 .context("proto-port must be a port number")?,
         );
 
+        let web_address = SocketAddr::new(
+            bind_address,
+            value_t!(server_matches, "web-port", u16)
+                .context("web-port must be a port number")?,
+        );
+
         let disable_devices = server_matches
             .value_of("disable-devices")
             .map(|value| {
@@ -100,6 +106,11 @@ pub fn run() -> Result<(), failure::Error> {
         ];
 
         let server_future = futures::future::join_all(servers).map(|_| ());
+
+        let (sender, receiver) = futures::sync::oneshot::channel::<()>();
+
+        // Instantiate the web server
+        let web_server = hyperion::web::bind(web_address, receiver, "web/dist");
 
         let exit_code = Arc::new(AtomicI32::new(exitcode::OK));
         let final_exit_code = exit_code.clone();
@@ -145,12 +156,15 @@ pub fn run() -> Result<(), failure::Error> {
                     }),
             );
 
+            tokio::spawn(web_server);
+
             server_future
                 .map_err(|error| {
                     warn!("server error: {:?}", error);
                 })
                 .select(tripwire)
-                .map(|_| {
+                .map(move |_| {
+                    sender.send(()).expect("failed to signal the web server");
                     info!("server terminating");
                 })
                 .map_err(|_| {

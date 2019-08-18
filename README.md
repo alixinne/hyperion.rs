@@ -177,9 +177,9 @@ The following temporal filters are available:
 
 Grabbing is not planned yet for hyperion.rs.
 
-### Web configuration
+### Web interface
 
-Web configuration of the hyperion.rs is outside of the scope of this project.
+The web interface for hyperion.rs is currently under development.
 
 ## Authors
 

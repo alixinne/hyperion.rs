@@ -35,6 +35,8 @@ extern crate futures;
 extern crate log;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate serde_json;
 
 pub mod color;
 pub mod config;
@@ -45,3 +47,4 @@ pub mod methods;
 pub mod runtime;
 pub mod serde;
 pub mod servers;
+pub mod web;

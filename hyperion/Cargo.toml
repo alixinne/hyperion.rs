@@ -26,6 +26,10 @@ humantime = "1.2.0"
 circular-queue = "0.2.0"
 approx = "0.1.1"
 num-traits = "0.2.8"
+hyper = "0.12.33"
+hyper-staticfile = "0.4.0"
+reset-router = "0.6.5"
+hostname = "0.1.5"
 
 [build-dependencies]
 prost-build = "0.5.0"

@@ -30,6 +30,12 @@ subcommands:
             help: TCP port for the Protobuf server
             default_value: '19445'
             required: true
+        - web-port:
+            long: web-port
+            value_name: PORT
+            help: TCP port for the Web interface
+            default_value: '19080'
+            required: true
         - disable-devices:
             long: disable-devices
             value_name: REGEX

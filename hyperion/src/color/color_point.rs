@@ -36,7 +36,7 @@ impl ColorPoint {
     /// * `temperature`: color temperature, in Kelvin
     pub fn from_kelvin(temperature: f32) -> Self {
         Self {
-            value: palette::Color::from(super::kelvin_to_rgb(temperature))
+            value: palette::Color::from(super::kelvin_to_rgb(temperature)),
         }
     }
 

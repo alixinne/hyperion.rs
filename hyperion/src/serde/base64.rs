@@ -31,4 +31,3 @@ where
 {
     deserializer.deserialize_str(Base64Visitor {})
 }
-

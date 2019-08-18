@@ -100,11 +100,7 @@ pub fn bind(
                         sender
                             .unbounded_send(Input::from_full(
                                 StateUpdate::SolidColor {
-                                    color: color::ColorPoint::from((
-                                        color.0,
-                                        color.1,
-                                        color.2,
-                                    )),
+                                    color: color::ColorPoint::from((color.0, color.1, color.2)),
                                 },
                                 color_request.priority,
                                 color_request.duration,

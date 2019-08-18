@@ -51,4 +51,3 @@ where
 {
     serializer.serialize_str(&format!("{}", humantime::Duration::from(*duration)))
 }
-

@@ -10,6 +10,8 @@ use std::io::BufReader;
 use std::net::SocketAddr;
 use std::path::Path;
 
+use std::sync::{atomic::AtomicI32, atomic::Ordering, Arc};
+
 use futures::{Future, Stream};
 use stream_cancel::Tripwire;
 use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
@@ -99,15 +101,30 @@ pub fn run() -> Result<(), failure::Error> {
 
         let server_future = futures::future::join_all(servers).map(|_| ());
 
+        let exit_code = Arc::new(AtomicI32::new(exitcode::OK));
+        let final_exit_code = exit_code.clone();
+
         tokio::run(futures::lazy(move || {
             tokio::spawn(
                 Signal::new(SIGINT)
                     .flatten_stream()
-                    .map(|_| "SIGINT")
-                    .select(Signal::new(SIGTERM).flatten_stream().map(|_| "SIGTERM"))
+                    .select(Signal::new(SIGTERM).flatten_stream())
                     .into_future()
-                    .and_then(move |(signal, _): (Option<&'static str>, _)| {
-                        info!("got {}, terminating", signal.unwrap());
+                    .and_then(move |(signal, _): (Option<i32>, _)| {
+                        let signal_name = if let Some(signal_number) = signal {
+                            if signal_number == SIGINT {
+                                exit_code.store(130, Ordering::SeqCst);
+                                "SIGINT".to_owned()
+                            } else if signal_number == SIGTERM {
+                                "SIGTERM".to_owned()
+                            } else {
+                                signal_number.to_string()
+                            }
+                        } else {
+                            "<unknown>".to_owned()
+                        };
+
+                        info!("got {}, terminating", signal_name);
                         drop(trigger);
                         Ok(())
                     })
@@ -141,7 +158,7 @@ pub fn run() -> Result<(), failure::Error> {
                 })
         }));
 
-        Ok(())
+        std::process::exit(final_exit_code.load(Ordering::SeqCst));
     } else {
         bail!(CliError::InvalidCommand)
     }

@@ -1,5 +1,7 @@
 //! Definition of the Correction type
 
+use validator::Validate;
+
 use crate::color::ColorPoint;
 
 /// Default saturation gain
@@ -23,19 +25,23 @@ fn default_gamma() -> ColorPoint {
 }
 
 /// Transform part of the color processing pipeline
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct Transform {
     /// Saturation gain
     #[serde(default = "default_saturation")]
+    #[validate(range(min = 0.0))]
     pub saturation: f32,
     /// Luminance gain
     #[serde(default = "default_lightness")]
+    #[validate(range(min = 0.0))]
     pub lightness: f32,
     /// Luminance threshold
     #[serde(default = "default_threshold")]
+    #[validate(range(min = 0.0))]
     pub threshold: f32,
     /// RGB gamma
     #[serde(default = "default_gamma")]
+    // TODO: validate ColorPoint gamma values
     pub gamma: ColorPoint,
 }
 
@@ -66,10 +72,11 @@ impl Default for Transform {
 }
 
 /// Color correction settings
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Default, Validate, Debug, Serialize, Deserialize)]
 pub struct Correction {
     /// Transform correction
     #[serde(default)]
+    #[validate]
     pub transform: Transform,
 }
 

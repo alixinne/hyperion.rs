@@ -31,10 +31,11 @@ pub use scan_range::*;
 mod tests {
     use super::*;
     use std::time::Duration;
+    use validator::Validate;
 
     #[test]
     fn sanitize_frequency() {
-        let mut device = Device {
+        let device = Device {
             name: "test".into(),
             format: ColorFormat::default(),
             endpoint: Endpoint::Stdout { bits: 8 },
@@ -44,13 +45,12 @@ mod tests {
             filter: Filter::default(),
         };
 
-        device.sanitize();
-        assert!(device.frequency >= 1.0f64 / 3600f64);
+        assert!(device.validate().is_err());
     }
 
     #[test]
     fn sanitize_idle() {
-        let mut device = Device {
+        let device = Device {
             name: "test".into(),
             format: ColorFormat::default(),
             endpoint: Endpoint::Stdout { bits: 8 },
@@ -63,8 +63,7 @@ mod tests {
             filter: Filter::default(),
         };
 
-        device.sanitize();
-        assert!(device.idle.delay > Duration::from_millis((1_000f64 / device.frequency) as u64));
+        assert!(device.validate().is_err());
     }
 
     #[test]

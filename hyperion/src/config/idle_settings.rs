@@ -3,6 +3,8 @@
 use std::fmt;
 use std::time::Duration;
 
+use validator::Validate;
+
 /// Default idle delay
 fn default_idle_delay() -> Duration {
     Duration::from_millis(5000)
@@ -29,7 +31,7 @@ fn default_idle_retries() -> u32 {
 }
 
 /// Settings for idling devices
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct IdleSettings {
     /// Time before the device is considered idle (default: 5s)
     #[serde(
@@ -60,26 +62,8 @@ pub struct IdleSettings {
     /// the physical device, so this setting ensures that at least `retries` are sent in those
     /// cases.
     #[serde(default = "default_idle_retries")]
+    #[validate(range(min = 1))]
     pub retries: u32,
-}
-
-impl IdleSettings {
-    /// Ensures these idle settings are valid
-    ///
-    /// This will warn about invalid retries.
-    ///
-    /// # Parameters
-    ///
-    /// `device_name`: name of the device these settings are being sanitized for
-    pub fn sanitize(&mut self, device_name: &str) {
-        if self.retries < 1 {
-            warn!(
-                "device '{}': invalid idle retries, defaulted to 1",
-                device_name
-            );
-            self.retries = 1;
-        }
-    }
 }
 
 impl Default for IdleSettings {

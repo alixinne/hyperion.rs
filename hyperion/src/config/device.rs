@@ -2,11 +2,18 @@
 
 use std::time::Duration;
 
+use regex::Regex;
+use validator::{Validate, ValidationError};
+
 use super::*;
 
 /// Default frequency for a device
 fn default_frequency() -> f64 {
     10.0
+}
+
+lazy_static! {
+    static ref NAME_REGEX: Regex = Regex::new(r"\S").unwrap();
 }
 
 /// Physical or virtual ambient lighting device representation
@@ -21,59 +28,57 @@ fn default_frequency() -> f64 {
 ///
 /// The device method is reponsible for transforming filtered color data into the target
 /// representation for the physical device.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
+#[validate(schema(function = "validate_device"))]
 pub struct Device {
     /// Name of the device
+    #[validate(regex = "NAME_REGEX")]
     pub name: String,
     /// Target endpoint to contact
+    #[validate]
     pub endpoint: Endpoint,
     /// List of LED specifications
+    #[validate]
     pub leds: Vec<Led>,
     /// Update frequency (Hz)
     #[serde(default = "default_frequency")]
+    #[validate(range(min = 0.0))]
     pub frequency: f64,
     /// Idle timeout
     #[serde(default)]
+    #[validate]
     pub idle: IdleSettings,
     /// Filtering method
     #[serde(default)]
+    #[validate]
     pub filter: Filter,
     /// Color format
     #[serde(default)]
+    #[validate]
     pub format: ColorFormat,
 }
 
-impl Device {
-    /// Ensures the configuration of the device is valid
-    ///
-    /// This will warn about invalid frequencies and idle timeouts.
-    pub fn sanitize(&mut self) {
-        // Clamp frequency to 1/hour Hz
-        let mut freq = 1.0f64 / 3600f64;
-        if self.frequency > freq {
-            freq = self.frequency;
-        } else {
-            warn!(
-                "device '{}': invalid frequency {}Hz",
-                self.name, self.frequency
-            );
-        }
-
-        self.frequency = freq;
-
-        // Compute interval from frequency
-        let update_duration = Duration::from_nanos((1_000_000_000f64 / self.frequency) as u64);
-
-        // The idle timeout should be at least 2/frequency
-        let mut idle_duration = self.idle.delay;
-        if 2 * update_duration > idle_duration {
-            warn!("device '{}': idle duration too short", self.name);
-            idle_duration = 2 * update_duration;
-        }
-
-        self.idle.delay = idle_duration;
-
-        // Sanitize idle settings
-        self.idle.sanitize(&self.name);
+/// Ensures the configuration of the device is valid
+fn validate_device(device: &Device) -> Result<(), ValidationError> {
+    // Clamp frequency to 1/hour Hz
+    let freq = 1.0f64 / 3600f64;
+    if device.frequency <= freq {
+        return Err(ValidationError::new("invalid_frequency"));
     }
+
+    // Compute interval from frequency
+    let update_duration = Duration::from_nanos((1_000_000_000f64 / device.frequency) as u64);
+
+    // The idle timeout should be at least 2/frequency
+    let idle_duration = device.idle.delay;
+    if 2 * update_duration > idle_duration {
+        let mut error = ValidationError::new("invalid_idle_duration");
+        error.add_param(
+            "minimum_duration".into(),
+            &humantime::Duration::from(2 * update_duration).to_string(),
+        );
+        return Err(error);
+    }
+
+    Ok(())
 }

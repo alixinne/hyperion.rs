@@ -18,6 +18,8 @@ use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
 
 use regex::Regex;
 
+use validator::Validate;
+
 /// Error raised when the CLI fails
 #[derive(Debug, Fail)]
 pub enum CliError {
@@ -27,6 +29,9 @@ pub enum CliError {
     /// Hyperion server error
     #[fail(display = "server error: {}", 0)]
     ServerError(String),
+    /// Configuration validation error
+    #[fail(display = "failed to validate configuration: {}", 0)]
+    InvalidConfiguration(String),
 }
 
 /// Parse the configuration at a given path
@@ -61,6 +66,10 @@ pub fn run() -> Result<(), failure::Error> {
     debug!("{} {}", crate_name!(), crate_version!());
 
     let configuration = read_config(matches.value_of("config").expect("--config is required"))?;
+
+    if let Err(error) = configuration.validate() {
+        bail!(CliError::InvalidConfiguration(error.to_string()));
+    }
 
     if let Some(server_matches) = matches.subcommand_matches("server") {
         // Tripwire to cancel the server listening

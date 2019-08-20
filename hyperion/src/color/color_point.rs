@@ -126,8 +126,10 @@ impl ColorPoint {
     ///
     /// * `format`: color format to convert to
     pub fn to_device(&self, format: &config::ColorFormat) -> DeviceColor {
+        use config::*;
+
         match format {
-            config::ColorFormat::Rgb { rgb, gamma, .. } => {
+            ColorFormat::Rgb(RgbFormat { rgb, gamma, .. }) => {
                 // Whitebalance the RGB white
                 let (r, g, b) =
                     whitebalance(LinSrgb::from(self.value), rgb.value.into(), srgb_white())
@@ -139,9 +141,9 @@ impl ColorPoint {
                     b: b.powf(gamma.b),
                 }
             }
-            config::ColorFormat::Rgbw {
+            ColorFormat::Rgbw(RgbwFormat {
                 rgb, white, gamma, ..
-            } => {
+            }) => {
                 let rgb_value = LinSrgb::from(self.value);
                 let dest_white = white.value.into();
 
@@ -165,7 +167,7 @@ impl ColorPoint {
                     w: w.powf(gamma.w),
                 }
             }
-            config::ColorFormat::Rgbcw { rgb, gamma, .. } => {
+            ColorFormat::Rgbcw(RgbcwFormat { rgb, gamma, .. }) => {
                 // Whitebalance the RGB white
                 let (r, g, b) =
                     whitebalance(LinSrgb::from(self.value), rgb.value.into(), srgb_white())

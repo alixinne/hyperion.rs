@@ -38,15 +38,12 @@ impl Service {
     ///   be instantiated from the configuration.
     /// * `debug_listener`: channel to send debug updates to.
     pub fn new(
-        mut configuration: Configuration,
+        configuration: Configuration,
         disable_devices: Option<Regex>,
         debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
     ) -> Result<(Self, mpsc::UnboundedSender<Input>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
-
-        // Sanitize configuration
-        configuration.sanitize();
 
         let devices: Vec<_> = configuration
             .devices

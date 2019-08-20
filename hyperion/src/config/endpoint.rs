@@ -2,6 +2,7 @@
 
 use serde_yaml::Value;
 use std::collections::BTreeMap as Map;
+use validator::{Validate, ValidationError, ValidationErrors};
 
 /// Default stdout method bit depth
 fn default_bit_depth() -> i32 {
@@ -38,4 +39,21 @@ pub enum Endpoint {
         #[serde(flatten)]
         params: Map<String, Value>,
     },
+}
+
+impl Validate for Endpoint {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        match self {
+            Endpoint::Stdout { bits } => {
+                if *bits < 1 {
+                    let mut errors = ValidationErrors::new();
+                    errors.add("bits", ValidationError::new("bits must be greater than 0"));
+                    return Err(errors);
+                }
+
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
 }

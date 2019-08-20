@@ -1,26 +1,19 @@
 //! Definition of the Configuration type
 
+use validator::Validate;
+
 use super::{Correction, Device};
 
 /// Configuration for an Hyperion instance
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct Configuration {
     /// List of devices for this configuration
+    #[validate]
     pub devices: Vec<Device>,
     /// Image color correction
     #[serde(default)]
+    #[validate]
     pub color: Correction,
-}
-
-impl Configuration {
-    /// Ensures the configuration is well-formed
-    ///
-    /// This will issue warnings for fields that need to be changed.
-    pub fn sanitize(&mut self) {
-        for device in &mut self.devices {
-            device.sanitize();
-        }
-    }
 }
 
 #[cfg(test)]

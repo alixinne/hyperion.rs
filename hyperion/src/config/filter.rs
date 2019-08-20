@@ -1,5 +1,7 @@
 //! Definition of the Filter type
 
+use validator::{Validate, ValidationError, ValidationErrors};
+
 /// Default linear filter frequency
 fn default_linear_frequency() -> f32 {
     30.0
@@ -28,5 +30,22 @@ pub enum Filter {
 impl Default for Filter {
     fn default() -> Self {
         Filter::Nearest
+    }
+}
+
+impl Validate for Filter {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        match self {
+            Filter::Linear { frequency } => {
+                if *frequency <= 0.0  {
+                    let mut errors = ValidationErrors::new();
+                    errors.add("frequency", ValidationError::new("invalid_frequency"));
+                    return Err(errors);
+                }
+
+                Ok(())
+            }
+            _ => Ok(()),
+        }
     }
 }

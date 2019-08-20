@@ -1,5 +1,7 @@
 //! Definition of the Led type
 
+use validator::Validate;
+
 use super::ScanRange;
 
 /// Basic element of the Hyperion internal state
@@ -10,14 +12,16 @@ use super::ScanRange;
 /// It holds its current color as a linear-space RGB value in image space. The
 /// corresponding value on the target devices is computed downstream by the
 /// filters.
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Validate, Serialize, Deserialize, Clone, Default)]
 pub struct Led {
     /// Horizontal scan range
     ///
     /// Horizontal span on screen that this LED covers.
+    #[validate]
     pub hscan: ScanRange,
     /// Vertical scan range
     ///
     /// Vertical span on screen that this LED covers.
+    #[validate]
     pub vscan: ScanRange,
 }

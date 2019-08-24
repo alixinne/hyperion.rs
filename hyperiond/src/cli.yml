@@ -36,7 +36,3 @@ subcommands:
             help: TCP port for the Web interface
             default_value: '19080'
             required: true
-        - disable-devices:
-            long: disable-devices
-            value_name: REGEX
-            help: Disable matching devices from updates

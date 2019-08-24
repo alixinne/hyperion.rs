@@ -16,8 +16,6 @@ use futures::{Future, Stream};
 use stream_cancel::Tripwire;
 use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
 
-use regex::Regex;
-
 use validator::Validate;
 
 /// Error raised when the CLI fails
@@ -100,14 +98,8 @@ pub fn run() -> Result<(), failure::Error> {
                 .context("web-port must be a port number")?,
         );
 
-        let disable_devices = server_matches
-            .value_of("disable-devices")
-            .map(|value| {
-                Regex::new(value).expect("failed to parse regex, please see https://docs.rs/regex/1.1.6/regex/#syntax for details")
-            });
-
         let (hyperion, sender) =
-            hyperion::hyperion::Service::new(configuration, disable_devices, None)?;
+            hyperion::hyperion::Service::new(configuration, None)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,

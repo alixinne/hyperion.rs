@@ -36,6 +36,7 @@ mod tests {
     #[test]
     fn sanitize_frequency() {
         let device = Device {
+            enabled: true,
             name: "test".into(),
             format: ColorFormat::default(),
             endpoint: Endpoint::Stdout { bits: 8 },
@@ -51,6 +52,7 @@ mod tests {
     #[test]
     fn sanitize_idle() {
         let device = Device {
+            enabled: true,
             name: "test".into(),
             format: ColorFormat::default(),
             endpoint: Endpoint::Stdout { bits: 8 },

@@ -13,17 +13,16 @@ For now, the CLI is only able to start the hyperion server implementation:
     Starts the server daemon
 
     USAGE:
-        hyperiond --config <FILE> server [OPTIONS] --bind <ADDRESS> --json-port <PORT> --proto-port <PORT> --web-port <PORT>
+        hyperiond --config <FILE> server --bind <ADDRESS> --json-port <PORT> --proto-port <PORT> --web-port <PORT>
 
     FLAGS:
         -h, --help    Prints help information
 
     OPTIONS:
-            --bind <ADDRESS>             IP address to bind the servers to [default: 127.0.0.1]
-            --disable-devices <REGEX>    Disable matching devices from updates
-            --json-port <PORT>           TCP port for the JSON server [default: 19444]
-            --proto-port <PORT>          TCP port for the Protobuf server [default: 19445]
-            --web-port <PORT>            TCP port for the Web interface [default: 19080]
+            --bind <ADDRESS>       IP address to bind the servers to [default: 127.0.0.1]
+            --json-port <PORT>     TCP port for the JSON server [default: 19444]
+            --proto-port <PORT>    TCP port for the Protobuf server [default: 19445]
+            --web-port <PORT>      TCP port for the Web interface [default: 19080]
 
 Logging is set using the HYPERION_LOG environment variable, which can be set to the desired
 logging level (trace, debug, info, warn, error). Note that this will affect logging of all

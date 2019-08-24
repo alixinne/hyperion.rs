@@ -7,8 +7,6 @@ use std::convert::TryFrom;
 use futures::sync::mpsc;
 use futures::{Async, Future, Poll, Stream};
 
-use regex::Regex;
-
 use crate::color;
 use crate::config::Configuration;
 use crate::image::Processor;
@@ -34,12 +32,9 @@ impl Service {
     /// # Parameters
     ///
     /// * `configuration`: configuration to derive this instance from
-    /// * `disable_devices`: regular expression to match on device names. Matching devices will not
-    ///   be instantiated from the configuration.
     /// * `debug_listener`: channel to send debug updates to.
     pub fn new(
         configuration: Configuration,
-        disable_devices: Option<Regex>,
         debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
     ) -> Result<(Self, mpsc::UnboundedSender<Input>), HyperionError> {
         // TODO: check channel capacity
@@ -48,16 +43,7 @@ impl Service {
         let devices: Vec<_> = configuration
             .devices
             .into_iter()
-            .filter(|device| {
-                if let Some(rgx) = disable_devices.as_ref() {
-                    if rgx.is_match(&device.name) {
-                        info!("disabling device '{}'", device.name);
-                        return false;
-                    }
-                }
-
-                true
-            })
+            .filter(|device| device.enabled)
             .collect();
 
         let correction = configuration.color;

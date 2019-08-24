@@ -7,6 +7,11 @@ use validator::{Validate, ValidationError};
 
 use super::*;
 
+/// Default enabled value
+fn default_enabled() -> bool {
+    true
+}
+
 /// Default frequency for a device
 fn default_frequency() -> f64 {
     10.0
@@ -31,6 +36,9 @@ lazy_static! {
 #[derive(Debug, Validate, Serialize, Deserialize)]
 #[validate(schema(function = "validate_device"))]
 pub struct Device {
+    /// True if this device is enabled
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
     /// Name of the device
     #[validate(regex = "NAME_REGEX")]
     pub name: String,

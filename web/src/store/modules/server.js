@@ -10,7 +10,6 @@ const actions = {
       var response = await api.server.info()
       commit('loadSuccess', response.data)
     } catch (error) {
-      console.log(error)
       commit('loadError', error)
     }
   }

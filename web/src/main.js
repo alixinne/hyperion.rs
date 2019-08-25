@@ -40,6 +40,11 @@ axios.interceptors.response.use((response) => {
   return response
 }, (error) => {
   store.commit('loadError', error)
+  console.log(error.message)
+  Toast.open({
+    message: error.message,
+    type: 'is-danger'
+  })
   return Promise.reject(error)
 })
 

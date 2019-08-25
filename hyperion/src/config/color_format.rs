@@ -5,59 +5,17 @@ use validator::{Validate, ValidationErrors};
 
 use crate::color::ColorPoint;
 
-/// Default RGB LED order
-fn default_rgb_order() -> String {
-    "rgb".to_owned()
-}
-
-/// Default RGBW LED order
-fn default_rgbw_order() -> String {
-    "rgbw".to_owned()
-}
-
-/// Default RGBCW LED order
-fn default_rgbcw_order() -> String {
-    "rgbcw".to_owned()
-}
-
-/// Default RGB white temperature
-fn default_rgb() -> ColorPoint {
-    ColorPoint::srgb_white()
-}
-
-/// Default RGBW white temperature
-fn default_rgbw_white() -> ColorPoint {
-    ColorPoint::from_kelvin(6500.)
-}
-
-/// Default RGBCW cold white temperature
-fn default_rgbcw_cold_white() -> ColorPoint {
-    ColorPoint::from_kelvin(6500.)
-}
-
-/// Default RGBCW warm white temperature
-fn default_rgbcw_warm_white() -> ColorPoint {
-    ColorPoint::from_kelvin(2800.)
-}
-
-/// Default gamma value
-fn default_gamma() -> f32 {
-    2.2
-}
-
 /// RGB Gamma data
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RgbGamma {
     /// Red channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub r: f32,
     /// Green channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub g: f32,
     /// Blue channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub b: f32,
 }
@@ -65,30 +23,27 @@ pub struct RgbGamma {
 impl Default for RgbGamma {
     fn default() -> Self {
         Self {
-            r: default_gamma(),
-            g: default_gamma(),
-            b: default_gamma(),
+            r: 2.2,
+            g: 2.2,
+            b: 2.2,
         }
     }
 }
 
 /// RGBW Gamma data
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RgbwGamma {
     /// Red channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub r: f32,
     /// Green channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub g: f32,
     /// Blue channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub b: f32,
     /// White channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub w: f32,
 }
@@ -96,35 +51,31 @@ pub struct RgbwGamma {
 impl Default for RgbwGamma {
     fn default() -> Self {
         Self {
-            r: default_gamma(),
-            g: default_gamma(),
-            b: default_gamma(),
-            w: default_gamma(),
+            r: 2.2,
+            g: 2.2,
+            b: 2.2,
+            w: 2.2,
         }
     }
 }
 
 /// RGBCW Gamma data
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RgbcwGamma {
     /// Red channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub r: f32,
     /// Green channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub g: f32,
     /// Blue channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub b: f32,
     /// Cold white channel gamma,
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub c: f32,
     /// Warm white channel gamma
-    #[serde(default = "default_gamma")]
     #[validate(range(min = 0.0))]
     pub w: f32,
 }
@@ -132,11 +83,11 @@ pub struct RgbcwGamma {
 impl Default for RgbcwGamma {
     fn default() -> Self {
         Self {
-            r: default_gamma(),
-            g: default_gamma(),
-            b: default_gamma(),
-            c: default_gamma(),
-            w: default_gamma(),
+            r: 2.2,
+            g: 2.2,
+            b: 2.2,
+            c: 2.2,
+            w: 2.2,
         }
     }
 }
@@ -149,24 +100,22 @@ lazy_static! {
 
 /// RGB format data
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RgbFormat {
     /// LED order string
-    #[serde(default = "default_rgb_order")]
     #[validate(regex = "RGB_REGEX")]
     pub order: String,
     /// RGB White point
-    #[serde(default = "default_rgb")]
     pub rgb: ColorPoint,
     /// Gamma values
-    #[serde(default)]
     pub gamma: RgbGamma,
 }
 
 impl Default for RgbFormat {
     fn default() -> Self {
         Self {
-            order: default_rgb_order(),
-            rgb: default_rgb(),
+            order: "rgb".to_owned(),
+            rgb: ColorPoint::srgb_white(),
             gamma: Default::default(),
         }
     }
@@ -174,28 +123,25 @@ impl Default for RgbFormat {
 
 /// RGBW format data
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RgbwFormat {
     /// LED order string
-    #[serde(default = "default_rgbw_order")]
     #[validate(regex = "RGBW_REGEX")]
     pub order: String,
     /// RGB White temperature
-    #[serde(default = "default_rgb")]
     pub rgb: ColorPoint,
     /// White temperature (Kelvin)
-    #[serde(default = "default_rgbw_white")]
     pub white: ColorPoint,
     /// Gamma values
-    #[serde(default)]
     pub gamma: RgbwGamma,
 }
 
 impl Default for RgbwFormat {
     fn default() -> Self {
         Self {
-            order: default_rgb_order(),
-            rgb: default_rgb(),
-            white: default_rgbw_white(),
+            order: "rgbw".to_owned(),
+            rgb: ColorPoint::srgb_white(),
+            white: ColorPoint::from_kelvin(6500.),
             gamma: Default::default(),
         }
     }
@@ -203,32 +149,28 @@ impl Default for RgbwFormat {
 
 /// RGBCW format data
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RgbcwFormat {
     /// LED order string
-    #[serde(default = "default_rgbcw_order")]
     #[validate(regex = "RGBCW_REGEX")]
     pub order: String,
     /// RGB White temperature
-    #[serde(default = "default_rgb")]
     pub rgb: ColorPoint,
     /// Cold white temperature (Kelvin)
-    #[serde(default = "default_rgbcw_cold_white")]
     pub cold_white: ColorPoint,
     /// Warm white temperature (Kelvin)
-    #[serde(default = "default_rgbcw_warm_white")]
     pub warm_white: ColorPoint,
     /// Gamma values
-    #[serde(default)]
     pub gamma: RgbcwGamma,
 }
 
 impl Default for RgbcwFormat {
     fn default() -> Self {
         Self {
-            order: default_rgb_order(),
-            rgb: default_rgb(),
-            cold_white: default_rgbcw_cold_white(),
-            warm_white: default_rgbcw_warm_white(),
+            order: "rgbcw".to_owned(),
+            rgb: ColorPoint::srgb_white(),
+            cold_white: ColorPoint::from_kelvin(6500.),
+            warm_white: ColorPoint::from_kelvin(2800.),
             gamma: Default::default(),
         }
     }

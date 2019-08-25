@@ -5,55 +5,27 @@ use std::time::Duration;
 
 use validator::Validate;
 
-/// Default idle delay
-fn default_idle_delay() -> Duration {
-    Duration::from_millis(5000)
-}
-
-/// Default idle enabled state
-fn default_idle_enabled() -> bool {
-    true
-}
-
-/// Default idle holds state
-fn default_idle_holds() -> bool {
-    false
-}
-
-/// Default idle min. change resolution
-fn default_idle_resolution() -> u32 {
-    16
-}
-
-/// Default idle device retries
-fn default_idle_retries() -> u32 {
-    5
-}
-
 /// Settings for idling devices
 #[derive(Clone, Debug, Validate, Serialize, Deserialize)]
+#[serde(default)]
 pub struct IdleSettings {
     /// Time before the device is considered idle (default: 5s)
     #[serde(
         serialize_with = "crate::serde::hyperion_write_duration",
-        deserialize_with = "crate::serde::hyperion_parse_duration",
-        default = "default_idle_delay"
+        deserialize_with = "crate::serde::hyperion_parse_duration"
     )]
     pub delay: Duration,
     /// true if the device should be idled, false otherwise (default: true)
-    #[serde(default = "default_idle_enabled")]
     pub enabled: bool,
     /// true if the devices holds its color without updates, false otherwise (default: false)
     ///
     /// If false, the device will be updated on a timer with a `delay` period to keep the device
     /// active. Otherwise the device will not receive state updates as soon as it is considered
     /// idle, even when displaying a color.
-    #[serde(default = "default_idle_holds")]
     pub holds: bool,
     /// Default idle value resolution, in bits (default: 16)
     ///
     /// Changes smaller in value than `2^(-resolution)` will not be considered as updates
-    #[serde(default = "default_idle_resolution")]
     pub resolution: u32,
     /// Number of state updates to send on oneshot changes (default: 5)
     ///
@@ -61,19 +33,18 @@ pub struct IdleSettings {
     /// devices on unreliable networks for example. This means that single updates might not reach
     /// the physical device, so this setting ensures that at least `retries` are sent in those
     /// cases.
-    #[serde(default = "default_idle_retries")]
     #[validate(range(min = 1))]
     pub retries: u32,
 }
 
 impl Default for IdleSettings {
     fn default() -> Self {
-        IdleSettings {
-            delay: default_idle_delay(),
-            enabled: default_idle_enabled(),
-            holds: default_idle_holds(),
-            resolution: default_idle_resolution(),
-            retries: default_idle_retries(),
+        Self {
+            delay: Duration::from_millis(5000),
+            enabled: true,
+            holds: false,
+            resolution: 16,
+            retries: 5,
         }
     }
 }

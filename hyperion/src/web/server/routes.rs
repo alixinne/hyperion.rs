@@ -26,6 +26,7 @@ macro_rules! json_response {
         // TODO: Handle unwrap?
         http::Response::builder()
             .status($status_code)
+            .header(header::CONTENT_TYPE, "application/json")
             .body(Body::from(serde_json::to_string($body).unwrap()))
             .unwrap()
     };

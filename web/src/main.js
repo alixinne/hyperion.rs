@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import Vuelidate from 'vuelidate'
 import App from './App'
 import router from './router'
 
@@ -22,6 +23,8 @@ Vue.use(Buefy, {
   defaultIconComponent: 'vue-fontawesome',
   defaultIconPack: 'fas'
 })
+
+Vue.use(Vuelidate)
 
 Vue.config.productionTip = false
 

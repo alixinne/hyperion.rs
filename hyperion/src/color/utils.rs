@@ -108,3 +108,16 @@ pub fn whitebalance(c: LinSrgb, src_white: LinSrgb, dst_white: LinSrgb) -> LinSr
     let corr = dst_white / src_white;
     c * corr / color_max(corr)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn srgb_white() {
+        assert!(ulps_eq!(
+            kelvin_to_rgb(6600.0),
+            LinSrgb::from_components((1.0, 1.0, 1.0))
+        ));
+    }
+}

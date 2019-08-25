@@ -19,6 +19,23 @@ use crate::config;
 pub struct ColorPoint {
     /// Value of this color point
     value: palette::Color,
+    /// Type of the value (for serialization only)
+    format: ColorPointType,
+}
+
+/// Type of a color point value
+#[derive(Debug, Clone, Copy)]
+enum ColorPointType {
+    /// Derived from RGB
+    RgbValue,
+    /// Derived from Kelvin
+    KelvinValue(f32),
+}
+
+impl Default for ColorPointType {
+    fn default() -> Self {
+        ColorPointType::RgbValue
+    }
 }
 
 impl ColorPoint {
@@ -26,6 +43,7 @@ impl ColorPoint {
     pub fn srgb_white() -> Self {
         Self {
             value: palette::Color::from(super::srgb_white()),
+            format: ColorPointType::KelvinValue(6600.0),
         }
     }
 
@@ -37,6 +55,7 @@ impl ColorPoint {
     pub fn from_kelvin(temperature: f32) -> Self {
         Self {
             value: palette::Color::from(super::kelvin_to_rgb(temperature)),
+            format: ColorPointType::KelvinValue(temperature),
         }
     }
 
@@ -82,6 +101,7 @@ impl ColorPoint {
                 s.powf(1.0 / saturation),
                 l.powf(1.0 / lightness),
             ))),
+            format: ColorPointType::RgbValue,
         }
     }
 
@@ -99,6 +119,7 @@ impl ColorPoint {
 
         Self {
             value: palette::Color::from(Hsl::from_components((h, s, l))),
+            format: ColorPointType::RgbValue,
         }
     }
 
@@ -117,6 +138,7 @@ impl ColorPoint {
 
         Self {
             value: palette::Color::from(LinSrgb::from_components((r, g, b))),
+            format: ColorPointType::RgbValue,
         }
     }
 
@@ -199,6 +221,7 @@ impl From<(u8, u8, u8)> for ColorPoint {
                 f32::from(rgb.1) / 255.0,
                 f32::from(rgb.2) / 255.0,
             ),
+            format: ColorPointType::RgbValue,
         }
     }
 }
@@ -212,6 +235,7 @@ impl From<(f32, f32, f32)> for ColorPoint {
     fn from(rgb: (f32, f32, f32)) -> Self {
         Self {
             value: palette::Color::linear_rgb(rgb.0, rgb.1, rgb.2),
+            format: ColorPointType::RgbValue,
         }
     }
 }
@@ -220,6 +244,7 @@ impl From<LinSrgb> for ColorPoint {
     fn from(color: LinSrgb) -> Self {
         Self {
             value: palette::Color::from(color),
+            format: ColorPointType::RgbValue,
         }
     }
 }
@@ -237,6 +262,7 @@ impl Add<ColorPoint> for ColorPoint {
     fn add(self, rhs: Self) -> Self {
         Self {
             value: self.value.plus(rhs.value),
+            format: ColorPointType::RgbValue,
         }
     }
 }
@@ -247,6 +273,7 @@ impl Mul<f32> for ColorPoint {
     fn mul(self, rhs: f32) -> Self {
         Self {
             value: palette::Color::from(LinSrgb::from(self.value) * rhs),
+            format: ColorPointType::RgbValue,
         }
     }
 }
@@ -256,8 +283,15 @@ impl Serialize for ColorPoint {
     where
         S: Serializer,
     {
-        let (r, g, b) = self.as_rgb();
-        serializer.serialize_str(&format!("rgb({}, {}, {})", r, g, b))
+        match self.format {
+            ColorPointType::RgbValue => {
+                let (r, g, b) = self.as_rgb();
+                serializer.serialize_str(&format!("rgb({}, {}, {})", r, g, b))
+            }
+            ColorPointType::KelvinValue(temperature) => {
+                serializer.serialize_str(&format!("{}K", temperature))
+            }
+        }
     }
 }
 
@@ -321,7 +355,7 @@ impl<'de> Visitor<'de> for ColorPointVisitor {
                         string
                     )))
                 } else {
-                    Ok(ColorPoint::from(kelvin_to_rgb(temperature)))
+                    Ok(ColorPoint::from_kelvin(temperature))
                 }
             } else {
                 Err(E::custom(format!(

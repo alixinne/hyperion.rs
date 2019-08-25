@@ -2,6 +2,7 @@ import Vue from 'vue'
 import 'es6-promise/auto'
 import Vuex from 'vuex'
 
+import devices from './modules/devices'
 import server from './modules/server'
 
 Vue.use(Vuex)
@@ -22,6 +23,7 @@ export default new Vuex.Store({
   state,
   mutations,
   modules: {
+    devices,
     server
   }
 })

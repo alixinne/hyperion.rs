@@ -10,7 +10,7 @@
           </template>
 
           <template slot="start">
-            <b-navbar-item href="#">
+            <b-navbar-item tag="router-link" :to="{ name: 'Devices' }">
               Devices
             </b-navbar-item>
           </template>

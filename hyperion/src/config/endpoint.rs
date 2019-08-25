@@ -14,7 +14,7 @@ fn default_bit_depth() -> i32 {
 /// An endpoint is defined by a method (how to contact the target device) and
 /// parameters used by the method to determine the actual target (where to contact
 /// the device).
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Endpoint {
     /// Logging output (requires stdout.lua)

@@ -33,7 +33,7 @@ lazy_static! {
 ///
 /// The device method is reponsible for transforming filtered color data into the target
 /// representation for the physical device.
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 #[validate(schema(function = "validate_device"))]
 pub struct Device {
     /// True if this device is enabled
@@ -66,6 +66,27 @@ pub struct Device {
     pub format: ColorFormat,
 }
 
+/// Update to a device instance
+#[derive(Debug, Deserialize)]
+pub struct DeviceUpdate {
+    /// True if this device is enabled
+    pub enabled: Option<bool>,
+    /// Name of the device
+    pub name: Option<String>,
+    /// Target endpoint to contact
+    pub endpoint: Option<Endpoint>,
+    /// List of LED specifications
+    pub leds: Option<Vec<Led>>,
+    /// Update frequency (Hz)
+    pub frequency: Option<f64>,
+    /// Idle timeout
+    pub idle: Option<IdleSettings>,
+    /// Filtering method
+    pub filter: Option<Filter>,
+    /// Color format
+    pub format: Option<ColorFormat>,
+}
+
 /// Ensures the configuration of the device is valid
 fn validate_device(device: &Device) -> Result<(), ValidationError> {
     // Clamp frequency to 1/hour Hz
@@ -89,4 +110,40 @@ fn validate_device(device: &Device) -> Result<(), ValidationError> {
     }
 
     Ok(())
+}
+
+macro_rules! update_field {
+    ($field:ident, $device_update:ident, $cloned_self:ident) => {
+        if let Some($field) = $device_update.$field {
+            $cloned_self.$field = $field;
+        }
+    }
+}
+
+impl Device {
+    /// Update a device configuration
+    ///
+    /// # Parameters
+    ///
+    /// * `device_update`: set of possible updates to the device configuration
+    pub fn update(&mut self, device_update: DeviceUpdate) -> Result<(), validator::ValidationErrors> {
+        // Clone self
+        let mut cloned_self = self.clone();
+
+        // Apply changes
+        update_field!(enabled, device_update, cloned_self);
+        update_field!(name, device_update, cloned_self);
+        update_field!(endpoint, device_update, cloned_self);
+        update_field!(leds, device_update, cloned_self);
+        update_field!(frequency, device_update, cloned_self);
+        update_field!(idle, device_update, cloned_self);
+        update_field!(filter, device_update, cloned_self);
+        update_field!(format, device_update, cloned_self);
+
+        // Validate changes
+        cloned_self.validate()?;
+
+        *self = cloned_self;
+        Ok(())
+    }
 }

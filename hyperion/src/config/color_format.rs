@@ -46,7 +46,7 @@ fn default_gamma() -> f32 {
 }
 
 /// RGB Gamma data
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct RgbGamma {
     /// Red channel gamma
     #[serde(default = "default_gamma")]
@@ -73,7 +73,7 @@ impl Default for RgbGamma {
 }
 
 /// RGBW Gamma data
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct RgbwGamma {
     /// Red channel gamma
     #[serde(default = "default_gamma")]
@@ -105,7 +105,7 @@ impl Default for RgbwGamma {
 }
 
 /// RGBCW Gamma data
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct RgbcwGamma {
     /// Red channel gamma
     #[serde(default = "default_gamma")]
@@ -148,7 +148,7 @@ lazy_static! {
 }
 
 /// RGB format data
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct RgbFormat {
     /// LED order string
     #[serde(default = "default_rgb_order")]
@@ -173,7 +173,7 @@ impl Default for RgbFormat {
 }
 
 /// RGBW format data
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct RgbwFormat {
     /// LED order string
     #[serde(default = "default_rgbw_order")]
@@ -202,7 +202,7 @@ impl Default for RgbwFormat {
 }
 
 /// RGBCW format data
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct RgbcwFormat {
     /// LED order string
     #[serde(default = "default_rgbcw_order")]
@@ -235,7 +235,7 @@ impl Default for RgbcwFormat {
 }
 
 /// Color data format used by a device
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ColorFormat {
     /// RGB

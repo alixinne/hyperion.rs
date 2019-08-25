@@ -1,22 +1,17 @@
 //! Command line interface (CLI) of the hyperion binary
 
 use clap::App;
-use failure::ResultExt;
+use failure::{Fail, ResultExt};
 
 use hyperion::servers;
 
-use std::fs::File;
-use std::io::BufReader;
 use std::net::SocketAddr;
-use std::path::Path;
 
 use std::sync::{atomic::AtomicI32, atomic::Ordering, Arc};
 
 use futures::{Future, Stream};
 use stream_cancel::Tripwire;
 use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
-
-use validator::Validate;
 
 /// Error raised when the CLI fails
 #[derive(Debug, Fail)]
@@ -27,23 +22,6 @@ pub enum CliError {
     /// Hyperion server error
     #[fail(display = "server error: {}", 0)]
     ServerError(String),
-    /// Configuration validation error
-    #[fail(display = "failed to validate configuration: {}", 0)]
-    InvalidConfiguration(String),
-}
-
-/// Parse the configuration at a given path
-///
-/// # Parameters
-///
-/// * `path`: path to the configuration to load
-fn read_config<P: AsRef<Path>>(path: P) -> std::io::Result<hyperion::config::Configuration> {
-    // Open file and create reader
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
-    Ok(serde_yaml::from_reader(reader)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?)
 }
 
 /// Entry point for the hyperion CLI
@@ -63,11 +41,16 @@ pub fn run() -> Result<(), failure::Error> {
 
     debug!("{} {}", crate_name!(), crate_version!());
 
-    let configuration = read_config(matches.value_of("config").expect("--config is required"))?;
+    let configuration_path = matches
+        .value_of("config")
+        .expect("--config is required")
+        .to_owned();
 
-    if let Err(error) = configuration.validate() {
-        bail!(CliError::InvalidConfiguration(error.to_string()));
-    }
+    let configuration =
+        hyperion::config::Configuration::read(&configuration_path).map_err(|error| {
+            let context = format!("{}: {}", configuration_path, error);
+            error.context(context)
+        })?;
 
     if let Some(server_matches) = matches.subcommand_matches("server") {
         // Tripwire to cancel the server listening
@@ -94,14 +77,12 @@ pub fn run() -> Result<(), failure::Error> {
 
         let web_address = SocketAddr::new(
             bind_address,
-            value_t!(server_matches, "web-port", u16)
-                .context("web-port must be a port number")?,
+            value_t!(server_matches, "web-port", u16).context("web-port must be a port number")?,
         );
 
         let configuration = configuration.into_handle();
 
-        let (hyperion, sender) =
-            hyperion::hyperion::Service::new(configuration.clone(), None)?;
+        let (hyperion, sender) = hyperion::hyperion::Service::new(configuration.clone(), None)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,

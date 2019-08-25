@@ -26,10 +26,13 @@ fn api_server(_: Request) -> Result<Response, Response> {
     let response = http::Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(json!({
-            "version": VERSION,
-            "hostname": hostname::get_hostname(),
-        }).to_string()))
+        .body(Body::from(
+            json!({
+                "version": VERSION,
+                "hostname": hostname::get_hostname(),
+            })
+            .to_string(),
+        ))
         .unwrap();
 
     Ok(response)

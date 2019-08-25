@@ -1,14 +1,52 @@
 //! Definition of the Configuration type
 
+use std::fs::File;
+use std::io::BufReader;
 use std::ops::Deref;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 use validator::Validate;
 
 use super::{Correction, Device};
 
+/// Configuration loading error
+#[derive(Debug, Fail)]
+pub enum ConfigurationLoadError {
+    /// I/O error
+    #[fail(display = "an i/o error occurred: {}", 0)]
+    IoError(std::io::Error),
+    /// Deserialization error
+    #[fail(display = "invalid syntax: {}", 0)]
+    InvalidSyntax(serde_yaml::Error),
+    /// Validator error
+    #[fail(display = "failed to validate configuration: {}", 0)]
+    InvalidConfiguration(validator::ValidationErrors),
+}
+
+impl From<std::io::Error> for ConfigurationLoadError {
+    fn from(error: std::io::Error) -> Self {
+        ConfigurationLoadError::IoError(error)
+    }
+}
+
+impl From<serde_yaml::Error> for ConfigurationLoadError {
+    fn from(error: serde_yaml::Error) -> Self {
+        ConfigurationLoadError::InvalidSyntax(error)
+    }
+}
+
+impl From<validator::ValidationErrors> for ConfigurationLoadError{
+    fn from(error: validator::ValidationErrors) -> Self {
+        ConfigurationLoadError::InvalidConfiguration(error)
+    }
+}
+
 /// Configuration for an Hyperion instance
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct Configuration {
+    /// Path this configuration was loaded from
+    #[serde(skip)]
+    path: PathBuf,
     /// List of devices for this configuration
     #[validate]
     pub devices: Vec<Device>,
@@ -22,6 +60,25 @@ pub struct Configuration {
 pub type ConfigurationHandle = Arc<RwLock<Configuration>>;
 
 impl Configuration {
+    /// Read the configuration from a file
+    ///
+    /// # Parameters
+    ///
+    /// * `path`: path to the configuration to load
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<Configuration, ConfigurationLoadError> {
+        let src_path = path.as_ref().to_path_buf();
+
+        // Open file and create reader
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+
+        let mut configuration: Self = serde_yaml::from_reader(reader)?;
+        configuration.path = src_path;
+        configuration.validate()?;
+
+        Ok(configuration)
+    }
+
     /// Turn this configuration object into a shared handle
     pub fn into_handle(self) -> ConfigurationHandle {
         Arc::new(RwLock::new(self))

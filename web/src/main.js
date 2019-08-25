@@ -1,11 +1,27 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import Buefy from 'buefy'
+
+import { library } from '@fortawesome/fontawesome-svg-core'
+// internal icons
+import { faCheck, faCheckCircle, faInfoCircle, faExclamationTriangle, faExclamationCircle,
+  faArrowUp, faAngleRight, faAngleLeft, faAngleDown,
+  faEye, faEyeSlash, faCaretDown, faCaretUp, faUpload } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import Buefy, { ToastProgrammatic as Toast } from 'buefy'
+
 import store from './store'
 import axios from 'axios'
 
-Vue.use(Buefy)
+library.add(faCheck, faCheckCircle, faInfoCircle, faExclamationTriangle, faExclamationCircle,
+  faArrowUp, faAngleRight, faAngleLeft, faAngleDown,
+  faEye, faEyeSlash, faCaretDown, faCaretUp, faUpload)
+Vue.component('vue-fontawesome', FontAwesomeIcon)
+
+Vue.use(Buefy, {
+  defaultIconComponent: 'vue-fontawesome',
+  defaultIconPack: 'fas'
+})
 
 Vue.config.productionTip = false
 

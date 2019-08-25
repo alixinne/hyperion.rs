@@ -2,44 +2,11 @@
 
 use std::fs::File;
 use std::io::BufReader;
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::sync::{Arc, RwLock};
 use validator::Validate;
 
-use super::{Correction, Device};
-
-/// Config loading error
-#[derive(Debug, Fail)]
-pub enum ConfigLoadError {
-    /// I/O error
-    #[fail(display = "an i/o error occurred: {}", 0)]
-    IoError(std::io::Error),
-    /// Deserialization error
-    #[fail(display = "invalid syntax: {}", 0)]
-    InvalidSyntax(serde_yaml::Error),
-    /// Validator error
-    #[fail(display = "failed to validate config: {}", 0)]
-    InvalidConfig(validator::ValidationErrors),
-}
-
-impl From<std::io::Error> for ConfigLoadError {
-    fn from(error: std::io::Error) -> Self {
-        ConfigLoadError::IoError(error)
-    }
-}
-
-impl From<serde_yaml::Error> for ConfigLoadError {
-    fn from(error: serde_yaml::Error) -> Self {
-        ConfigLoadError::InvalidSyntax(error)
-    }
-}
-
-impl From<validator::ValidationErrors> for ConfigLoadError {
-    fn from(error: validator::ValidationErrors) -> Self {
-        ConfigLoadError::InvalidConfig(error)
-    }
-}
+use super::{ConfigHandle, ConfigLoadError, Correction, Device};
 
 /// Config for an Hyperion instance
 #[derive(Debug, Validate, Serialize, Deserialize)]
@@ -55,9 +22,6 @@ pub struct Config {
     #[validate]
     pub color: Correction,
 }
-
-/// Handle to the shared config object
-pub type ConfigHandle = Arc<RwLock<Config>>;
 
 impl Config {
     /// Read the configuration from a file
@@ -82,57 +46,6 @@ impl Config {
     /// Turn this config object into a shared handle
     pub fn into_handle(self) -> ConfigHandle {
         Arc::new(RwLock::new(self))
-    }
-}
-
-/// Sub-configuration handle
-#[derive(Clone)]
-pub struct DeviceConfigHandle {
-    /// Root configuration handle
-    config: ConfigHandle,
-    /// Device index
-    device_index: usize,
-}
-
-impl DeviceConfigHandle {
-    /// Create a new device configuration handle
-    ///
-    /// # Parameters
-    ///
-    /// * `config`: configuration to derive this config from
-    /// * `device_index`: index to the device
-    pub fn new(config: ConfigHandle, device_index: usize) -> Self {
-        Self {
-            config,
-            device_index,
-        }
-    }
-
-    /// Obtain a read handle to the target config
-    pub fn read(
-        &self,
-    ) -> Result<DeviceConfigGuard<'_>, std::sync::PoisonError<std::sync::RwLockReadGuard<'_, Config>>>
-    {
-        self.config.read().map(|lock_guard| DeviceConfigGuard {
-            lock_guard,
-            handle: &self,
-        })
-    }
-}
-
-/// Device config read lock guard
-pub struct DeviceConfigGuard<'a> {
-    /// Lock guard
-    lock_guard: RwLockReadGuard<'a, Config>,
-    /// Source handle
-    handle: &'a DeviceConfigHandle,
-}
-
-impl<'a> Deref for DeviceConfigGuard<'a> {
-    type Target = Device;
-
-    fn deref(&self) -> &Self::Target {
-        &self.lock_guard.devices[self.handle.device_index]
     }
 }
 

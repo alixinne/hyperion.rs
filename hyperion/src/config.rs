@@ -6,6 +6,12 @@ pub use color_format::*;
 mod config;
 pub use config::*;
 
+mod config_handle;
+pub use config_handle::*;
+
+mod config_load_error;
+pub use config_load_error::*;
+
 mod correction;
 pub use correction::*;
 

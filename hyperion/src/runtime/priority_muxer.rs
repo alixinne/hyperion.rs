@@ -9,7 +9,7 @@ use std::time::Instant;
 use futures::sync::mpsc;
 use futures::{Async, Poll, Stream};
 
-use crate::hyperion::{HyperionError, Input, StateUpdate};
+use crate::hyperion::{HyperionError, Input, ServiceCommand, StateUpdate};
 
 /// Priority muxer
 ///
@@ -19,6 +19,26 @@ pub struct PriorityMuxer {
     receiver: mpsc::UnboundedReceiver<Input>,
     /// Priority queue of inputs
     inputs: BinaryHeap<MuxerEntry>,
+}
+
+/// Result of service inputs muxed by priority
+pub enum MuxedInput {
+    /// Lighting system state update
+    StateUpdate(StateUpdate),
+    /// Internal service update
+    Internal(ServiceCommand),
+}
+
+impl From<StateUpdate> for MuxedInput {
+    fn from(state_update: StateUpdate) -> Self {
+        MuxedInput::StateUpdate(state_update)
+    }
+}
+
+impl From<ServiceCommand> for MuxedInput {
+    fn from(service_command: ServiceCommand) -> Self {
+        MuxedInput::Internal(service_command)
+    }
 }
 
 /// Entry in the muxer queue
@@ -92,7 +112,7 @@ impl PriorityMuxer {
 }
 
 impl Stream for PriorityMuxer {
-    type Item = StateUpdate;
+    type Item = MuxedInput;
     type Error = HyperionError;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
@@ -105,12 +125,17 @@ impl Stream for PriorityMuxer {
             if let Some(input) = value {
                 trace!("received new input {:?}", input);
 
+                // Forward internal commands directly
+                if let Input::Internal(service_command) = input {
+                    return Ok(Async::Ready(Some(service_command.into())));
+                }
+
                 let entry = MuxerEntry::from(input);
 
                 if entry.is_clearall() {
                     // Clear all pending messages and turn off everything
                     self.inputs.clear();
-                    return Ok(Async::Ready(Some(StateUpdate::Clear)));
+                    return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
                 } else {
                     // Other message, add to queue
                     self.inputs.push(entry);
@@ -141,11 +166,11 @@ impl Stream for PriorityMuxer {
 
             if let Some(input) = input {
                 trace!("forwarding input: {:?}", input);
-                return Ok(Async::Ready(Some(input.into_update())));
+                return Ok(Async::Ready(Some(input.into_update().into())));
             }
         } else if expired_entries {
             // We expired entries and now there are none, clear everything
-            return Ok(Async::Ready(Some(StateUpdate::Clear)));
+            return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
         }
 
         Ok(Async::NotReady)

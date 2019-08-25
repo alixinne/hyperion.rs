@@ -3,7 +3,7 @@
 use std::convert::TryInto;
 use std::time::Duration;
 
-use super::StateUpdate;
+use super::{ServiceCommand, StateUpdate};
 
 /// Hyperion input information
 #[derive(Debug, Clone)]
@@ -26,6 +26,8 @@ pub enum Input {
         /// Duration to apply the input for
         duration: Duration,
     },
+    /// Internal command, not a direct user input
+    Internal(ServiceCommand),
 }
 
 impl Input {
@@ -55,6 +57,7 @@ impl Input {
             Input::OneShot(update) => update,
             Input::Priority { update, .. } => update,
             Input::Full { update, .. } => update,
+            Input::Internal(_) => panic!("cannot turn internal command into state update"),
         }
     }
 
@@ -93,5 +96,11 @@ impl Input {
             },
             _ => Input::Priority { update, priority },
         }
+    }
+}
+
+impl From<ServiceCommand> for Input {
+    fn from(command: ServiceCommand) -> Self {
+        Input::Internal(command)
     }
 }

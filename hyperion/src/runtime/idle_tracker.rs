@@ -107,6 +107,19 @@ impl From<IdleSettings> for IdleTracker {
 }
 
 impl IdleTracker {
+    /// Loads new settings in the IdleTracker
+    ///
+    /// # Parameters
+    ///
+    /// * `idle_settings`: new settings to load
+    pub fn reload(&mut self, idle_settings: IdleSettings) {
+        self.idle_settings = idle_settings;
+
+        // Trigger new check on next pass
+        self.current_state = IdleState::Active;
+        self.passes_since_last_change = 0;
+    }
+
     /// Starts a new pass
     ///
     /// This function should be called before updating LEDs in the device.

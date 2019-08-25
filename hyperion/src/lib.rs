@@ -28,6 +28,8 @@
 #[macro_use]
 extern crate approx;
 #[macro_use]
+extern crate bitflags;
+#[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate futures;

@@ -8,6 +8,7 @@ use hyper_staticfile::Static;
 use reset_router::{bits::Method, Request, RequestExtensions, Response};
 
 use crate::config::ConfigHandle;
+use crate::hyperion::{ServiceCommand, ServiceInputSender};
 
 /// Hyper server state
 #[derive(Clone)]
@@ -16,6 +17,8 @@ pub struct State {
     hyper_static: Static,
     /// Reference to the configuration
     config: ConfigHandle,
+    /// Service input sender
+    service_input: ServiceInputSender,
 }
 
 /// Crate version
@@ -71,7 +74,20 @@ fn api_patch_device(req: Request) -> Box<impl Future<Item = Response, Error = Re
 
                 let state = parts.state::<State>().unwrap();
                 let device = &mut state.config.write().unwrap().devices[id];
-                json_try!(device.update(parsed));
+
+                let reload_hints = json_try!(device.update(parsed));
+
+                // Send state update to Hyperion
+                state
+                    .service_input
+                    .unbounded_send(
+                        ServiceCommand::ReloadDevice {
+                            device_index: id,
+                            reload_hints,
+                        }
+                        .into(),
+                    )
+                    .unwrap();
 
                 Ok(json_response!(StatusCode::OK, device))
             }),
@@ -85,10 +101,12 @@ impl State {
     ///
     /// * `webroot`: path to the root for static files
     /// * `config`: configuration handle
-    pub fn new(webroot: PathBuf, config: ConfigHandle) -> Self {
+    /// * `service_input`: service input sender
+    pub fn new(webroot: PathBuf, config: ConfigHandle, service_input: ServiceInputSender) -> Self {
         Self {
             hyper_static: Static::new(webroot),
             config,
+            service_input,
         }
     }
 }
@@ -102,9 +120,14 @@ pub type Router = reset_router::Router<State>;
 ///
 /// * `webroot`: path to the root for static files
 /// * `config`: configuration handle
-pub fn build_router(webroot: PathBuf, config: ConfigHandle) -> Router {
+/// * `service_input`: service input sender
+pub fn build_router(
+    webroot: PathBuf,
+    config: ConfigHandle,
+    service_input: ServiceInputSender,
+) -> Router {
     reset_router::Router::build()
-        .with_state(State::new(webroot, config))
+        .with_state(State::new(webroot, config, service_input))
         .add(Method::GET, r"^/api/server$", api_server)
         .add(Method::GET, r"^/api/devices$", api_devices)
         .add(Method::PATCH, r"^/api/devices/(\d+)$", api_patch_device)

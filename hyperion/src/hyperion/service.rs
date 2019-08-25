@@ -8,9 +8,9 @@ use futures::sync::mpsc;
 use futures::{Async, Future, Poll, Stream};
 
 use crate::color;
-use crate::config::ConfigHandle;
+use crate::config::{ConfigHandle, ReloadHints};
 use crate::image::Processor;
-use crate::runtime::{Devices, PriorityMuxer};
+use crate::runtime::{Devices, MuxedInput, PriorityMuxer};
 
 use super::*;
 
@@ -26,6 +26,9 @@ pub struct Service {
     debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
 }
 
+/// Type of the sender end of the channel for Hyperion inputs
+pub type ServiceInputSender = mpsc::UnboundedSender<Input>;
+
 impl Service {
     /// Create a new Service instance
     ///
@@ -36,7 +39,7 @@ impl Service {
     pub fn new(
         config: ConfigHandle,
         debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
-    ) -> Result<(Self, mpsc::UnboundedSender<Input>), HyperionError> {
+    ) -> Result<(Self, ServiceInputSender), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
 
@@ -92,6 +95,31 @@ impl Service {
             }
         }
     }
+
+    /// Handle an incoming service command
+    ///
+    /// # Parameters
+    ///
+    /// * `service_command`: command to handle
+    fn handle_command(&mut self, service_command: ServiceCommand) {
+        match service_command {
+            ServiceCommand::ReloadDevice {
+                device_index,
+                reload_hints,
+            } => match self.devices.reload_device(device_index, reload_hints) {
+                Ok(_) => {
+                    if reload_hints.contains(ReloadHints::DEVICE_LEDS) {
+                        // Reload the image processor if the LEDs changed
+                        trace!("clearing the image processor cache");
+                        self.image_processor = Default::default();
+                    }
+                }
+                Err(error) => {
+                    error!("error while reloading device: {}", error);
+                }
+            },
+        }
+    }
 }
 
 impl Future for Service {
@@ -101,8 +129,11 @@ impl Future for Service {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         // Poll channel for state updates
         while let Async::Ready(value) = self.priority_muxer.poll()? {
-            if let Some(state_update) = value {
-                self.handle_update(state_update);
+            if let Some(muxed_input) = value {
+                match muxed_input {
+                    MuxedInput::StateUpdate(state_update) => self.handle_update(state_update),
+                    MuxedInput::Internal(service_command) => self.handle_command(service_command),
+                }
             } else {
                 return Ok(Async::Ready(()));
             }

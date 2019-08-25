@@ -113,11 +113,12 @@ fn validate_device(device: &Device) -> Result<(), ValidationError> {
 }
 
 macro_rules! update_field {
-    ($field:ident, $device_update:ident, $cloned_self:ident) => {
+    ($field:ident, $device_update:ident, $cloned_self:ident, $changed_flags:ident, $extra_bits:expr) => {
         if let Some($field) = $device_update.$field {
             $cloned_self.$field = $field;
+            $changed_flags |= $extra_bits;
         }
-    }
+    };
 }
 
 impl Device {
@@ -126,24 +127,76 @@ impl Device {
     /// # Parameters
     ///
     /// * `device_update`: set of possible updates to the device configuration
-    pub fn update(&mut self, device_update: DeviceUpdate) -> Result<(), validator::ValidationErrors> {
+    pub fn update(
+        &mut self,
+        device_update: DeviceUpdate,
+    ) -> Result<ReloadHints, validator::ValidationErrors> {
         // Clone self
         let mut cloned_self = self.clone();
+        let mut changed_flags = ReloadHints::empty();
 
         // Apply changes
-        update_field!(enabled, device_update, cloned_self);
-        update_field!(name, device_update, cloned_self);
-        update_field!(endpoint, device_update, cloned_self);
-        update_field!(leds, device_update, cloned_self);
-        update_field!(frequency, device_update, cloned_self);
-        update_field!(idle, device_update, cloned_self);
-        update_field!(filter, device_update, cloned_self);
-        update_field!(format, device_update, cloned_self);
+        update_field!(
+            enabled,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_GENERIC
+        );
+        update_field!(
+            name,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_GENERIC
+        );
+        update_field!(
+            endpoint,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_ENDPOINT
+        );
+        update_field!(
+            leds,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_LEDS
+        );
+        update_field!(
+            frequency,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_FREQUENCY
+        );
+        update_field!(
+            idle,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_IDLE
+        );
+        update_field!(
+            filter,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_FILTER
+        );
+        update_field!(
+            format,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_FORMAT
+        );
 
         // Validate changes
         cloned_self.validate()?;
 
         *self = cloned_self;
-        Ok(())
+        Ok(changed_flags)
     }
 }

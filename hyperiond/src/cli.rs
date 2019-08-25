@@ -81,11 +81,11 @@ pub fn run() -> Result<(), failure::Error> {
 
         let config = config.into_handle();
 
-        let (hyperion, sender) = hyperion::hyperion::Service::new(config.clone(), None)?;
+        let (hyperion, service_sender) = hyperion::hyperion::Service::new(config.clone(), None)?;
 
         let servers = vec![
-            servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,
-            servers::bind_proto(&proto_address, sender.clone(), tripwire.clone())?,
+            servers::bind_json(&json_address, service_sender.clone(), tripwire.clone())?,
+            servers::bind_proto(&proto_address, service_sender.clone(), tripwire.clone())?,
         ];
 
         let server_future = futures::future::join_all(servers).map(|_| ());
@@ -93,7 +93,13 @@ pub fn run() -> Result<(), failure::Error> {
         let (sender, receiver) = futures::sync::oneshot::channel::<()>();
 
         // Instantiate the web server
-        let web_server = hyperion::web::bind(web_address, receiver, "web/dist", config);
+        let web_server = hyperion::web::bind(
+            web_address,
+            receiver,
+            "web/dist",
+            config,
+            service_sender.clone(),
+        );
 
         let exit_code = Arc::new(AtomicI32::new(exitcode::OK));
         let final_exit_code = exit_code.clone();

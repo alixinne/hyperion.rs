@@ -30,6 +30,9 @@ pub use idle_settings::*;
 mod led;
 pub use led::*;
 
+mod reload_hints;
+pub use reload_hints::*;
+
 mod scan_range;
 pub use scan_range::*;
 

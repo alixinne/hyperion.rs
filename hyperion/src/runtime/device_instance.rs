@@ -12,7 +12,7 @@ use crate::color;
 use crate::methods;
 use crate::methods::Method;
 
-use crate::config::DeviceConfigHandle;
+use crate::config::{DeviceConfigHandle, ReloadHints};
 
 use super::{IdleTracker, LedInstance};
 use crate::filters::ColorFilter;
@@ -35,6 +35,12 @@ pub struct DeviceInstance {
     config: DeviceConfigHandle,
 }
 
+fn updater_for(frequency: f64) -> (Duration, Interval) {
+    // Compute interval from frequency
+    let update_duration = Duration::from_nanos((1_000_000_000f64 / frequency) as u64);
+    (update_duration, Interval::new_interval(update_duration))
+}
+
 impl TryFrom<DeviceConfigHandle> for DeviceInstance {
     type Error = methods::MethodError;
 
@@ -49,10 +55,37 @@ impl TryFrom<DeviceConfigHandle> for DeviceInstance {
     /// When the device method cannot be initialized from the configuration (for example, if the
     /// UDP address is already in use).
     fn try_from(config: DeviceConfigHandle) -> Result<Self, Self::Error> {
-        let (method, updater, leds, idle_tracker, filter) = DeviceInstance::build(&config, true);
+        let device = config.read().unwrap();
 
-        Ok(DeviceInstance {
-            method: method.unwrap()?,
+        let (update_duration, updater) = updater_for(device.frequency);
+
+        // Log initialized device
+        info!(
+            "initialized device '{}': update {}, idle {}, {} leds",
+            device.name,
+            humantime::Duration::from(update_duration),
+            device.idle,
+            device.leds.len()
+        );
+
+        let filter = ColorFilter::from(device.filter.clone());
+        let capacity = filter.capacity(device.frequency as f32);
+
+        let method = methods::from_endpoint(&device.endpoint)?;
+
+        let leds = device
+            .leds
+            .iter()
+            .map(|led| LedInstance::new(led.clone(), capacity))
+            .collect();
+
+        let idle_tracker = IdleTracker::from(device.idle.clone());
+
+        // device not used here, frees config from borrow
+        drop(device);
+
+        Ok(Self {
+            method,
             updater,
             leds,
             idle_tracker,
@@ -71,61 +104,6 @@ pub enum DeviceError {
 }
 
 impl DeviceInstance {
-    /// Build the device parts from the given configuration
-    ///
-    /// # Parameters
-    ///
-    /// * `config`: configuration handle
-    /// * `build_method`: true if the method object should be built
-    fn build(
-        config: &DeviceConfigHandle,
-        build_method: bool,
-    ) -> (
-        Option<Result<Box<dyn Method + Send>, methods::MethodError>>,
-        Interval,
-        Vec<LedInstance>,
-        IdleTracker,
-        ColorFilter,
-    ) {
-        let device = config.read().unwrap();
-
-        // Compute interval from frequency
-        let update_duration = Duration::from_nanos((1_000_000_000f64 / device.frequency) as u64);
-
-        // Log initialized device
-        info!(
-            "{} device '{}': update {}, idle {}, {} leds",
-            if build_method {
-                "initialized"
-            } else {
-                "reloaded"
-            },
-            device.name,
-            humantime::Duration::from(update_duration),
-            device.idle,
-            device.leds.len()
-        );
-
-        let filter = ColorFilter::from(device.filter.clone());
-        let capacity = filter.capacity(device.frequency as f32);
-
-        let method = if build_method {
-            Some(methods::from_endpoint(&device.endpoint))
-        } else {
-            None
-        };
-
-        let updater = Interval::new_interval(update_duration);
-        let leds = device
-            .leds
-            .iter()
-            .map(|led| LedInstance::new(led.clone(), capacity))
-            .collect();
-        let idle_tracker = IdleTracker::from(device.idle.clone());
-
-        (method, updater, leds, idle_tracker, filter)
-    }
-
     /// Iterate LEDs
     pub fn iter_leds(&self) -> impl Iterator<Item = (usize, &LedInstance)> {
         self.leds.iter().enumerate()
@@ -180,15 +158,54 @@ impl DeviceInstance {
 
     /// In case of a configuration update, reload cached settings
     /// from the configuration
-    pub fn reload(&mut self) {
-        let (_method, updater, leds, idle_tracker, filter) =
-            DeviceInstance::build(&self.config, false);
+    ///
+    /// # Parameters
+    ///
+    /// * `reload_hints`: details about which parts to reload
+    pub fn reload(&mut self, reload_hints: ReloadHints) -> Result<(), methods::MethodError> {
+        let device = self.config.read().unwrap();
 
-        // TODO: Preserve state when reloading
-        self.updater = updater;
-        self.leds = leds;
-        self.idle_tracker = idle_tracker;
-        self.filter = filter;
+        if reload_hints.contains(ReloadHints::DEVICE_IDLE) {
+            // Preserve idle tracker state on load
+            self.idle_tracker.reload(device.idle.clone());
+        }
+
+        if reload_hints.contains(ReloadHints::DEVICE_FREQUENCY) {
+            // Updater and filter are state-less
+            let (_update_duration, updater) = updater_for(device.frequency);
+            self.updater = updater;
+        }
+
+        if reload_hints.contains(ReloadHints::DEVICE_FILTER) {
+            self.filter = ColorFilter::from(device.filter.clone());
+        }
+
+        if reload_hints.contains(ReloadHints::DEVICE_LEDS) {
+            let capacity = self.filter.capacity(device.frequency as f32);
+
+            if self.leds.len() == device.leds.len() {
+                // Same amount of LEDs, preserve value states
+                for (i, new_led) in device.leds.iter().enumerate() {
+                    self.leds[i].reload(new_led.clone(), capacity);
+                }
+            } else {
+                // LED count changed, just reload everything
+                self.leds = device
+                    .leds
+                    .iter()
+                    .map(|led| LedInstance::new(led.clone(), capacity))
+                    .collect();
+            }
+        }
+
+        if reload_hints.contains(ReloadHints::DEVICE_ENDPOINT) {
+            self.method = methods::from_endpoint(&device.endpoint)?;
+        }
+
+        // Log initialized device
+        info!("reloaded device '{}': {:?}", device.name, reload_hints);
+
+        Ok(())
     }
 }
 

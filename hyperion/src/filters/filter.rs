@@ -7,7 +7,7 @@ use super::ValueStore;
 use crate::color;
 
 /// A generic time-domain filter over values
-pub trait Filter<T> {
+pub trait Filter<T: Copy> {
     /// Computes the current value using this filter and the stored values
     ///
     /// # Parameters

@@ -10,7 +10,7 @@ use super::{Filter, ValueStore};
 #[derive(Default)]
 pub struct Nearest;
 
-impl<T: std::fmt::Debug + Default + Clone> Filter<T> for Nearest {
+impl<T: std::fmt::Debug + Default + Copy> Filter<T> for Nearest {
     fn current_value(&self, _time: Instant, value_store: &ValueStore<T>) -> T {
         value_store
             .iter()

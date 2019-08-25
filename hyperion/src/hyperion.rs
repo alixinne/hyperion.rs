@@ -12,5 +12,8 @@ pub use input::*;
 mod service;
 pub use service::*;
 
+mod service_command;
+pub use service_command::*;
+
 mod state_update;
 pub use state_update::*;

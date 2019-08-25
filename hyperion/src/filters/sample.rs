@@ -3,15 +3,15 @@
 use std::time::Instant;
 
 /// A sample value associated with its time
-#[derive(Debug)]
-pub struct Sample<T> {
+#[derive(Copy, Clone, Debug)]
+pub struct Sample<T: Copy> {
     /// Time of the sample
     pub instant: Instant,
     /// Value of the sample
     pub value: T,
 }
 
-impl<T> Sample<T> {
+impl<T: Copy> Sample<T> {
     /// Create a new sample
     ///
     /// # Parameters

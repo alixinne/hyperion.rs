@@ -35,7 +35,7 @@ fn t(d: Duration) -> f32 {
 
 use std::fmt::Debug;
 
-impl<T: Debug + Default + Clone + Add<T, Output = T> + Mul<f32, Output = T>> Filter<T> for Linear {
+impl<T: Debug + Default + Copy + Add<T, Output = T> + Mul<f32, Output = T>> Filter<T> for Linear {
     fn current_value(&self, time: Instant, value_store: &ValueStore<T>) -> T {
         let period = 1.0 / self.frequency;
 

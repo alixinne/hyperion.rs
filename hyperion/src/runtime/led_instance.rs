@@ -36,6 +36,22 @@ impl LedInstance {
         }
     }
 
+    /// Reload an LED's configuration from a new instance
+    ///
+    /// This will preserve the current value store, and update it to the
+    /// required capacity.
+    ///
+    /// # Parameters
+    ///
+    /// * `new_led`: new LED instance to pull settings from
+    pub fn reload(&mut self, led: Led, capacity: (usize, usize)) {
+        // Update spec
+        self.spec = led;
+
+        // Update capacity
+        self.values.set_capacity(capacity);
+    }
+
     /// Updates this LED's color
     ///
     /// # Parameters

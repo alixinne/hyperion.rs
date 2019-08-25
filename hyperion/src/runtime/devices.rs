@@ -80,6 +80,20 @@ impl Devices {
                 .unwrap();
         });
     }
+
+    /// Reload a given device
+    ///
+    /// # Parameters
+    ///
+    /// * `device_index`: index of the device to reload
+    /// * `reload_hints`: parts of the device to reload
+    pub fn reload_device(
+        &mut self,
+        device_index: usize,
+        reload_hints: ReloadHints,
+    ) -> Result<(), crate::methods::MethodError> {
+        self.devices[device_index].reload(reload_hints)
+    }
 }
 
 // Note: can't use a blanket implementation for IntoIterator<Item = Device>

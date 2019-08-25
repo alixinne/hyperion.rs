@@ -21,37 +21,6 @@ pub struct State {
 /// Crate version
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// GET /api/server route
-fn api_server(_: Request) -> Result<Response, Response> {
-    let response = http::Response::builder()
-        .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(
-            json!({
-                "version": VERSION,
-                "hostname": hostname::get_hostname(),
-            })
-            .to_string(),
-        ))
-        .unwrap();
-
-    Ok(response)
-}
-
-/// GET /api/devices route
-fn api_devices(req: Request) -> Result<Response, Response> {
-    let response = http::Response::builder()
-        .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(
-            serde_json::to_string(&req.state::<State>().unwrap().config.read().unwrap().devices)
-                .unwrap(),
-        ))
-        .unwrap();
-
-    Ok(response)
-}
-
 macro_rules! json_response {
     ($status_code:expr, $body:expr) => {
         // TODO: Handle unwrap?
@@ -70,6 +39,22 @@ macro_rules! json_try {
     ($what:expr) => {
         $what.map_err(|error| json_error!(error))?
     };
+}
+
+/// GET /api/server route
+fn api_server(_: Request) -> Result<Response, Response> {
+    Ok(json_response!(
+        StatusCode::OK,
+        &json!({ "version": VERSION, "hostname": hostname::get_hostname() })
+    ))
+}
+
+/// GET /api/devices route
+fn api_devices(req: Request) -> Result<Response, Response> {
+    Ok(json_response!(
+        StatusCode::OK,
+        &req.state::<State>().unwrap().config.read().unwrap().devices
+    ))
 }
 
 /// PATCH /api/devices/:id route

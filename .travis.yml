@@ -12,7 +12,10 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
-cache: cargo
+cache:
+  cargo: true
+  directories:
+    - web/node_modules
 script:
   - |
     # Download cargo-make binary release
@@ -33,7 +36,7 @@ script:
     if [ $TRAVIS_RUST_VERSION = stable ]; then
       cargo make --no-workspace package-ci-flow
     else
-      cargo make --no-workspace workspace-ci-flow
+      cargo make --no-workspace default-ci-flow
     fi
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&

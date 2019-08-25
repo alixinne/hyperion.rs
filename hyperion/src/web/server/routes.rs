@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use futures::Future;
 use hyper::{header, http, Body, StatusCode};
 use hyper_staticfile::Static;
-use reset_router::{bits::Method, Request, RequestExtensions, Response, Router};
+use reset_router::{bits::Method, Request, RequestExtensions, Response};
 
 use crate::config::ConfigHandle;
 
@@ -67,14 +67,17 @@ impl State {
     }
 }
 
+/// hyperion.rs router type
+pub type Router = reset_router::Router<State>;
+
 /// Build the hyperion.rs web router
 ///
 /// # Parameters
 ///
 /// * `webroot`: path to the root for static files
 /// * `config`: configuration handle
-pub fn build_router(webroot: PathBuf, config: ConfigHandle) -> Router<State> {
-    Router::build()
+pub fn build_router(webroot: PathBuf, config: ConfigHandle) -> Router {
+    reset_router::Router::build()
         .with_state(State::new(webroot, config))
         .add(Method::GET, r"^/api/server$", api_server)
         .add(Method::GET, r"^/api/devices$", api_devices)

@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use futures::Future;
 use hyper::Server;
 
+use super::logging_server::LoggingServer;
 use super::routes::build_router;
 use crate::config::ConfigHandle;
 
@@ -28,7 +29,8 @@ pub fn bind<P: Into<PathBuf> + Send + 'static>(
     config: ConfigHandle,
 ) -> ServerFuture {
     Box::new(futures::lazy(move || {
-        let server = Server::bind(&addr).serve(build_router(webroot.into(), config));
+        let server =
+            Server::bind(&addr).serve(LoggingServer::new(build_router(webroot.into(), config)));
 
         let server = server.with_graceful_shutdown(shutdown).map_err(|err| {
             error!("web server error: {}", err);

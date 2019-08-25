@@ -28,7 +28,7 @@ impl LoggingServer {
 
 impl Service for LoggingServer {
     type Error = reset_router::Never;
-    type Future = Box<Future<Item = http::Response<Self::ResBody>, Error = Self::Error> + Send>;
+    type Future = Box<dyn Future<Item = http::Response<Self::ResBody>, Error = Self::Error> + Send>;
     type ReqBody = hyper::Body;
     type ResBody = hyper::Body;
 

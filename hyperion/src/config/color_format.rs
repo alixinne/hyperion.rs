@@ -141,7 +141,7 @@ impl Default for RgbwFormat {
         Self {
             order: "rgbw".to_owned(),
             rgb: ColorPoint::srgb_white(),
-            white: ColorPoint::from_kelvin(6500.),
+            white: ColorPoint::srgb_white(),
             gamma: Default::default(),
         }
     }
@@ -169,7 +169,7 @@ impl Default for RgbcwFormat {
         Self {
             order: "rgbcw".to_owned(),
             rgb: ColorPoint::srgb_white(),
-            cold_white: ColorPoint::from_kelvin(6500.),
+            cold_white: ColorPoint::srgb_white(),
             warm_white: ColorPoint::from_kelvin(2800.),
             gamma: Default::default(),
         }

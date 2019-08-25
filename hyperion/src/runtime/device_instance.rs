@@ -12,14 +12,14 @@ use crate::color;
 use crate::methods;
 use crate::methods::Method;
 
-use crate::config::DeviceConfigurationHandle;
+use crate::config::DeviceConfigHandle;
 
 use super::{IdleTracker, LedInstance};
 use crate::filters::ColorFilter;
 
 /// Runtime data for a given device
 ///
-/// This type is constructed from the configuration details in the config file.
+/// This type is constructed from the configuration details in the configuration file.
 pub struct DeviceInstance {
     /// Communication method
     method: Box<dyn Method + Send>,
@@ -32,10 +32,10 @@ pub struct DeviceInstance {
     /// Filter instance
     filter: ColorFilter,
     /// Configuration handle
-    configuration: DeviceConfigurationHandle,
+    config: DeviceConfigHandle,
 }
 
-impl TryFrom<DeviceConfigurationHandle> for DeviceInstance {
+impl TryFrom<DeviceConfigHandle> for DeviceInstance {
     type Error = methods::MethodError;
 
     /// Try to instantiate the device corresponding to a specification
@@ -48,9 +48,8 @@ impl TryFrom<DeviceConfigurationHandle> for DeviceInstance {
     ///
     /// When the device method cannot be initialized from the configuration (for example, if the
     /// UDP address is already in use).
-    fn try_from(configuration: DeviceConfigurationHandle) -> Result<Self, Self::Error> {
-        let (method, updater, leds, idle_tracker, filter) =
-            DeviceInstance::build(&configuration, true);
+    fn try_from(config: DeviceConfigHandle) -> Result<Self, Self::Error> {
+        let (method, updater, leds, idle_tracker, filter) = DeviceInstance::build(&config, true);
 
         Ok(DeviceInstance {
             method: method.unwrap()?,
@@ -58,7 +57,7 @@ impl TryFrom<DeviceConfigurationHandle> for DeviceInstance {
             leds,
             idle_tracker,
             filter,
-            configuration,
+            config,
         })
     }
 }
@@ -76,10 +75,10 @@ impl DeviceInstance {
     ///
     /// # Parameters
     ///
-    /// * `configuration`: configuration handle
+    /// * `config`: configuration handle
     /// * `build_method`: true if the method object should be built
     fn build(
-        configuration: &DeviceConfigurationHandle,
+        config: &DeviceConfigHandle,
         build_method: bool,
     ) -> (
         Option<Result<Box<dyn Method + Send>, methods::MethodError>>,
@@ -88,7 +87,7 @@ impl DeviceInstance {
         IdleTracker,
         ColorFilter,
     ) {
-        let device = configuration.read().unwrap();
+        let device = config.read().unwrap();
 
         // Compute interval from frequency
         let update_duration = Duration::from_nanos((1_000_000_000f64 / device.frequency) as u64);
@@ -183,7 +182,7 @@ impl DeviceInstance {
     /// from the configuration
     pub fn reload(&mut self) {
         let (_method, updater, leds, idle_tracker, filter) =
-            DeviceInstance::build(&self.configuration, false);
+            DeviceInstance::build(&self.config, false);
 
         // TODO: Preserve state when reloading
         self.updater = updater;
@@ -213,7 +212,7 @@ impl Future for DeviceInstance {
             // check the change tracker to see if it's actually useful
             let (changed, state) = self.idle_tracker.update_state();
 
-            let device = self.configuration.read().unwrap();
+            let device = self.config.read().unwrap();
 
             // Notify log of state changes
             if changed {

@@ -1,6 +1,6 @@
 //! Hyper server type definition
 
-mod routes;
 mod bind;
+mod routes;
 
 pub use bind::bind;

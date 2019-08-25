@@ -1,4 +1,4 @@
-//! Definition of the Configuration type
+//! Definition of the Config type
 
 use std::fs::File;
 use std::io::BufReader;
@@ -9,9 +9,9 @@ use validator::Validate;
 
 use super::{Correction, Device};
 
-/// Configuration loading error
+/// Config loading error
 #[derive(Debug, Fail)]
-pub enum ConfigurationLoadError {
+pub enum ConfigLoadError {
     /// I/O error
     #[fail(display = "an i/o error occurred: {}", 0)]
     IoError(std::io::Error),
@@ -19,35 +19,35 @@ pub enum ConfigurationLoadError {
     #[fail(display = "invalid syntax: {}", 0)]
     InvalidSyntax(serde_yaml::Error),
     /// Validator error
-    #[fail(display = "failed to validate configuration: {}", 0)]
-    InvalidConfiguration(validator::ValidationErrors),
+    #[fail(display = "failed to validate config: {}", 0)]
+    InvalidConfig(validator::ValidationErrors),
 }
 
-impl From<std::io::Error> for ConfigurationLoadError {
+impl From<std::io::Error> for ConfigLoadError {
     fn from(error: std::io::Error) -> Self {
-        ConfigurationLoadError::IoError(error)
+        ConfigLoadError::IoError(error)
     }
 }
 
-impl From<serde_yaml::Error> for ConfigurationLoadError {
+impl From<serde_yaml::Error> for ConfigLoadError {
     fn from(error: serde_yaml::Error) -> Self {
-        ConfigurationLoadError::InvalidSyntax(error)
+        ConfigLoadError::InvalidSyntax(error)
     }
 }
 
-impl From<validator::ValidationErrors> for ConfigurationLoadError{
+impl From<validator::ValidationErrors> for ConfigLoadError {
     fn from(error: validator::ValidationErrors) -> Self {
-        ConfigurationLoadError::InvalidConfiguration(error)
+        ConfigLoadError::InvalidConfig(error)
     }
 }
 
-/// Configuration for an Hyperion instance
+/// Config for an Hyperion instance
 #[derive(Debug, Validate, Serialize, Deserialize)]
-pub struct Configuration {
-    /// Path this configuration was loaded from
+pub struct Config {
+    /// Path this config was loaded from
     #[serde(skip)]
     path: PathBuf,
-    /// List of devices for this configuration
+    /// List of devices for this config
     #[validate]
     pub devices: Vec<Device>,
     /// Image color correction
@@ -56,83 +56,79 @@ pub struct Configuration {
     pub color: Correction,
 }
 
-/// Handle to the shared configuration object
-pub type ConfigurationHandle = Arc<RwLock<Configuration>>;
+/// Handle to the shared config object
+pub type ConfigHandle = Arc<RwLock<Config>>;
 
-impl Configuration {
+impl Config {
     /// Read the configuration from a file
     ///
     /// # Parameters
     ///
     /// * `path`: path to the configuration to load
-    pub fn read<P: AsRef<Path>>(path: P) -> Result<Configuration, ConfigurationLoadError> {
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<Config, ConfigLoadError> {
         let src_path = path.as_ref().to_path_buf();
 
         // Open file and create reader
         let file = File::open(path)?;
         let reader = BufReader::new(file);
 
-        let mut configuration: Self = serde_yaml::from_reader(reader)?;
-        configuration.path = src_path;
-        configuration.validate()?;
+        let mut config: Self = serde_yaml::from_reader(reader)?;
+        config.path = src_path;
+        config.validate()?;
 
-        Ok(configuration)
+        Ok(config)
     }
 
-    /// Turn this configuration object into a shared handle
-    pub fn into_handle(self) -> ConfigurationHandle {
+    /// Turn this config object into a shared handle
+    pub fn into_handle(self) -> ConfigHandle {
         Arc::new(RwLock::new(self))
     }
 }
 
 /// Sub-configuration handle
 #[derive(Clone)]
-pub struct DeviceConfigurationHandle {
+pub struct DeviceConfigHandle {
     /// Root configuration handle
-    configuration: ConfigurationHandle,
+    config: ConfigHandle,
     /// Device index
     device_index: usize,
 }
 
-impl DeviceConfigurationHandle {
+impl DeviceConfigHandle {
     /// Create a new device configuration handle
     ///
     /// # Parameters
     ///
-    /// * `configuration`: configuration to derive this config from
+    /// * `config`: configuration to derive this config from
     /// * `device_index`: index to the device
-    pub fn new(configuration: ConfigurationHandle, device_index: usize) -> Self {
+    pub fn new(config: ConfigHandle, device_index: usize) -> Self {
         Self {
-            configuration,
+            config,
             device_index,
         }
     }
 
-    /// Obtain a read handle to the target configuration
+    /// Obtain a read handle to the target config
     pub fn read(
         &self,
-    ) -> Result<
-        DeviceConfigurationGuard<'_>,
-        std::sync::PoisonError<std::sync::RwLockReadGuard<'_, Configuration>>,
-    > {
-        self.configuration
-            .read()
-            .map(|lock_guard| DeviceConfigurationGuard {
-                lock_guard,
-                handle: &self,
-            })
+    ) -> Result<DeviceConfigGuard<'_>, std::sync::PoisonError<std::sync::RwLockReadGuard<'_, Config>>>
+    {
+        self.config.read().map(|lock_guard| DeviceConfigGuard {
+            lock_guard,
+            handle: &self,
+        })
     }
 }
 
-/// Device configuration read lock guard
-pub struct DeviceConfigurationGuard<'a> {
+/// Device config read lock guard
+pub struct DeviceConfigGuard<'a> {
     /// Lock guard
-    lock_guard: RwLockReadGuard<'a, Configuration>,
+    lock_guard: RwLockReadGuard<'a, Config>,
     /// Source handle
-    handle: &'a DeviceConfigurationHandle,
+    handle: &'a DeviceConfigHandle,
 }
 
-impl<'a> Deref for DeviceConfigurationGuard<'a> {
+impl<'a> Deref for DeviceConfigGuard<'a> {
     type Target = Device;
 
     fn deref(&self) -> &Self::Target {
@@ -146,7 +142,7 @@ mod tests {
 
     #[test]
     pub fn deserialize_full_config() {
-        let config: Configuration = serde_yaml::from_str(
+        let config: Config = serde_yaml::from_str(
             r#"
 devices:
   - name: Stdout dummy

@@ -7,7 +7,7 @@ use hyper::{header, http, Body, StatusCode};
 use hyper_staticfile::Static;
 use reset_router::{bits::Method, Request, RequestExtensions, Response, Router};
 
-use crate::config::ConfigurationHandle;
+use crate::config::ConfigHandle;
 
 /// Hyper server state
 #[derive(Clone)]
@@ -15,7 +15,7 @@ pub struct State {
     /// Static file server
     hyper_static: Static,
     /// Reference to the configuration
-    configuration: ConfigurationHandle,
+    config: ConfigHandle,
 }
 
 /// Crate version
@@ -44,11 +44,11 @@ impl State {
     /// # Parameters
     ///
     /// * `webroot`: path to the root for static files
-    /// * `configuration`: configuration handle
-    pub fn new(webroot: PathBuf, configuration: ConfigurationHandle) -> Self {
+    /// * `config`: configuration handle
+    pub fn new(webroot: PathBuf, config: ConfigHandle) -> Self {
         Self {
             hyper_static: Static::new(webroot),
-            configuration,
+            config,
         }
     }
 }
@@ -58,10 +58,10 @@ impl State {
 /// # Parameters
 ///
 /// * `webroot`: path to the root for static files
-/// * `configuration`: configuration handle
-pub fn build_router(webroot: PathBuf, configuration: ConfigurationHandle) -> Router<State> {
+/// * `config`: configuration handle
+pub fn build_router(webroot: PathBuf, config: ConfigHandle) -> Router<State> {
     Router::build()
-        .with_state(State::new(webroot, configuration))
+        .with_state(State::new(webroot, config))
         .add(Method::GET, r"^/api/server$", api_server)
         .add(Method::GET, r"", |req: Request| {
             req.state::<State>()

@@ -41,16 +41,15 @@ pub fn run() -> Result<(), failure::Error> {
 
     debug!("{} {}", crate_name!(), crate_version!());
 
-    let configuration_path = matches
+    let config_path = matches
         .value_of("config")
         .expect("--config is required")
         .to_owned();
 
-    let configuration =
-        hyperion::config::Configuration::read(&configuration_path).map_err(|error| {
-            let context = format!("{}: {}", configuration_path, error);
-            error.context(context)
-        })?;
+    let config = hyperion::config::Config::read(&config_path).map_err(|error| {
+        let context = format!("{}: {}", config_path, error);
+        error.context(context)
+    })?;
 
     if let Some(server_matches) = matches.subcommand_matches("server") {
         // Tripwire to cancel the server listening
@@ -80,9 +79,9 @@ pub fn run() -> Result<(), failure::Error> {
             value_t!(server_matches, "web-port", u16).context("web-port must be a port number")?,
         );
 
-        let configuration = configuration.into_handle();
+        let config = config.into_handle();
 
-        let (hyperion, sender) = hyperion::hyperion::Service::new(configuration.clone(), None)?;
+        let (hyperion, sender) = hyperion::hyperion::Service::new(config.clone(), None)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,
@@ -94,7 +93,7 @@ pub fn run() -> Result<(), failure::Error> {
         let (sender, receiver) = futures::sync::oneshot::channel::<()>();
 
         // Instantiate the web server
-        let web_server = hyperion::web::bind(web_address, receiver, "web/dist", configuration);
+        let web_server = hyperion::web::bind(web_address, receiver, "web/dist", config);
 
         let exit_code = Arc::new(AtomicI32::new(exitcode::OK));
         let final_exit_code = exit_code.clone();

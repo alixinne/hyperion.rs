@@ -8,7 +8,7 @@ use futures::sync::mpsc;
 use futures::{Async, Future, Poll, Stream};
 
 use crate::color;
-use crate::config::ConfigurationHandle;
+use crate::config::ConfigHandle;
 use crate::image::Processor;
 use crate::runtime::{Devices, PriorityMuxer};
 
@@ -31,16 +31,16 @@ impl Service {
     ///
     /// # Parameters
     ///
-    /// * `configuration`: configuration to derive this instance from
+    /// * `config`: configuration to derive this instance from
     /// * `debug_listener`: channel to send debug updates to.
     pub fn new(
-        configuration: ConfigurationHandle,
+        config: ConfigHandle,
         debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
     ) -> Result<(Self, mpsc::UnboundedSender<Input>), HyperionError> {
         // TODO: check channel capacity
         let (sender, receiver) = mpsc::unbounded();
 
-        let devices = Devices::try_from(configuration.clone()).map_err(HyperionError::from)?;
+        let devices = Devices::try_from(config.clone()).map_err(HyperionError::from)?;
 
         let priority_muxer = PriorityMuxer::new(receiver);
 

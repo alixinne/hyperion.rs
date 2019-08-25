@@ -21,7 +21,7 @@ pub struct Devices {
     /// List of device instances
     devices: Vec<DeviceInstance>,
     /// Configuration handle
-    configuration: ConfigurationHandle,
+    config: ConfigHandle,
 }
 
 impl Devices {
@@ -69,8 +69,8 @@ impl Devices {
 
         // Mutable reference to devices to prevent the closure exclusive access
         let devices = &mut self.devices;
-        // Get reference to color configuration data
-        let correction = &self.configuration.read().unwrap().color;
+        // Get reference to color config data
+        let correction = &self.config.read().unwrap().color;
 
         // Update LEDs with computed colors
         image_processor.update_leds(|(device_idx, led_idx), color| {
@@ -84,26 +84,23 @@ impl Devices {
 
 // Note: can't use a blanket implementation for IntoIterator<Item = Device>
 // See #50133
-impl TryFrom<ConfigurationHandle> for Devices {
+impl TryFrom<ConfigHandle> for Devices {
     // Can't use TryFrom<Device>::Error, see #38078
     type Error = methods::MethodError;
 
-    fn try_from(configuration: ConfigurationHandle) -> Result<Self, Self::Error> {
-        let devices = configuration
+    fn try_from(config: ConfigHandle) -> Result<Self, Self::Error> {
+        let devices = config
             .read()
             .unwrap()
             .devices
             .iter()
             .enumerate()
             .map(|(i, _device)| {
-                DeviceInstance::try_from(DeviceConfigurationHandle::new(configuration.clone(), i))
+                DeviceInstance::try_from(DeviceConfigHandle::new(config.clone(), i))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self {
-            devices,
-            configuration,
-        })
+        Ok(Self { devices, config })
     }
 }
 

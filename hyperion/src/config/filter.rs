@@ -37,7 +37,7 @@ impl Validate for Filter {
     fn validate(&self) -> Result<(), ValidationErrors> {
         match self {
             Filter::Linear { frequency } => {
-                if *frequency <= 0.0  {
+                if *frequency <= 0.0 {
                     let mut errors = ValidationErrors::new();
                     errors.add("frequency", ValidationError::new("invalid_frequency"));
                     return Err(errors);

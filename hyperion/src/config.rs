@@ -3,8 +3,8 @@
 mod color_format;
 pub use color_format::*;
 
-mod configuration;
-pub use configuration::*;
+mod config;
+pub use config::*;
 
 mod correction;
 pub use correction::*;

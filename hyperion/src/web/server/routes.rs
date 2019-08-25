@@ -38,6 +38,20 @@ fn api_server(_: Request) -> Result<Response, Response> {
     Ok(response)
 }
 
+/// /api/devices route
+fn api_devices(req: Request) -> Result<Response, Response> {
+    let response = http::Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(
+            serde_json::to_string(&req.state::<State>().unwrap().config.read().unwrap().devices)
+                .unwrap(),
+        ))
+        .unwrap();
+
+    Ok(response)
+}
+
 impl State {
     /// Create a new Hyper server state
     ///
@@ -63,6 +77,7 @@ pub fn build_router(webroot: PathBuf, config: ConfigHandle) -> Router<State> {
     Router::build()
         .with_state(State::new(webroot, config))
         .add(Method::GET, r"^/api/server$", api_server)
+        .add(Method::GET, r"^/api/devices$", api_devices)
         .add(Method::GET, r"", |req: Request| {
             req.state::<State>()
                 .unwrap()

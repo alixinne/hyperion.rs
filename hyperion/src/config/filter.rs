@@ -10,7 +10,7 @@ fn default_linear_frequency() -> f32 {
 /// Temporal filter definition
 ///
 /// Specifies how LED values should be filtered before being sent to the device.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Filter {
     #[serde(rename = "nearest")]

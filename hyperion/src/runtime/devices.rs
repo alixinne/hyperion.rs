@@ -10,7 +10,7 @@ use num_traits::Float;
 use std::ops::AddAssign;
 
 use crate::color;
-use crate::config::{Correction, Device};
+use crate::config::*;
 use crate::image::*;
 use crate::methods;
 
@@ -20,8 +20,8 @@ use super::DeviceInstance;
 pub struct Devices {
     /// List of device instances
     devices: Vec<DeviceInstance>,
-    /// Image color correction
-    correction: Correction,
+    /// Configuration handle
+    configuration: ConfigurationHandle,
 }
 
 impl Devices {
@@ -67,11 +67,16 @@ impl Devices {
             )
             .process_image(raw_image);
 
+        // Mutable reference to devices to prevent the closure exclusive access
+        let devices = &mut self.devices;
+        // Get reference to color configuration data
+        let correction = &self.configuration.read().unwrap().color;
+
         // Update LEDs with computed colors
         image_processor.update_leds(|(device_idx, led_idx), color| {
             // Should never fail, we only consider valid LEDs
-            self.devices[device_idx]
-                .set_led(time, led_idx, self.correction.process(color), immediate)
+            devices[device_idx]
+                .set_led(time, led_idx, correction.process(color), immediate)
                 .unwrap();
         });
     }
@@ -79,17 +84,25 @@ impl Devices {
 
 // Note: can't use a blanket implementation for IntoIterator<Item = Device>
 // See #50133
-impl TryFrom<(Vec<Device>, Correction)> for Devices {
+impl TryFrom<ConfigurationHandle> for Devices {
     // Can't use TryFrom<Device>::Error, see #38078
     type Error = methods::MethodError;
 
-    fn try_from((devices, correction): (Vec<Device>, Correction)) -> Result<Self, Self::Error> {
+    fn try_from(configuration: ConfigurationHandle) -> Result<Self, Self::Error> {
+        let devices = configuration
+            .read()
+            .unwrap()
+            .devices
+            .iter()
+            .enumerate()
+            .map(|(i, _device)| {
+                DeviceInstance::try_from(DeviceConfigurationHandle::new(configuration.clone(), i))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(Self {
-            devices: devices
-                .into_iter()
-                .map(DeviceInstance::try_from)
-                .collect::<Result<Vec<_>, _>>()?,
-            correction,
+            devices,
+            configuration,
         })
     }
 }

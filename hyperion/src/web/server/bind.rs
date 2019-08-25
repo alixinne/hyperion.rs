@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use futures::Future;
 use hyper::Server;
 
+use crate::config::ConfigurationHandle;
 use super::routes::build_router;
 
 /// Web server graceful shutdown signal
@@ -24,9 +25,10 @@ pub fn bind<P: Into<PathBuf> + Send + 'static>(
     addr: SocketAddr,
     shutdown: GracefulShutdownReceiver,
     webroot: P,
+    configuration: ConfigurationHandle,
 ) -> ServerFuture {
     Box::new(futures::lazy(move || {
-        let server = Server::bind(&addr).serve(build_router(webroot.into()));
+        let server = Server::bind(&addr).serve(build_router(webroot.into(), configuration));
 
         let server = server.with_graceful_shutdown(shutdown).map_err(|err| {
             error!("web server error: {}", err);

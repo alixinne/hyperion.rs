@@ -98,8 +98,10 @@ pub fn run() -> Result<(), failure::Error> {
                 .context("web-port must be a port number")?,
         );
 
+        let configuration = configuration.into_handle();
+
         let (hyperion, sender) =
-            hyperion::hyperion::Service::new(configuration, None)?;
+            hyperion::hyperion::Service::new(configuration.clone(), None)?;
 
         let servers = vec![
             servers::bind_json(&json_address, sender.clone(), tripwire.clone())?,
@@ -111,7 +113,7 @@ pub fn run() -> Result<(), failure::Error> {
         let (sender, receiver) = futures::sync::oneshot::channel::<()>();
 
         // Instantiate the web server
-        let web_server = hyperion::web::bind(web_address, receiver, "web/dist");
+        let web_server = hyperion::web::bind(web_address, receiver, "web/dist", configuration);
 
         let exit_code = Arc::new(AtomicI32::new(exitcode::OK));
         let final_exit_code = exit_code.clone();

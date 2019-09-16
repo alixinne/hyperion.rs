@@ -21,33 +21,6 @@ where
     .map_err(MethodError::from)
 }
 
-use std::path::{Path, PathBuf};
-
-/// Get the path to a script method by name
-///
-/// # Parameters
-///
-/// * `name`: name of the script method to find
-fn method_path(name: &str) -> PathBuf {
-    Path::new("scripts")
-        .join("methods")
-        .join(name.to_owned() + ".lua")
-}
-
-use serde_yaml::Value;
-use std::collections::BTreeMap as Map;
-
-/// Turn stdout parameters into stdout script parameters
-///
-/// # Parameters
-///
-/// * `bits`: output bit depth
-fn stdout_params(bits: i32) -> Map<String, Value> {
-    let mut map = Map::new();
-    map.insert("bits".to_owned(), Value::Number(bits.into()));
-    map
-}
-
 /// Create a device method from its endpoint configuration
 ///
 /// # Parameters
@@ -57,10 +30,7 @@ pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, Meth
     trace!("creating method for {:?}", endpoint);
 
     match endpoint {
-        Endpoint::Stdout { bits } => {
-            to_box(Script::new(&method_path("stdout"), stdout_params(*bits)))
-        }
+        Endpoint::Stdout { bits } => to_box(Stdout::new(*bits)),
         Endpoint::Udp { address } => to_box(Udp::new(address.to_owned())),
-        Endpoint::Script { path, params } => to_box(Script::new(path, params.to_owned())),
     }
 }

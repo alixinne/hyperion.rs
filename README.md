@@ -156,12 +156,10 @@ In hyperion.rs, color processing is divided into two parts:
 
 ### Effects
 
-Effects in hyperion.rs will be implemented as Lua scripts with a specific API to
-interact with hyperiond. This project uses the Lua interpreter as it is lighter
-to embed than the Python interpreter, and the language differences should not
-matter much for writing effect code.
+Effects in hyperion.rs are implemented using the same API as the reference
+implementation of hyperion, so effect code should be portable.
 
-Effect support is under development.
+Effect support is still under development.
 
 ### Smoothing
 

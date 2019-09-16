@@ -1,7 +1,5 @@
 //! Definition of the Endpoint type
 
-use serde_yaml::Value;
-use std::collections::BTreeMap as Map;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 /// Default stdout method bit depth
@@ -17,7 +15,7 @@ fn default_bit_depth() -> i32 {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Endpoint {
-    /// Logging output (requires stdout.lua)
+    /// Logging output
     #[serde(rename = "stdout")]
     Stdout {
         /// Bit depth for the output values
@@ -29,15 +27,6 @@ pub enum Endpoint {
     Udp {
         /// Device address
         address: String,
-    },
-    /// Scripting engine method
-    #[serde(rename = "script")]
-    Script {
-        /// Script path
-        path: String,
-        /// Script parameters
-        #[serde(flatten)]
-        params: Map<String, Value>,
     },
 }
 

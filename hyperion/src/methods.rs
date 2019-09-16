@@ -12,5 +12,5 @@ pub use method_error::*;
 mod udp;
 pub use udp::Udp;
 
-mod script;
-pub use script::Script;
+mod stdout;
+pub use stdout::Stdout;

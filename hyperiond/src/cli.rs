@@ -84,7 +84,12 @@ pub fn run() -> Result<(), failure::Error> {
         let (hyperion, service_sender) = hyperion::hyperion::Service::new(config.clone(), None)?;
 
         let servers = vec![
-            servers::bind_json(&json_address, service_sender.clone(), tripwire.clone())?,
+            servers::bind_json(
+                &json_address,
+                service_sender.clone(),
+                tripwire.clone(),
+                hyperion.get_effect_engine(),
+            )?,
             servers::bind_proto(&proto_address, service_sender.clone(), tripwire.clone())?,
         ];
 

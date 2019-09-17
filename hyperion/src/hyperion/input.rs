@@ -5,6 +5,8 @@ use std::time::Duration;
 
 use super::{ServiceCommand, StateUpdate};
 
+use crate::servers::json::Effect;
+
 /// Hyperion input information
 #[derive(Debug, Clone)]
 pub enum Input {
@@ -26,6 +28,15 @@ pub enum Input {
         /// Duration to apply the input for
         duration: Duration,
     },
+    /// Effect command
+    Effect {
+        /// Effect to run
+        effect: Effect,
+        /// Priority of the input
+        priority: i32,
+        /// Duration to apply the effect for
+        duration: Option<Duration>,
+    },
     /// Internal command, not a direct user input
     Internal(ServiceCommand),
 }
@@ -37,6 +48,10 @@ impl Input {
     pub fn get_duration(&self) -> Duration {
         match self {
             Input::Full { duration, .. } => *duration,
+            Input::Effect {
+                duration: Some(duration),
+                ..
+            } => *duration,
             _ => Duration::from_millis(u64::from(std::u32::MAX)),
         }
     }
@@ -46,8 +61,20 @@ impl Input {
     /// Items without priority will return the highest priority (apply instantly)
     pub fn get_priority(&self) -> i32 {
         match self {
-            Input::Full { priority, .. } | Input::Priority { priority, .. } => *priority,
+            Input::Full { priority, .. }
+            | Input::Priority { priority, .. }
+            | Input::Effect { priority, .. } => *priority,
             _ => std::i32::MAX,
+        }
+    }
+
+    /// Returns true if this input is a state update
+    pub fn is_update(&self) -> bool {
+        match self {
+            Input::OneShot(_) => true,
+            Input::Priority { .. } => true,
+            Input::Full { .. } => true,
+            _ => false,
         }
     }
 
@@ -58,6 +85,7 @@ impl Input {
             Input::Priority { update, .. } => update,
             Input::Full { update, .. } => update,
             Input::Internal(_) => panic!("cannot turn internal command into state update"),
+            Input::Effect { .. } => panic!("cannot turn effect into state update"),
         }
     }
 
@@ -95,6 +123,25 @@ impl Input {
                 duration: Duration::from_millis(duration.try_into().unwrap()),
             },
             _ => Input::Priority { update, priority },
+        }
+    }
+
+    /// Create an input from effect input details
+    ///
+    /// # Parameters
+    ///
+    /// * `priority`: priority of the update
+    /// * `duration`: duration of the update
+    /// * `effect`: effect to run
+    pub fn effect(priority: i32, duration: i32, effect: Effect) -> Self {
+        Input::Effect {
+            effect,
+            priority,
+            duration: if duration > 0 {
+                Some(Duration::from_millis(duration.try_into().unwrap()))
+            } else {
+                None
+            },
         }
     }
 }

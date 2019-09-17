@@ -25,12 +25,12 @@ pub struct Correction {
 }
 
 /// Trigger an effect by name
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Effect {
     /// Effect name
-    name: String,
+    pub name: String,
     /// Effect parameters
-    args: Option<serde_json::Value>,
+    pub args: Option<serde_json::Value>,
 }
 
 /// Change color temperature values
@@ -150,6 +150,52 @@ pub enum HyperionMessage {
     },
 }
 
+/// Effect definition details
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EffectDefinition {
+    /// User-friendly name of the effect
+    pub name: String,
+    /// Path to the script to run
+    pub script: String,
+    /// Extra script arguments
+    pub args: serde_json::Value,
+}
+
+/// Hyperion build info
+#[derive(Debug, Serialize)]
+pub struct BuildInfo {
+    /// Version number
+    version: String,
+    /// Build time
+    time: String,
+}
+
+/// Hyperion server info
+#[derive(Debug, Serialize)]
+pub struct ServerInfo {
+    /// Server hostname
+    hostname: String,
+    /// Effects
+    effects: Vec<EffectDefinition>,
+    /// Build info
+    hyperion_build: BuildInfo,
+
+    /// Priority information (array)
+    priorities: serde_json::Value,
+    /// Color correction information (array)
+    correction: serde_json::Value,
+    /// Temperature correction information (array)
+    temperature: serde_json::Value,
+    /// Transform correction information (array)
+    adjustment: serde_json::Value,
+    /// Active effect info (array)
+    #[serde(rename = "activeEffects")]
+    active_effects: serde_json::Value,
+    /// Active static LED color (array)
+    #[serde(rename = "activeLedColor")]
+    active_led_color: serde_json::Value,
+}
+
 /// Hyperion JSON response
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
@@ -166,4 +212,49 @@ pub enum HyperionResponse {
         /// Error message
         error: String,
     },
+    /// Server information response
+    ServerInfoResponse {
+        /// Success value (should be true)
+        success: bool,
+        /// Server information
+        // Box because of large size difference
+        info: Box<ServerInfo>,
+    },
+}
+
+impl HyperionResponse {
+    /// Return a success response
+    pub fn success() -> Self {
+        HyperionResponse::SuccessResponse { success: true }
+    }
+
+    /// Return an error response
+    pub fn error(error: String) -> Self {
+        HyperionResponse::ErrorResponse {
+            success: false,
+            error,
+        }
+    }
+
+    /// Return a server information response
+    pub fn server_info(hostname: String, effects: Vec<EffectDefinition>, version: String) -> Self {
+        HyperionResponse::ServerInfoResponse {
+            success: true,
+            info: Box::new(ServerInfo {
+                hostname,
+                effects,
+                hyperion_build: BuildInfo {
+                    version,
+                    time: "".to_owned(),
+                },
+
+                priorities: json!([]),
+                correction: json!([]),
+                temperature: json!([]),
+                adjustment: json!([]),
+                active_effects: json!([]),
+                active_led_color: json!([]),
+            }),
+        }
+    }
 }

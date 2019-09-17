@@ -35,6 +35,11 @@ pub struct DeviceInstance {
     config: DeviceConfigHandle,
 }
 
+/// Build an updater interval from a frequency
+///
+/// # Parameters
+///
+/// * `frequency`: update frequency in Hz
 fn updater_for(frequency: f64) -> (Duration, Interval) {
     // Compute interval from frequency
     let update_duration = Duration::from_nanos((1_000_000_000f64 / frequency) as u64);
@@ -107,6 +112,11 @@ impl DeviceInstance {
     /// Iterate LEDs
     pub fn iter_leds(&self) -> impl Iterator<Item = (usize, &LedInstance)> {
         self.leds.iter().enumerate()
+    }
+
+    /// Get the LED count for this device
+    pub fn get_led_count(&self) -> usize {
+        self.leds.len()
     }
 
     /// Set all LEDs of this device to a new color
@@ -224,7 +234,7 @@ impl Future for DeviceInstance {
         }
 
         // Write device if needed
-        if write_device {
+        if write_device && self.config.read().unwrap().enabled {
             // The interval told us to check the device, but now
             // check the change tracker to see if it's actually useful
             let (changed, state) = self.idle_tracker.update_state();

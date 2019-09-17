@@ -94,6 +94,46 @@ impl Devices {
     ) -> Result<(), crate::methods::MethodError> {
         self.devices[device_index].reload(reload_hints)
     }
+
+    /// Set all LEDs of all devices to a new color immediately
+    ///
+    /// # Parameters
+    ///
+    /// * `time`: time of the color update
+    /// * `leds`: color data for every device LED
+    /// * `immediate`: apply change immediately (skipping filtering)
+    pub fn set_leds(&mut self, time: Instant, leds: Vec<color::ColorPoint>, immediate: bool) {
+        let mut current_idx = 0;
+
+        for device in self.devices.iter_mut() {
+            if current_idx >= leds.len() {
+                warn!(
+                    "not enough led data (only got {}, check led count)",
+                    leds.len()
+                );
+                break;
+            }
+
+            for idx in 0..device.get_led_count() {
+                if current_idx >= leds.len() {
+                    break;
+                }
+
+                device
+                    .set_led(time, idx, leds[current_idx], immediate)
+                    .unwrap();
+
+                current_idx += 1;
+            }
+        }
+    }
+
+    /// Get the total LED count for all devices
+    pub fn get_led_count(&self) -> usize {
+        self.devices
+            .iter()
+            .fold(0usize, |s, device| s + device.get_led_count())
+    }
 }
 
 // Note: can't use a blanket implementation for IntoIterator<Item = Device>

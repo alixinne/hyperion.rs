@@ -61,14 +61,14 @@ impl<T: Debug + Default + Copy + Add<T, Output = T> + Mul<f32, Output = T>> Filt
 
             if time_diff >= period {
                 // Linear filtering period over
-                last_target_sample.value.clone()
+                last_target_sample.value
             } else {
                 let time_factor = time_diff / period;
 
                 // Linear filtering in effect
-                current_sample.value.clone()
-                    + last_target_sample.value.clone() * time_factor
-                    + current_sample.value.clone() * (-time_factor)
+                current_sample.value
+                    + last_target_sample.value * time_factor
+                    + current_sample.value * (-time_factor)
             }
         } else {
             // No target sample found

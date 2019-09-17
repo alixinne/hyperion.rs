@@ -15,4 +15,6 @@ pub enum StateUpdate {
     },
     /// Use given image to set colors
     Image(image::RawImage),
+    /// Per-LED color data
+    LedData(Vec<color::ColorPoint>),
 }

@@ -4,10 +4,7 @@ addons:
   apt:
     packages:
       - p7zip-full
-rust:
-  - stable
-  - beta
-  - nightly
+rust: nightly
 matrix:
   allow_failures:
     - rust: nightly
@@ -27,22 +24,15 @@ script:
     fi
   - |
     # Install tarpaulin binary release
-    if [ $TRAVIS_RUST_VERSION = stable ]; then
-      export CARGO_MAKE_RUN_CODECOV=true
-      bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
-    fi
+    export CARGO_MAKE_RUN_CODECOV=true
+    bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
   - |
     # Build project
-    if [ $TRAVIS_RUST_VERSION = stable ]; then
-      cargo make --no-workspace package-ci-flow
-    else
-      cargo make --no-workspace default-ci-flow
-    fi
+    cargo make --no-workspace package-ci-flow
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&
   [ $TRAVIS_PULL_REQUEST = false ] &&
   [ $TRAVIS_OS_NAME = linux ] &&
-  [ $TRAVIS_RUST_VERSION = stable ] &&
   cargo doc &&
   echo '<meta http-equiv=refresh content=0;url="hyperion/">' > target/doc/index.html &&
   pip install --user ghp-import &&

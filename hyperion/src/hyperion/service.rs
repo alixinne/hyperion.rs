@@ -3,6 +3,7 @@
 use std::time::Instant;
 
 use std::convert::TryFrom;
+use std::sync::{Arc, Mutex};
 
 use futures::sync::mpsc;
 use futures::{Async, Future, Poll, Stream};
@@ -10,7 +11,7 @@ use futures::{Async, Future, Poll, Stream};
 use crate::color;
 use crate::config::{ConfigHandle, ReloadHints};
 use crate::image::Processor;
-use crate::runtime::{Devices, MuxedInput, PriorityMuxer};
+use crate::runtime::{Devices, EffectEngine, MuxedInput, PriorityMuxer};
 
 use super::*;
 
@@ -18,6 +19,8 @@ use super::*;
 pub struct Service {
     /// Priority muxer
     priority_muxer: PriorityMuxer,
+    /// Effect engine
+    effect_engine: Arc<Mutex<EffectEngine>>,
     /// Device runtime data
     devices: Devices,
     /// Image processor
@@ -45,17 +48,30 @@ impl Service {
 
         let devices = Devices::try_from(config.clone()).map_err(HyperionError::from)?;
 
-        let priority_muxer = PriorityMuxer::new(receiver);
+        let effect_engine = Arc::new(Mutex::new(EffectEngine::new(vec!["effects/".into()])));
+
+        let priority_muxer = PriorityMuxer::new(
+            receiver,
+            effect_engine.clone(),
+            sender.clone(),
+            devices.get_led_count(),
+        );
 
         Ok((
             Self {
                 priority_muxer,
+                effect_engine,
                 devices,
                 image_processor: Default::default(),
                 debug_listener,
             },
             sender,
         ))
+    }
+
+    /// Get a handle to the effect engine
+    pub fn get_effect_engine(&self) -> Arc<Mutex<EffectEngine>> {
+        self.effect_engine.clone()
     }
 
     /// Handle an incoming state update
@@ -92,6 +108,10 @@ impl Service {
 
                 self.devices
                     .set_from_image(now, &mut self.image_processor, raw_image, false);
+            }
+            StateUpdate::LedData(leds) => {
+                debug!("setting {} leds from color data", leds.len());
+                self.devices.set_leds(now, leds, false)
             }
         }
     }

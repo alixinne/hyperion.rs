@@ -18,7 +18,7 @@ lighting software.
 
 ## Requirements
 
-* [Rust stable](https://rustup.rs/)
+* [Rust **nightly**](https://rustup.rs/)
 * [protobuf compiler](https://github.com/protocolbuffers/protobuf/releases), `protobuf-compiler` on Debian distributions
 
 ## Usage
@@ -60,6 +60,12 @@ devices:
 You can run the daemon using the following commands:
 
 ```bash
+# Set the Rust toolchain to nightly
+rustup override set nightly
+
+# Install dependencies for Python wrapper
+sudo apt install python3-dev python-dev
+
 # Build and run
 HYPERION_LOG=hyperion=debug cargo run -- -c config.yml s --bind 0.0.0.0
 
@@ -85,7 +91,6 @@ configuration format might be updated in breaking ways.
 
 Not implemented yet:
 
-* Effects
 * Other LED device types
 
 ### Supported devices
@@ -120,11 +125,12 @@ to the Hyperion server.
 | Correction  | ❌     | N.A.     |
 | Effect      | ❌     | N.A.     |
 | Image       | ✔     | ✔        |
-| ServerInfo  | ❌     | N.A.     |
+| ServerInfo  | ✔ (1) | N.A.     |
 | Temperature | ❌     | N.A.     |
 | Transform   | ❌     | N.A.     |
 
 * N.A.: not defined for the protocol
+* (1): only some fields are implemented
 
 ### Image processing
 
@@ -157,9 +163,11 @@ In hyperion.rs, color processing is divided into two parts:
 ### Effects
 
 Effects in hyperion.rs are implemented using the same API as the reference
-implementation of hyperion, so effect code should be portable.
-
-Effect support is still under development.
+implementation of hyperion, so effect code should be portable, with one
+exception: the interface is implemented as an object injected as an `hyperion`
+variable in the scripts, whereas the original implementation has a module which
+needs to be imported. Thus, porting scripts from original hyperion effects
+requires removing any `import hyperion` statements.
 
 ### Smoothing
 

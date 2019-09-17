@@ -14,7 +14,7 @@ impl<T: std::fmt::Debug + Default + Copy> Filter<T> for Nearest {
     fn current_value(&self, _time: Instant, value_store: &ValueStore<T>) -> T {
         value_store
             .iter()
-            .map(|sample| sample.value.clone())
+            .map(|sample| sample.value)
             .next()
             .unwrap_or_else(Default::default)
     }

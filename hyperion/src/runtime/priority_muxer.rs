@@ -6,10 +6,13 @@ use std::collections::BinaryHeap;
 use std::mem::replace;
 use std::time::Instant;
 
+use std::sync::{Arc, Mutex};
+
 use futures::sync::mpsc;
 use futures::{Async, Poll, Stream};
 
-use crate::hyperion::{HyperionError, Input, ServiceCommand, StateUpdate};
+use crate::hyperion::{HyperionError, Input, ServiceCommand, ServiceInputSender, StateUpdate};
+use crate::runtime::EffectEngine;
 
 /// Priority muxer
 ///
@@ -19,6 +22,12 @@ pub struct PriorityMuxer {
     receiver: mpsc::UnboundedReceiver<Input>,
     /// Priority queue of inputs
     inputs: BinaryHeap<MuxerEntry>,
+    /// Effect engine
+    effect_engine: Arc<Mutex<EffectEngine>>,
+    /// Sender for effect inputs
+    sender: ServiceInputSender,
+    /// Number of LEDs for effects
+    led_count: usize,
 }
 
 /// Result of service inputs muxed by priority
@@ -103,10 +112,19 @@ impl PriorityMuxer {
     /// # Parameters
     ///
     /// * `receiver`: channel receiver for input commands
-    pub fn new(receiver: mpsc::UnboundedReceiver<Input>) -> Self {
+    /// * `effect_engine`: handle to the effect engine for this instance
+    pub fn new(
+        receiver: mpsc::UnboundedReceiver<Input>,
+        effect_engine: Arc<Mutex<EffectEngine>>,
+        sender: ServiceInputSender,
+        led_count: usize,
+    ) -> Self {
         Self {
             receiver,
             inputs: BinaryHeap::new(),
+            effect_engine,
+            sender,
+            led_count,
         }
     }
 }
@@ -135,6 +153,9 @@ impl Stream for PriorityMuxer {
                 if entry.is_clearall() {
                     // Clear all pending messages and turn off everything
                     self.inputs.clear();
+                    // Clear all effects
+                    self.effect_engine.lock().unwrap().clear_all();
+
                     return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
                 } else {
                     // Other message, add to queue
@@ -165,8 +186,35 @@ impl Stream for PriorityMuxer {
             let input = replace(&mut entry.input, None);
 
             if let Some(input) = input {
-                trace!("forwarding input: {:?}", input);
-                return Ok(Async::Ready(Some(input.into_update().into())));
+                if input.is_update() {
+                    trace!("forwarding input: {:?}", input);
+                    return Ok(Async::Ready(Some(input.into_update().into())));
+                } else if let Input::Effect {
+                    effect,
+                    priority,
+                    duration,
+                } = input
+                {
+                    let name = effect.name.clone();
+                    let deadline = duration.map(|d| now + d);
+
+                    let mut ee = self.effect_engine.lock().unwrap();
+
+                    // Stop current effects
+                    ee.clear_all();
+
+                    // Start next one
+                    match ee.launch(
+                        effect,
+                        priority,
+                        deadline,
+                        self.sender.clone(),
+                        self.led_count,
+                    ) {
+                        Ok(()) => debug!("launched effect {}", name),
+                        Err(error) => warn!("failed to launch effect {}: {}", name, error),
+                    }
+                }
             }
         } else if expired_entries {
             // We expired entries and now there are none, clear everything

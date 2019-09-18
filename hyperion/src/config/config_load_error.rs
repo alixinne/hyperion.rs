@@ -1,33 +1,16 @@
 //! ConfigLoadError type definition
+#![allow(missing_docs)]
 
-/// Config loading error
-#[derive(Debug, Fail)]
-pub enum ConfigLoadError {
-    /// I/O error
-    #[fail(display = "an i/o error occurred: {}", 0)]
-    IoError(std::io::Error),
-    /// Deserialization error
-    #[fail(display = "invalid syntax: {}", 0)]
-    InvalidSyntax(serde_yaml::Error),
-    /// Validator error
-    #[fail(display = "failed to validate config: {}", 0)]
-    InvalidConfig(validator::ValidationErrors),
-}
+use error_chain::error_chain;
 
-impl From<std::io::Error> for ConfigLoadError {
-    fn from(error: std::io::Error) -> Self {
-        ConfigLoadError::IoError(error)
+error_chain! {
+    types {
+        ConfigLoadError, ConfigLoadErrorKind, ResultExt;
     }
-}
 
-impl From<serde_yaml::Error> for ConfigLoadError {
-    fn from(error: serde_yaml::Error) -> Self {
-        ConfigLoadError::InvalidSyntax(error)
-    }
-}
-
-impl From<validator::ValidationErrors> for ConfigLoadError {
-    fn from(error: validator::ValidationErrors) -> Self {
-        ConfigLoadError::InvalidConfig(error)
+    foreign_links {
+        Io(std::io::Error);
+        InvalidSyntax(serde_yaml::Error);
+        InvalidConvig(validator::ValidationErrors);
     }
 }

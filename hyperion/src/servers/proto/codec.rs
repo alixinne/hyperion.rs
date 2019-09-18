@@ -1,3 +1,5 @@
+use error_chain::error_chain;
+
 use tokio::codec::{Decoder, Encoder};
 
 use super::message;
@@ -6,8 +8,6 @@ use byteorder::{BigEndian, ByteOrder};
 use bytes::{BufMut, BytesMut};
 
 use prost::Message;
-
-use std::io;
 
 /// Wrapper type that covers all possible protobuf encoded Hyperion messages
 #[derive(Debug)]
@@ -22,26 +22,21 @@ pub enum HyperionRequest {
     ClearAllRequest(message::HyperionRequest),
 }
 
-/// Error raised when parsing a protobuf encoded message fails
-#[derive(Debug, Fail)]
-pub enum HyperionMessageError {
-    /// I/O error
-    #[fail(display = "I/O error: {}", 0)]
-    IoError(io::Error),
-    /// Protobuf decoding error
-    #[fail(display = "decode error: {}", 0)]
-    DecodeError(prost::DecodeError),
-    /// Invalid incoming message
-    #[fail(display = "invalid message")]
-    InvalidMessageError,
-    /// Protobuf encoding error
-    #[fail(display = "encode error: {}", 0)]
-    EncodeError(prost::EncodeError),
-}
+error_chain! {
+    types {
+        HyperionMessageError, HyperionMessageErrorKind, ResultExt;
+    }
 
-impl From<std::io::Error> for HyperionMessageError {
-    fn from(error: std::io::Error) -> Self {
-        HyperionMessageError::IoError(error)
+    foreign_links {
+        Io(::std::io::Error);
+        Decode(::prost::DecodeError);
+        Encode(::prost::EncodeError);
+    }
+
+    errors {
+        InvalidMessage {
+            description("invalid message")
+        }
     }
 }
 
@@ -97,9 +92,9 @@ impl Decoder for ProtoCodec {
                         Some(message).map(HyperionRequest::ClearAllRequest)
                     }
                 }
-                .ok_or(HyperionMessageError::InvalidMessageError)
+                .ok_or(HyperionMessageErrorKind::InvalidMessage.into())
             }
-            Err(parse_error) => Err(HyperionMessageError::DecodeError(parse_error)),
+            Err(parse_error) => Err(parse_error.into()),
         };
 
         // Consume the message from the buffer: since it's complete, the parsing
@@ -125,8 +120,7 @@ impl Encoder for ProtoCodec {
         dst.put_u32_be(message_size as u32);
 
         // Write message contents
-        item.encode(dst)
-            .map_err(HyperionMessageError::EncodeError)?;
+        item.encode(dst)?;
 
         Ok(())
     }

@@ -1,18 +1,21 @@
 //! Definition of the EffectError type
+#![allow(missing_docs)]
 
-/// Errors occurring when running an effect
-#[derive(Debug, Fail)]
-pub enum EffectError {
-    /// Requested effect not found
-    #[fail(display = "effect '{}' was not found", 0)]
-    NotFound(String),
-    /// I/O error
-    #[fail(display = "i/o error: {}", 0)]
-    IoError(std::io::Error),
-}
+use error_chain::error_chain;
 
-impl From<std::io::Error> for EffectError {
-    fn from(error: std::io::Error) -> Self {
-        EffectError::IoError(error)
+error_chain! {
+    types {
+        EffectError, EffectErrorKind, ResultExt;
+    }
+
+    foreign_links {
+        Io(::std::io::Error);
+    }
+
+    errors {
+        NotFound(name: String) {
+            description("effect not found")
+            display("effect '{}' was not found", name)
+        }
     }
 }

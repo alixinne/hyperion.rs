@@ -1,7 +1,7 @@
 //! Command line interface (CLI) of the hyperion binary
 
 use clap::App;
-use failure::{Fail, ResultExt};
+use error_chain::bail;
 
 use hyperion::servers;
 
@@ -13,22 +13,38 @@ use futures::{Future, Stream};
 use stream_cancel::Tripwire;
 use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
 
-/// Error raised when the CLI fails
-#[derive(Debug, Fail)]
-pub enum CliError {
-    /// An invalid subcommand was specified
-    #[fail(display = "no valid command specified, see hyperion --help for usage details")]
-    InvalidCommand,
-    /// Hyperion server error
-    #[fail(display = "server error: {}", 0)]
-    ServerError(String),
+mod errors {
+    use error_chain::error_chain;
+
+    error_chain! {
+        links {
+            ConfigLoad(::hyperion::config::ConfigLoadError, ::hyperion::config::ConfigLoadErrorKind);
+            Hyperion(::hyperion::hyperion::HyperionError, ::hyperion::hyperion::HyperionErrorKind);
+            JsonServer(::hyperion::servers::json::JsonServerError, ::hyperion::servers::json::JsonServerErrorKind);
+            ProtoServer(::hyperion::servers::proto::ProtoServerError, ::hyperion::servers::proto::ProtoServerErrorKind);
+        }
+
+        errors {
+            InvalidCommand {
+                description("invalid command")
+                display("no valid command specified, see hyperion --help for usage details")
+            }
+
+            ServerError(m: String) {
+                description("server launch error")
+                display("server error: {}", m)
+            }
+        }
+    }
 }
+
+use errors::*;
 
 /// Entry point for the hyperion CLI
 ///
 /// Parses arguments for the command line and dispatches to the corresponding subcommands.
 /// See cli.yml for the definition of subcommands and arguments.
-pub fn run() -> Result<(), failure::Error> {
+pub fn run() -> Result<()> {
     // Parse CLI args
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml)
@@ -46,10 +62,7 @@ pub fn run() -> Result<(), failure::Error> {
         .expect("--config is required")
         .to_owned();
 
-    let config = hyperion::config::Config::read(&config_path).map_err(|error| {
-        let context = format!("{}: {}", config_path, error);
-        error.context(context)
-    })?;
+    let config = hyperion::config::Config::read(&config_path).chain_err(|| config_path)?;
 
     if let Some(server_matches) = matches.subcommand_matches("server") {
         // Tripwire to cancel the server listening
@@ -60,23 +73,24 @@ pub fn run() -> Result<(), failure::Error> {
             .value_of("bind-addr")
             .unwrap()
             .parse()
-            .map_err(|_| CliError::ServerError("could not parse bind address".into()))?;
+            .chain_err(|| "could not parse bind address")?;
 
         let json_address = SocketAddr::new(
             bind_address,
             value_t!(server_matches, "json-port", u16)
-                .context("json-port must be a port number")?,
+                .chain_err(|| "json-port must be a port number")?,
         );
 
         let proto_address = SocketAddr::new(
             bind_address,
             value_t!(server_matches, "proto-port", u16)
-                .context("proto-port must be a port number")?,
+                .chain_err(|| "proto-port must be a port number")?,
         );
 
         let web_address = SocketAddr::new(
             bind_address,
-            value_t!(server_matches, "web-port", u16).context("web-port must be a port number")?,
+            value_t!(server_matches, "web-port", u16)
+                .chain_err(|| "web-port must be a port number")?,
         );
 
         let config = config.into_handle();
@@ -168,6 +182,6 @@ pub fn run() -> Result<(), failure::Error> {
 
         std::process::exit(final_exit_code.load(Ordering::SeqCst));
     } else {
-        bail!(CliError::InvalidCommand)
+        bail!(ErrorKind::InvalidCommand)
     }
 }

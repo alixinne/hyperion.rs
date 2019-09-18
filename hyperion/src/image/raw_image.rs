@@ -13,13 +13,24 @@ pub struct RawImage {
     height: u32,
 }
 
-/// Raw image data error
-#[derive(Debug, Fail)]
-pub enum RawImageError {
-    /// Invalid width and height for given buffer
-    #[fail(display = "invalid dimensions")]
-    InvalidDimensions,
+#[allow(missing_docs)]
+mod errors {
+    use error_chain::error_chain;
+
+    error_chain! {
+        types {
+            RawImageError, RawImageErrorKind, ResultExt;
+        }
+
+        errors {
+            InvalidDimensions {
+                description("invalid dimensions")
+            }
+        }
+    }
 }
+
+pub use errors::*;
 
 impl RawImage {
     /// Get the width and height of the image
@@ -52,11 +63,11 @@ impl TryFrom<(Vec<u8>, u32, u32)> for RawImage {
 
     fn try_from(value: (Vec<u8>, u32, u32)) -> Result<Self, Self::Error> {
         if value.0.len() != (value.1 * value.2 * 3) as usize {
-            return Err(RawImageError::InvalidDimensions);
+            return Err(RawImageErrorKind::InvalidDimensions.into());
         }
 
         if value.1 == 0 || value.2 == 0 {
-            return Err(RawImageError::InvalidDimensions);
+            return Err(RawImageErrorKind::InvalidDimensions.into());
         }
 
         Ok(RawImage {

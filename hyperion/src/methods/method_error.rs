@@ -1,18 +1,14 @@
 //! Definition of the MethodError type
+#![allow(missing_docs)]
 
-/// Device method error
-#[derive(Debug, Fail)]
-pub enum MethodError {
-    /// Wrapped I/O error
-    #[fail(display = "I/O error: {}", error)]
-    IoError {
-        /// I/O error which triggered the MethodError
-        error: std::io::Error,
-    },
-}
+use error_chain::error_chain;
 
-impl From<std::io::Error> for MethodError {
-    fn from(error: std::io::Error) -> MethodError {
-        MethodError::IoError { error }
+error_chain! {
+    types {
+        MethodError, MethodErrorKind, ResultExt;
+    }
+
+    foreign_links {
+        Io(::std::io::Error);
     }
 }

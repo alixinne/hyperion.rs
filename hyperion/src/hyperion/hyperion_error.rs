@@ -1,32 +1,30 @@
 //! Definition of the HyperionError type
+#![allow(missing_docs)]
+
+use error_chain::error_chain;
 
 use crate::methods;
 
-/// Hyperion instance errors
-#[derive(Debug, Fail)]
-pub enum HyperionError {
-    /// StateUpdate channel receive error
-    #[fail(display = "failed to receive update from channel")]
-    ChannelReceiveFailed,
-    /// Device Interval polling error
-    #[fail(display = "failed to poll the updater interval")]
-    UpdaterPollFailed,
-    /// Device initialization failed
-    #[fail(display = "failed to initialize LED devices: {}", error)]
-    LedDeviceInitFailed {
-        /// Device method error which caused this HyperionError
-        error: methods::MethodError,
-    },
-}
-
-impl From<methods::MethodError> for HyperionError {
-    fn from(error: methods::MethodError) -> Self {
-        HyperionError::LedDeviceInitFailed { error }
+error_chain! {
+    types {
+        HyperionError, HyperionErrorKind, ResultExt;
     }
-}
 
-impl From<tokio::timer::Error> for HyperionError {
-    fn from(_error: tokio::timer::Error) -> Self {
-        HyperionError::UpdaterPollFailed
+    links {
+        LedDeviceInit(methods::MethodError, methods::MethodErrorKind);
+    }
+
+    foreign_links {
+        Tokio(tokio::timer::Error);
+    }
+
+    errors {
+        ChannelReceive {
+            description("failed to receive update from channel")
+        }
+
+        UpdaterPoll {
+            description("failed to poll the updater interval")
+        }
     }
 }

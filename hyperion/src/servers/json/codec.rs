@@ -1,3 +1,5 @@
+use error_chain::error_chain;
+
 use bytes::BytesMut;
 use tokio::codec::{Decoder, Encoder, LinesCodec};
 
@@ -31,6 +33,17 @@ fn encode_reply(reply: &message::HyperionResponse) -> serde_json::Result<String>
     serde_json::to_string(reply)
 }
 
+error_chain! {
+    types {
+        HyperionMessageError, HyperionMessageErrorKind, ResultExt;
+    }
+
+    foreign_links {
+        Io(::std::io::Error);
+        Decode(serde_json::Error);
+    }
+}
+
 /// JSON tokio codec
 pub struct JsonCodec {
     /// Line parsing codec
@@ -48,7 +61,7 @@ impl JsonCodec {
 
 impl Decoder for JsonCodec {
     type Item = message::HyperionMessage;
-    type Error = failure::Error;
+    type Error = HyperionMessageError;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         match self.lines.decode(src) {

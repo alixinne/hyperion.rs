@@ -26,6 +26,23 @@ use codec::*;
 
 pub use message::{Effect, EffectDefinition};
 
+#[allow(missing_docs)]
+mod errors {
+    use error_chain::error_chain;
+
+    error_chain! {
+        types {
+            JsonServerError, JsonServerErrorKind, ResultExt;
+        }
+
+        foreign_links {
+            Io(::std::io::Error);
+        }
+    }
+}
+
+pub use errors::*;
+
 /// Binds the JSON protocol server implementation to the given address, returning a future to
 /// process incoming requests.
 ///
@@ -44,7 +61,7 @@ pub fn bind(
     sender: mpsc::UnboundedSender<Input>,
     tripwire: stream_cancel::Tripwire,
     effect_engine: Arc<Mutex<EffectEngine>>,
-) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
+) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, JsonServerError> {
     let listener = TcpListener::bind(&address)?;
 
     let server = listener.incoming().for_each(move |socket| {

@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 clap = { version = "2.33.0", features = ["yaml"] }
-failure = "0.1.5"
 futures = "0.1.28"
 stream-cancel = "0.4.4"
 hyperion = { path = "../hyperion" }
@@ -15,3 +14,4 @@ tokio = "0.1.22"
 tokio-signal = "0.2.7"
 env_logger = "0.6.2"
 exitcode = "1.1.2"
+error-chain = "0.12.1"

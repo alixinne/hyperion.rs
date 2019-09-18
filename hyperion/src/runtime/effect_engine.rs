@@ -161,7 +161,7 @@ impl EffectEngine {
 
             Ok(())
         } else {
-            Err(EffectError::NotFound(effect_name.name))
+            Err(EffectErrorKind::NotFound(effect_name.name).into())
         }
     }
 

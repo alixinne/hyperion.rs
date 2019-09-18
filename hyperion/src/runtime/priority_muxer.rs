@@ -11,7 +11,9 @@ use std::sync::{Arc, Mutex};
 use futures::sync::mpsc;
 use futures::{Async, Poll, Stream};
 
-use crate::hyperion::{HyperionError, Input, ServiceCommand, ServiceInputSender, StateUpdate};
+use crate::hyperion::{
+    HyperionError, HyperionErrorKind, Input, ServiceCommand, ServiceInputSender, StateUpdate,
+};
 use crate::runtime::EffectEngine;
 
 /// Priority muxer
@@ -138,7 +140,7 @@ impl Stream for PriorityMuxer {
         while let Async::Ready(value) = self
             .receiver
             .poll()
-            .map_err(|_| HyperionError::ChannelReceiveFailed)?
+            .map_err(|_| HyperionError::from(HyperionErrorKind::ChannelReceive))?
         {
             if let Some(input) = value {
                 trace!("received new input {:?}", input);

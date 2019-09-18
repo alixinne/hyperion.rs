@@ -100,13 +100,25 @@ impl TryFrom<DeviceConfigHandle> for DeviceInstance {
     }
 }
 
-/// Device operation error type
-#[derive(Debug, Fail)]
-pub enum DeviceError {
-    /// The LED index was greater than the total number of LED in the device
-    #[fail(display = "no such LED at index {}", 0)]
-    OutOfBoundsLedIndex(usize),
+#[allow(missing_docs)]
+mod errors {
+    use error_chain::error_chain;
+
+    error_chain! {
+        types {
+            DeviceError, DeviceErrorKind, ResultExt;
+        }
+
+        errors {
+            OutOfBoundsLedIndex(i: usize) {
+                description("out of bounds led index")
+                display("no such LED at index {}", i)
+            }
+        }
+    }
 }
+
+pub use errors::*;
 
 impl DeviceInstance {
     /// Iterate LEDs
@@ -152,7 +164,7 @@ impl DeviceInstance {
         immediate: bool,
     ) -> Result<(), DeviceError> {
         if led_idx >= self.leds.len() {
-            return Err(DeviceError::OutOfBoundsLedIndex(led_idx));
+            return Err(DeviceErrorKind::OutOfBoundsLedIndex(led_idx).into());
         }
 
         let led = &mut self.leds[led_idx];

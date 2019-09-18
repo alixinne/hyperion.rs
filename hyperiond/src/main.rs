@@ -45,9 +45,6 @@
 #![deny(clippy::missing_docs_in_private_items)]
 
 #[macro_use]
-extern crate failure;
-
-#[macro_use]
 extern crate clap;
 
 #[macro_use]

@@ -6,5 +6,5 @@
 pub mod json;
 pub use json::bind as bind_json;
 
-mod proto;
+pub mod proto;
 pub use proto::bind as bind_proto;

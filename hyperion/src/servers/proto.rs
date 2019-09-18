@@ -21,6 +21,23 @@ mod message;
 mod codec;
 use codec::*;
 
+#[allow(missing_docs)]
+mod errors {
+    use error_chain::error_chain;
+
+    error_chain! {
+        types {
+            ProtoServerError, ProtoServerErrorKind, ResultExt;
+        }
+
+        foreign_links {
+            Io(::std::io::Error);
+        }
+    }
+}
+
+pub use errors::*;
+
 /// Create a success response
 ///
 /// # Parameters
@@ -50,7 +67,7 @@ pub fn bind(
     address: &SocketAddr,
     sender: mpsc::UnboundedSender<Input>,
     tripwire: stream_cancel::Tripwire,
-) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, failure::Error> {
+) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, ProtoServerError> {
     let listener = TcpListener::bind(&address)?;
 
     let server = listener.incoming().for_each(move |socket| {

@@ -26,6 +26,34 @@ pub struct Devices {
 }
 
 impl Devices {
+    /// Create a new runtime device host
+    ///
+    /// # Parameters
+    ///
+    /// * `config`: configuration handle for devices
+    pub fn new(config: ConfigHandle) -> Result<Self, methods::MethodError> {
+        let devices = config
+            .read()
+            .unwrap()
+            .devices
+            .iter()
+            .enumerate()
+            .map(|(i, _device)| {
+                DeviceInstance::try_from(DeviceConfigHandle::new(config.clone(), i))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(Self {
+            devices,
+            host: HostHandle::new(),
+        })
+    }
+
+    /// Get a reference to the host handle
+    pub fn get_host_mut(&mut self) -> &mut HostHandle {
+        &mut self.host
+    }
+
     /// Set all LEDs of all devices to a new color immediately
     ///
     /// # Parameters
@@ -135,29 +163,6 @@ impl Devices {
         self.devices
             .iter()
             .fold(0usize, |s, device| s + device.get_led_count())
-    }
-}
-
-// Note: can't use a blanket implementation for IntoIterator<Item = Device>
-// See #50133
-impl TryFrom<HostHandle> for Devices {
-    // Can't use TryFrom<Device>::Error, see #38078
-    type Error = methods::MethodError;
-
-    fn try_from(host: HostHandle) -> Result<Self, Self::Error> {
-        let config = host.get_config();
-        let devices = config
-            .read()
-            .unwrap()
-            .devices
-            .iter()
-            .enumerate()
-            .map(|(i, _device)| {
-                DeviceInstance::try_from(DeviceConfigHandle::new(config.clone(), i))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(Self { devices, host })
     }
 }
 

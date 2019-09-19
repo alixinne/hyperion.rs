@@ -105,13 +105,17 @@ impl PriorityMuxer {
     /// # Parameters
     ///
     /// * `receiver`: channel receiver for input commands
-    /// * `host`: component host handle
-    pub fn new(receiver: ServiceInputReceiver, host: HostHandle) -> Self {
+    pub fn new(receiver: ServiceInputReceiver) -> Self {
         Self {
             receiver,
             inputs: BinaryHeap::new(),
-            host,
+            host: HostHandle::new(),
         }
+    }
+
+    /// Get a reference to the host handle
+    pub fn get_host_mut(&mut self) -> &mut HostHandle {
+        &mut self.host
     }
 }
 

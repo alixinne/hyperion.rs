@@ -1,6 +1,6 @@
 //! Definition of the Host type
 
-use std::convert::TryFrom;
+use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::config::ConfigHandle;
@@ -24,11 +24,11 @@ pub use errors::*;
 /// Hyperion components host
 pub struct Host {
     /// Device runtime data
-    devices: Option<Mutex<Devices>>,
+    devices: Mutex<Devices>,
     /// Effect engine
-    effect_engine: Option<Mutex<EffectEngine>>,
+    effect_engine: Mutex<EffectEngine>,
     /// Priority muxer
-    priority_muxer: Option<Mutex<PriorityMuxer>>,
+    priority_muxer: Mutex<PriorityMuxer>,
     /// Image processor
     image_processor: Mutex<Processor<f32>>,
     /// Service input sender
@@ -38,7 +38,41 @@ pub struct Host {
 }
 
 /// Handle to Hyperion components
-pub type HostHandle = Arc<Host>;
+#[derive(Clone)]
+pub struct HostHandle(Option<Arc<Host>>);
+
+impl HostHandle {
+    /// Create a new host handle
+    ///
+    /// This handle will initially be empty, and should be later
+    /// resolved by the Host when all components have been created.
+    pub fn new() -> Self {
+        Self(None)
+    }
+
+    /// Load the actual host handle
+    ///
+    /// # Parameters
+    ///
+    /// * `value`: allocated host handle
+    fn replace(&mut self, value: Arc<Host>) {
+        self.0.replace(value);
+    }
+}
+
+impl Deref for HostHandle {
+    type Target = Host;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref().expect("uninitialized host reference")
+    }
+}
+
+impl From<Arc<Host>> for HostHandle {
+    fn from(host: Arc<Host>) -> Self {
+        Self(Some(host))
+    }
+}
 
 impl Host {
     /// Build a new component host for Hyperion
@@ -47,63 +81,50 @@ impl Host {
         service_input_sender: ServiceInputSender,
         config: ConfigHandle,
     ) -> Result<HostHandle> {
+        // Create individual components
+        let devices = Devices::new(config.clone())?;
+        let effect_engine = EffectEngine::new(vec!["effects/".into()]);
+        let priority_muxer = PriorityMuxer::new(service_input_receiver);
+
+        // Create host object
         let host = Arc::new(Self {
-            devices: None,
-            effect_engine: None,
-            priority_muxer: None,
+            devices: Mutex::new(devices),
+            effect_engine: Mutex::new(effect_engine),
+            priority_muxer: Mutex::new(priority_muxer),
             image_processor: Mutex::new(Default::default()),
             service_input_sender,
             config,
         });
 
-        let devices_host = host.clone();
-        let priority_muxer_host = host.clone();
+        // Update components with host object reference
+        host.devices
+            .lock()
+            .unwrap()
+            .get_host_mut()
+            .replace(host.clone());
 
-        // TODO: Remove this horrible hack
-        //
-        // We don't want to lock the entire host structure which would
-        // complicate access and have worse performance, but we still
-        // need to initialize its members with the created components.
-        unsafe {
-            // Initialize devices
-            std::ptr::write(
-                std::mem::transmute(&host.devices),
-                Some(Mutex::new(Devices::try_from(devices_host)?)),
-            );
+        host.priority_muxer
+            .lock()
+            .unwrap()
+            .get_host_mut()
+            .replace(host.clone());
 
-            // Initialize effect engine
-            // TODO: Introduce parameter for effect path
-            std::ptr::write(
-                std::mem::transmute(&host.effect_engine),
-                Some(Mutex::new(EffectEngine::new(vec!["effects/".into()]))),
-            );
-
-            // Initialize priority muxer
-            std::ptr::write(
-                std::mem::transmute(&host.priority_muxer),
-                Some(Mutex::new(PriorityMuxer::new(
-                    service_input_receiver,
-                    priority_muxer_host,
-                ))),
-            );
-        }
-
-        Ok(host)
+        Ok(host.into())
     }
 
     /// Acquire reference to the effect engine
     pub fn get_effect_engine(&self) -> MutexGuard<EffectEngine> {
-        self.effect_engine.as_ref().unwrap().lock().unwrap()
+        self.effect_engine.lock().unwrap()
     }
 
     /// Acquire reference to the device runtime data
     pub fn get_devices(&self) -> MutexGuard<Devices> {
-        self.devices.as_ref().unwrap().lock().unwrap()
+        self.devices.lock().unwrap()
     }
 
     /// Acquire reference to the priority muxer
     pub fn get_priority_muxer(&self) -> MutexGuard<PriorityMuxer> {
-        self.priority_muxer.as_ref().unwrap().lock().unwrap()
+        self.priority_muxer.lock().unwrap()
     }
 
     /// Acquire reference to the image processor

@@ -13,6 +13,7 @@ args = [
   "hyperion.rs_${CARGO_MAKE_RUST_TARGET_ARCH}-${CARGO_MAKE_RUST_TARGET_ENV}-${CARGO_MAKE_RUST_TARGET_OS}.tar.gz",
   "target/release/hyperiond",
   "scripts",
+  "effects",
   "web/dist",
 ]
 

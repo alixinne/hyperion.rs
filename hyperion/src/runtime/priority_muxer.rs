@@ -178,6 +178,7 @@ impl Stream for PriorityMuxer {
                 } = input
                 {
                     let name = effect.name.clone();
+                    let args = effect.args.clone();
                     let deadline = duration.map(|d| now + d);
 
                     let mut ee = self.host.get_effect_engine();
@@ -193,7 +194,12 @@ impl Stream for PriorityMuxer {
                         self.host.get_service_input_sender(),
                         self.host.get_devices().get_led_count(),
                     ) {
-                        Ok(()) => debug!("launched effect {}", name),
+                        Ok(()) => debug!(
+                            "launched effect {} with args {}",
+                            name,
+                            args.map(|a| serde_json::to_string(&a).unwrap())
+                                .unwrap_or_else(|| "null".to_owned())
+                        ),
                         Err(error) => warn!("failed to launch effect {}: {}", name, error),
                     }
                 }

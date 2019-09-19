@@ -63,7 +63,12 @@ impl Effect {
         let locals = [("hyperion", hyperion.to_object(py))].into_py_dict(py);
 
         py.run(code, None, Some(&locals))
-            .map_err(|err| format!("{:?}", err))
+            .map_err(|err| if cfg!(test) {
+                err.print(py);
+                "Effect error".to_owned()
+            } else {
+                format!("{:?}", err)
+            })
     }
 
     /// Request that the effect be aborted
@@ -147,6 +152,8 @@ impl Effect {
 
     /// Check if the effect should abort or not
     fn abort(&mut self) -> PyResult<bool> {
+        self.check_deadline();
+
         Ok(self.abort_requested.load(Ordering::SeqCst))
     }
 }
@@ -197,12 +204,14 @@ mod tests {
     #[test]
     fn test_set_color_rgb() {
         let listener = Box::new(DebugListener::new());
+        let abort_requested = Arc::new(AtomicBool::new(false));
         Effect::run(
             "hyperion.setColor(10, 20, 30)",
             listener.clone(),
             1,
             None,
             None,
+            abort_requested,
         )
         .expect("running setColor failed");
 
@@ -215,12 +224,14 @@ mod tests {
     #[test]
     fn test_set_color_leds() {
         let listener = Box::new(DebugListener::new());
+        let abort_requested = Arc::new(AtomicBool::new(false));
         Effect::run(
             "hyperion.setColor(bytearray([10, 20, 30]))",
             listener.clone(),
             1,
             None,
             None,
+            abort_requested,
         )
         .expect("running setColor failed");
 
@@ -233,12 +244,14 @@ mod tests {
     #[test]
     fn test_set_image() {
         let listener = Box::new(DebugListener::new());
+        let abort_requested = Arc::new(AtomicBool::new(false));
         Effect::run(
             "hyperion.setImage(1, 1, bytearray([10, 20, 30]))",
             listener.clone(),
             1,
             None,
             None,
+            abort_requested,
         )
         .expect("running setImage failed");
 
@@ -251,28 +264,31 @@ mod tests {
     #[test]
     fn test_abort() {
         let listener = Box::new(DebugListener::new());
+        let abort_requested = Arc::new(AtomicBool::new(false));
         Effect::run(
-            "assert hyperion.abort() == True",
+            "assert hyperion.abort()",
             listener.clone(),
             1,
             None,
-            Instant::now() - Duration::from_millis(100),
+            Some(Instant::now() - Duration::from_millis(100)),
+            abort_requested.clone(),
         )
         .expect("running abort failed");
 
-        let data = listener.data.borrow();
-        assert_eq!(data.abort_requested, true);
+        assert!(abort_requested.load(Ordering::SeqCst));
     }
 
     #[test]
     fn test_args() {
         let listener = Box::new(DebugListener::new());
+        let abort_requested = Arc::new(AtomicBool::new(false));
         Effect::run(
-            "assert args['foo'] == 2",
+            "assert hyperion.args['foo'] == 2",
             listener.clone(),
             1,
             Some(json!({ "foo": 2 })),
             None,
+            abort_requested,
         )
         .expect("testing args failed");
     }

@@ -6,30 +6,21 @@ use std::collections::BinaryHeap;
 use std::mem::replace;
 use std::time::Instant;
 
-use std::sync::{Arc, Mutex};
-
-use futures::sync::mpsc;
 use futures::{Async, Poll, Stream};
 
-use crate::hyperion::{
-    HyperionError, HyperionErrorKind, Input, ServiceCommand, ServiceInputSender, StateUpdate,
-};
-use crate::runtime::EffectEngine;
+use crate::hyperion::{Input, ServiceCommand, ServiceInputReceiver, StateUpdate};
+use crate::runtime::HostHandle;
 
 /// Priority muxer
 ///
 /// Type responsible for determining which update applies depending on durations and priorities.
 pub struct PriorityMuxer {
     /// Input command receiver
-    receiver: mpsc::UnboundedReceiver<Input>,
+    receiver: ServiceInputReceiver,
     /// Priority queue of inputs
     inputs: BinaryHeap<MuxerEntry>,
-    /// Effect engine
-    effect_engine: Arc<Mutex<EffectEngine>>,
-    /// Sender for effect inputs
-    sender: ServiceInputSender,
-    /// Number of LEDs for effects
-    led_count: usize,
+    /// Components host
+    host: HostHandle,
 }
 
 /// Result of service inputs muxed by priority
@@ -114,34 +105,23 @@ impl PriorityMuxer {
     /// # Parameters
     ///
     /// * `receiver`: channel receiver for input commands
-    /// * `effect_engine`: handle to the effect engine for this instance
-    pub fn new(
-        receiver: mpsc::UnboundedReceiver<Input>,
-        effect_engine: Arc<Mutex<EffectEngine>>,
-        sender: ServiceInputSender,
-        led_count: usize,
-    ) -> Self {
+    /// * `host`: component host handle
+    pub fn new(receiver: ServiceInputReceiver, host: HostHandle) -> Self {
         Self {
             receiver,
             inputs: BinaryHeap::new(),
-            effect_engine,
-            sender,
-            led_count,
+            host,
         }
     }
 }
 
 impl Stream for PriorityMuxer {
     type Item = MuxedInput;
-    type Error = HyperionError;
+    type Error = ();
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         // Receive incoming inputs
-        while let Async::Ready(value) = self
-            .receiver
-            .poll()
-            .map_err(|_| HyperionError::from(HyperionErrorKind::ChannelReceive))?
-        {
+        while let Async::Ready(value) = self.receiver.poll()? {
             if let Some(input) = value {
                 trace!("received new input {:?}", input);
 
@@ -156,7 +136,7 @@ impl Stream for PriorityMuxer {
                     // Clear all pending messages and turn off everything
                     self.inputs.clear();
                     // Clear all effects
-                    self.effect_engine.lock().unwrap().clear_all();
+                    self.host.get_effect_engine().clear_all();
 
                     return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
                 } else {
@@ -200,7 +180,7 @@ impl Stream for PriorityMuxer {
                     let name = effect.name.clone();
                     let deadline = duration.map(|d| now + d);
 
-                    let mut ee = self.effect_engine.lock().unwrap();
+                    let mut ee = self.host.get_effect_engine();
 
                     // Stop current effects
                     ee.clear_all();
@@ -210,8 +190,8 @@ impl Stream for PriorityMuxer {
                         effect,
                         priority,
                         deadline,
-                        self.sender.clone(),
-                        self.led_count,
+                        self.host.get_service_input_sender(),
+                        self.host.get_devices().get_led_count(),
                     ) {
                         Ok(()) => debug!("launched effect {}", name),
                         Err(error) => warn!("failed to launch effect {}: {}", name, error),

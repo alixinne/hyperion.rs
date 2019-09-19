@@ -3,9 +3,6 @@
 mod debug_message;
 pub use debug_message::*;
 
-mod hyperion_error;
-pub use hyperion_error::*;
-
 mod input;
 pub use input::*;
 

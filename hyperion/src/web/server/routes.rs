@@ -7,18 +7,16 @@ use hyper::{header, http, Body, StatusCode};
 use hyper_staticfile::Static;
 use reset_router::{bits::Method, Request, RequestExtensions, Response};
 
-use crate::config::ConfigHandle;
-use crate::hyperion::{ServiceCommand, ServiceInputSender};
+use crate::hyperion::ServiceCommand;
+use crate::runtime::HostHandle;
 
 /// Hyper server state
 #[derive(Clone)]
 pub struct State {
     /// Static file server
     hyper_static: Static,
-    /// Reference to the configuration
-    config: ConfigHandle,
-    /// Service input sender
-    service_input: ServiceInputSender,
+    /// Component reference
+    host: HostHandle,
 }
 
 /// Crate version
@@ -57,7 +55,13 @@ fn api_server(_: Request) -> Result<Response, Response> {
 fn api_devices(req: Request) -> Result<Response, Response> {
     Ok(json_response!(
         StatusCode::OK,
-        &req.state::<State>().unwrap().config.read().unwrap().devices
+        &req.state::<State>()
+            .unwrap()
+            .host
+            .get_config()
+            .read()
+            .unwrap()
+            .devices
     ))
 }
 
@@ -73,13 +77,15 @@ fn api_patch_device(req: Request) -> Box<impl Future<Item = Response, Error = Re
                 let parsed: crate::config::DeviceUpdate = json_try!(serde_json::from_slice(&body));
 
                 let state = parts.state::<State>().unwrap();
-                let device = &mut state.config.write().unwrap().devices[id];
+                let config = state.host.get_config();
+                let device = &mut config.write().unwrap().devices[id];
 
                 let reload_hints = json_try!(device.update(parsed));
 
                 // Send state update to Hyperion
                 state
-                    .service_input
+                    .host
+                    .get_service_input_sender()
                     .unbounded_send(
                         ServiceCommand::ReloadDevice {
                             device_index: id,
@@ -100,13 +106,11 @@ impl State {
     /// # Parameters
     ///
     /// * `webroot`: path to the root for static files
-    /// * `config`: configuration handle
-    /// * `service_input`: service input sender
-    pub fn new(webroot: PathBuf, config: ConfigHandle, service_input: ServiceInputSender) -> Self {
+    /// * `host`: component host
+    pub fn new(webroot: PathBuf, host: HostHandle) -> Self {
         Self {
             hyper_static: Static::new(webroot),
-            config,
-            service_input,
+            host,
         }
     }
 }
@@ -119,15 +123,10 @@ pub type Router = reset_router::Router<State>;
 /// # Parameters
 ///
 /// * `webroot`: path to the root for static files
-/// * `config`: configuration handle
-/// * `service_input`: service input sender
-pub fn build_router(
-    webroot: PathBuf,
-    config: ConfigHandle,
-    service_input: ServiceInputSender,
-) -> Router {
+/// * `host`: component host
+pub fn build_router(webroot: PathBuf, host: HostHandle) -> Router {
     reset_router::Router::build()
-        .with_state(State::new(webroot, config, service_input))
+        .with_state(State::new(webroot, host))
         .add(Method::GET, r"^/api/server$", api_server)
         .add(Method::GET, r"^/api/devices$", api_devices)
         .add(Method::PATCH, r"^/api/devices/(\d+)$", api_patch_device)

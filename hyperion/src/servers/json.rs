@@ -2,7 +2,6 @@
 
 use std::convert::TryFrom;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
 
 use tokio::net::TcpListener;
 use tokio::prelude::*;
@@ -12,9 +11,7 @@ use tokio::codec::Framed;
 use crate::color;
 use crate::hyperion::{Input, StateUpdate};
 use crate::image::RawImage;
-use crate::runtime::EffectEngine;
-
-use futures::sync::mpsc;
+use crate::runtime::HostHandle;
 
 /// Schema definitions as Serde serializable structures and enums
 mod message;
@@ -49,18 +46,16 @@ pub use errors::*;
 /// # Parameters
 ///
 /// * `address`: address (and port) of the endpoint to bind the JSON server to
-/// * `sender`: channel endpoint to send state updates to
+/// * `host`: component host
 /// * `tripwire`: handle to the cancellation future
-/// * `effect_engine`: reference to the effect engine for returning effect info
 ///
 /// # Errors
 ///
 /// * When the server can't be bound to the given address
 pub fn bind(
     address: &SocketAddr,
-    sender: mpsc::UnboundedSender<Input>,
+    host: HostHandle,
     tripwire: stream_cancel::Tripwire,
-    effect_engine: Arc<Mutex<EffectEngine>>,
 ) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, JsonServerError> {
     let listener = TcpListener::bind(&address)?;
 
@@ -70,11 +65,11 @@ pub fn bind(
             socket.peer_addr().unwrap()
         );
 
-        let sender = sender.clone();
+        let sender = host.get_service_input_sender();
 
         let framed = Framed::new(socket, JsonCodec::new());
         let (writer, reader) = framed.split();
-        let effect_engine = effect_engine.clone();
+        let host = host.clone();
 
         let action = reader
             .and_then(move |request| {
@@ -167,7 +162,7 @@ pub fn bind(
                         HyperionResponse::success()
                     }
                     HyperionMessage::ServerInfo => {
-                        let effects = effect_engine.lock().unwrap().get_definitions();
+                        let effects = host.get_effect_engine().get_definitions();
 
                         HyperionResponse::server_info(
                             hostname::get_hostname()

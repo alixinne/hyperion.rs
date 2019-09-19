@@ -19,9 +19,9 @@ mod errors {
     error_chain! {
         links {
             ConfigLoad(::hyperion::config::ConfigLoadError, ::hyperion::config::ConfigLoadErrorKind);
-            Hyperion(::hyperion::hyperion::HyperionError, ::hyperion::hyperion::HyperionErrorKind);
             JsonServer(::hyperion::servers::json::JsonServerError, ::hyperion::servers::json::JsonServerErrorKind);
             ProtoServer(::hyperion::servers::proto::ProtoServerError, ::hyperion::servers::proto::ProtoServerErrorKind);
+            Host(::hyperion::runtime::host::Error, ::hyperion::runtime::host::ErrorKind);
         }
 
         errors {
@@ -94,17 +94,14 @@ pub fn run() -> Result<()> {
         );
 
         let config = config.into_handle();
+        let (sender, receiver) = futures::sync::mpsc::unbounded();
+        let host = hyperion::runtime::Host::new(receiver, sender, config)?;
 
-        let (hyperion, service_sender) = hyperion::hyperion::Service::new(config.clone(), None)?;
+        let hyperion = hyperion::hyperion::Service::new(host.clone(), None);
 
         let servers = vec![
-            servers::bind_json(
-                &json_address,
-                service_sender.clone(),
-                tripwire.clone(),
-                hyperion.get_effect_engine(),
-            )?,
-            servers::bind_proto(&proto_address, service_sender.clone(), tripwire.clone())?,
+            servers::bind_json(&json_address, host.clone(), tripwire.clone())?,
+            servers::bind_proto(&proto_address, host.clone(), tripwire.clone())?,
         ];
 
         let server_future = futures::future::join_all(servers).map(|_| ());
@@ -112,13 +109,7 @@ pub fn run() -> Result<()> {
         let (sender, receiver) = futures::sync::oneshot::channel::<()>();
 
         // Instantiate the web server
-        let web_server = hyperion::web::bind(
-            web_address,
-            receiver,
-            "web/dist",
-            config,
-            service_sender.clone(),
-        );
+        let web_server = hyperion::web::bind(web_address, receiver, "web/dist", host.clone());
 
         let exit_code = Arc::new(AtomicI32::new(exitcode::OK));
         let final_exit_code = exit_code.clone();

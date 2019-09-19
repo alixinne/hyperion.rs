@@ -13,6 +13,7 @@ use crate::color;
 use crate::config::*;
 use crate::image::*;
 use crate::methods;
+use crate::runtime::HostHandle;
 
 use super::DeviceInstance;
 
@@ -20,8 +21,8 @@ use super::DeviceInstance;
 pub struct Devices {
     /// List of device instances
     devices: Vec<DeviceInstance>,
-    /// Configuration handle
-    config: ConfigHandle,
+    /// Components handle
+    host: HostHandle,
 }
 
 impl Devices {
@@ -70,7 +71,8 @@ impl Devices {
         // Mutable reference to devices to prevent the closure exclusive access
         let devices = &mut self.devices;
         // Get reference to color config data
-        let correction = &self.config.read().unwrap().color;
+        let config = self.host.get_config();
+        let correction = &config.read().unwrap().color;
 
         // Update LEDs with computed colors
         image_processor.update_leds(|(device_idx, led_idx), color| {
@@ -138,11 +140,12 @@ impl Devices {
 
 // Note: can't use a blanket implementation for IntoIterator<Item = Device>
 // See #50133
-impl TryFrom<ConfigHandle> for Devices {
+impl TryFrom<HostHandle> for Devices {
     // Can't use TryFrom<Device>::Error, see #38078
     type Error = methods::MethodError;
 
-    fn try_from(config: ConfigHandle) -> Result<Self, Self::Error> {
+    fn try_from(host: HostHandle) -> Result<Self, Self::Error> {
+        let config = host.get_config();
         let devices = config
             .read()
             .unwrap()
@@ -154,7 +157,7 @@ impl TryFrom<ConfigHandle> for Devices {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self { devices, config })
+        Ok(Self { devices, host })
     }
 }
 

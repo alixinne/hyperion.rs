@@ -11,8 +11,7 @@ use tokio::codec::Framed;
 use crate::color;
 use crate::hyperion::{Input, StateUpdate};
 use crate::image::RawImage;
-
-use futures::sync::mpsc;
+use crate::runtime::HostHandle;
 
 /// Schema definitions as Serde serializable structures and enums
 mod message;
@@ -57,7 +56,7 @@ fn success_response(success: bool) -> message::HyperionReply {
 /// # Parameters
 ///
 /// * `address`: address (and port) of the endpoint to bind the protobuf server to
-/// * `sender`: channel endpoint to send state updates to
+/// * `host`: component host
 /// * `tripwire`: handle to the cancellation future
 ///
 /// # Errors
@@ -65,7 +64,7 @@ fn success_response(success: bool) -> message::HyperionReply {
 /// * When the server can't be bound to the given address
 pub fn bind(
     address: &SocketAddr,
-    sender: mpsc::UnboundedSender<Input>,
+    host: HostHandle,
     tripwire: stream_cancel::Tripwire,
 ) -> Result<Box<dyn Future<Item = (), Error = std::io::Error> + Send>, ProtoServerError> {
     let listener = TcpListener::bind(&address)?;
@@ -76,7 +75,7 @@ pub fn bind(
             socket.peer_addr().unwrap()
         );
 
-        let sender = sender.clone();
+        let sender = host.get_service_input_sender();
 
         let framed = Framed::new(socket, ProtoCodec::new());
         let (writer, reader) = framed.split();

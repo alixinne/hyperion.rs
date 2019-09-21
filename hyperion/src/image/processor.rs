@@ -11,14 +11,14 @@ use super::RawImage;
 
 /// Image pixel accumulator
 #[derive(Default, Clone)]
-struct Pixel<T: Float + AddAssign + Default> {
+struct Pixel<T: Float + AddAssign + Default + std::fmt::Display> {
     /// Accumulated color
     color: [T; 3],
     /// Number of samples
     count: T,
 }
 
-impl<T: Float + AddAssign + Default> Pixel<T> {
+impl<T: Float + AddAssign + Default + std::fmt::Display> Pixel<T> {
     /// Reset this pixels' value and sample count
     pub fn reset(&mut self) {
         *self = Self::default();
@@ -35,7 +35,7 @@ impl<T: Float + AddAssign + Default> Pixel<T> {
         use num_traits::NumCast;
 
         if area_factor < NumCast::from(0.0).unwrap() || area_factor > NumCast::from(1.0).unwrap() {
-            panic!("area_factor out of range");
+            panic!(format!("area_factor {} out of range", area_factor));
         }
 
         self.color[0] += area_factor * T::from(r).unwrap() / NumCast::from(255.0).unwrap();
@@ -60,7 +60,7 @@ impl<T: Float + AddAssign + Default> Pixel<T> {
 
 /// Raw image data processor
 #[derive(Default)]
-pub struct Processor<T: Float + AddAssign + Default> {
+pub struct Processor<T: Float + AddAssign + Default + std::fmt::Display> {
     /// Width of the LED map
     width: usize,
     /// Height of the LED map
@@ -76,7 +76,7 @@ pub struct ProcessorWithDevices<
     'p,
     'a,
     I: Iterator<Item = (usize, &'a LedInstance, usize)>,
-    T: Float + AddAssign + Default,
+    T: Float + AddAssign + Default + std::fmt::Display,
 > {
     /// Image processor
     processor: &'p mut Processor<T>,
@@ -84,7 +84,7 @@ pub struct ProcessorWithDevices<
     leds: I,
 }
 
-impl<T: Float + AddAssign + Default> Processor<T> {
+impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
     /// Allocates the image processor working memory
     ///
     /// # Parameters
@@ -250,7 +250,7 @@ impl<
         'p,
         'a,
         I: Iterator<Item = (usize, &'a LedInstance, usize)>,
-        T: Float + AddAssign + Default,
+        T: Float + AddAssign + Default + std::fmt::Display,
     > ProcessorWithDevices<'p, 'a, I, T>
 {
     /// Process incoming image data into led colors

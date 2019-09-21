@@ -75,7 +75,7 @@ impl Devices {
     /// * `image_processor`: image processor instance
     /// * `raw_image`: raw RGB image
     /// * `immediate`: apply change immediately (skipping filtering)
-    pub fn set_from_image<T: Float + AddAssign + Default>(
+    pub fn set_from_image<T: Float + AddAssign + Default + std::fmt::Display>(
         &mut self,
         time: Instant,
         image_processor: &mut Processor<T>,

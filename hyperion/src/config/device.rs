@@ -17,6 +17,11 @@ fn default_frequency() -> f64 {
     10.0
 }
 
+/// Default device latency
+fn default_latency() -> Duration {
+    Duration::from_millis(0)
+}
+
 lazy_static! {
     static ref NAME_REGEX: Regex = Regex::new(r"\S").unwrap();
 }
@@ -52,6 +57,13 @@ pub struct Device {
     #[serde(default = "default_frequency")]
     #[validate(range(min = 0.0))]
     pub frequency: f64,
+    /// Update latency
+    #[serde(
+        serialize_with = "crate::serde::hyperion_write_duration",
+        deserialize_with = "crate::serde::hyperion_parse_duration",
+        default = "default_latency"
+    )]
+    pub latency: Duration,
     /// Idle timeout
     #[serde(default)]
     #[validate]
@@ -79,6 +91,8 @@ pub struct DeviceUpdate {
     pub leds: Option<Vec<Led>>,
     /// Update frequency (Hz)
     pub frequency: Option<f64>,
+    /// Update latency
+    pub latency: Option<Duration>,
     /// Idle timeout
     pub idle: Option<IdleSettings>,
     /// Filtering method
@@ -170,6 +184,13 @@ impl Device {
             cloned_self,
             changed_flags,
             ReloadHints::DEVICE_FREQUENCY
+        );
+        update_field!(
+            latency,
+            device_update,
+            cloned_self,
+            changed_flags,
+            ReloadHints::DEVICE_LATENCY
         );
         update_field!(
             idle,

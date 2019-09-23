@@ -18,5 +18,7 @@ bitflags! {
         const DEVICE_FORMAT    = 0b0010_0000;
         /// Frequency information for a device changed
         const DEVICE_FREQUENCY = 0b0100_0000;
+        /// Latency information for a device changed
+        const DEVICE_LATENCY   = 0b1000_0000;
     }
 }

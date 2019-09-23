@@ -238,7 +238,7 @@ impl Future for DeviceInstance {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         let mut write_device = false;
 
-        let now = Instant::now();
+        let now = Instant::now() + self.config.read().unwrap().latency;
 
         // Poll all events until NotReady
         while let Async::Ready(Some(_instant)) = self.updater.poll()? {

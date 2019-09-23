@@ -31,11 +31,16 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Pixel<T> {
     /// * `(r, g, b)`: sampled RGB values
     /// * `area_factor`: weight of the current sample. 1.0 is the weight of a sample which covers
     /// the entire matching LED area.
-    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), area_factor: T) {
+    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), mut area_factor: T) {
         use num_traits::NumCast;
 
-        if area_factor < NumCast::from(0.0).unwrap() || area_factor > NumCast::from(1.0).unwrap() {
-            panic!(format!("area_factor {} out of range", area_factor));
+        let min = NumCast::from(0.0).unwrap();
+        let max = NumCast::from(1.0).unwrap();
+
+        if area_factor < min {
+            area_factor = min;
+        } else if area_factor > max {
+            area_factor = max;
         }
 
         self.color[0] += area_factor * T::from(r).unwrap() / NumCast::from(255.0).unwrap();

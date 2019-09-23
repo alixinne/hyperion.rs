@@ -79,7 +79,7 @@ pub fn bind(
                     HyperionMessage::ClearAll => {
                         // Update state
                         sender
-                            .unbounded_send(Input::new(StateUpdate::Clear))
+                            .unbounded_send(Input::user_input(StateUpdate::Clear, 0, None))
                             .unwrap();
 
                         HyperionResponse::success()
@@ -87,7 +87,7 @@ pub fn bind(
                     HyperionMessage::Clear { priority } => {
                         // Update state
                         sender
-                            .unbounded_send(Input::from_priority(StateUpdate::Clear, priority))
+                            .unbounded_send(Input::user_input(StateUpdate::Clear, priority, None))
                             .unwrap();
 
                         HyperionResponse::success()
@@ -107,7 +107,7 @@ pub fn bind(
 
                         // Update state
                         sender
-                            .unbounded_send(Input::from_full(update, priority, duration))
+                            .unbounded_send(Input::user_input(update, priority, duration))
                             .unwrap();
 
                         HyperionResponse::success()
@@ -132,7 +132,7 @@ pub fn bind(
                                     .map(|raw_image| {
                                         // Update state
                                         sender
-                                            .unbounded_send(Input::from_full(
+                                            .unbounded_send(Input::user_input(
                                                 StateUpdate::Image(raw_image),
                                                 priority,
                                                 duration,

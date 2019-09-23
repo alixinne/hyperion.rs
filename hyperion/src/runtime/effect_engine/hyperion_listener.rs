@@ -29,7 +29,7 @@ impl HyperionListener {
 impl EffectListener for HyperionListener {
     fn set_rgb(&mut self, rgb: (u8, u8, u8)) -> PyResult<()> {
         self.sender
-            .unbounded_send(Input::OneShot(StateUpdate::SolidColor {
+            .unbounded_send(Input::effect_input(StateUpdate::SolidColor {
                 color: rgb.into(),
             }))
             .map_err(|error| PyErr::new::<exceptions::RuntimeError, _>(error.to_string()))
@@ -37,7 +37,7 @@ impl EffectListener for HyperionListener {
 
     fn set_leds_rgb(&mut self, leds: &[ByteRgb]) -> PyResult<()> {
         self.sender
-            .unbounded_send(Input::OneShot(StateUpdate::LedData(
+            .unbounded_send(Input::effect_input(StateUpdate::LedData(
                 leds.iter()
                     .map(|rgb| ColorPoint::from((rgb.r, rgb.g, rgb.b)))
                     .collect(),
@@ -47,7 +47,7 @@ impl EffectListener for HyperionListener {
 
     fn set_image(&mut self, image: RawImage) -> PyResult<()> {
         self.sender
-            .unbounded_send(Input::OneShot(StateUpdate::Image(image)))
+            .unbounded_send(Input::effect_input(StateUpdate::Image(image)))
             .map_err(|error| PyErr::new::<exceptions::RuntimeError, _>(error.to_string()))
     }
 }

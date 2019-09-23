@@ -88,7 +88,7 @@ pub fn bind(
                     HyperionRequest::ClearAllRequest(_) => {
                         // Update state
                         sender
-                            .unbounded_send(Input::new(StateUpdate::Clear))
+                            .unbounded_send(Input::user_input(StateUpdate::Clear, 0, None))
                             .unwrap();
 
                         success_response(true)
@@ -96,9 +96,10 @@ pub fn bind(
                     HyperionRequest::ClearRequest(clear_request) => {
                         // Update state
                         sender
-                            .unbounded_send(Input::from_priority(
+                            .unbounded_send(Input::user_input(
                                 StateUpdate::Clear,
                                 clear_request.priority,
+                                None,
                             ))
                             .unwrap();
 
@@ -114,7 +115,7 @@ pub fn bind(
 
                         // Update state
                         sender
-                            .unbounded_send(Input::from_full(
+                            .unbounded_send(Input::user_input(
                                 StateUpdate::SolidColor {
                                     color: color::ColorPoint::from((color.0, color.1, color.2)),
                                 },
@@ -144,7 +145,7 @@ pub fn bind(
                                     .map(|raw_image| {
                                         // Update state
                                         sender
-                                            .unbounded_send(Input::from_full(
+                                            .unbounded_send(Input::user_input(
                                                 StateUpdate::Image(raw_image),
                                                 priority,
                                                 duration,

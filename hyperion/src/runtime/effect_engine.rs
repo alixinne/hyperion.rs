@@ -114,12 +114,12 @@ impl EffectEngine {
     /// # Parameters
     ///
     /// * `effect_name`: name and parameters of the effect
-    /// * `priority`: priority for this effect changes
     /// * `deadline`: instant at which the effect should time out
+    /// * `sender`: channel to send updates to
+    /// * `led_count`: number of LEDs currently managed
     pub fn launch(
         &mut self,
         effect_name: EffectName,
-        priority: i32,
         deadline: Option<Instant>,
         sender: ServiceInputSender,
         led_count: usize,

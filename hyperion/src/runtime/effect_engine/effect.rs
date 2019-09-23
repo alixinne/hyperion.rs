@@ -62,13 +62,14 @@ impl Effect {
 
         let locals = [("hyperion", hyperion.to_object(py))].into_py_dict(py);
 
-        py.run(code, None, Some(&locals))
-            .map_err(|err| if cfg!(test) {
+        py.run(code, None, Some(&locals)).map_err(|err| {
+            if cfg!(test) {
                 err.print(py);
                 "Effect error".to_owned()
             } else {
                 format!("{:?}", err)
-            })
+            }
+        })
     }
 
     /// Request that the effect be aborted

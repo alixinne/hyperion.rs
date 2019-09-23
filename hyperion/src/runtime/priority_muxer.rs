@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 use std::mem::replace;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use futures::{Async, Poll, Stream};
 
@@ -48,26 +48,18 @@ struct MuxerEntry {
     /// Input data, None when it was sent as a StateUpdate
     input: Option<Input>,
     /// Expiration date of the entry
-    deadline: Instant,
+    deadline: Option<Instant>,
     /// Priority of the entry
     priority: i32,
 }
 
-impl MuxerEntry {
-    /// Returns true if this input entry is a ClearAll message
-    fn is_clearall(&self) -> bool {
-        if let Some(Input::OneShot(StateUpdate::Clear)) = self.input {
-            return true;
-        }
-
-        false
-    }
-}
-
 impl From<Input> for MuxerEntry {
     fn from(input: Input) -> Self {
-        let deadline = Instant::now() + input.get_duration();
-        let priority = input.get_priority();
+        // Use duration or 24h from now as a default timeout
+        let deadline = input.get_duration().map(|d| Instant::now() + d);
+
+        // Default priority
+        let priority = input.get_priority().unwrap_or(1000);
 
         Self {
             input: Some(input),
@@ -134,19 +126,8 @@ impl Stream for PriorityMuxer {
                     return Ok(Async::Ready(Some(service_command.into())));
                 }
 
-                let entry = MuxerEntry::from(input);
-
-                if entry.is_clearall() {
-                    // Clear all pending messages and turn off everything
-                    self.inputs.clear();
-                    // Clear all effects
-                    self.host.get_effect_engine().clear_all();
-
-                    return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
-                } else {
-                    // Other message, add to queue
-                    self.inputs.push(entry);
-                }
+                // Push inputs into queue
+                self.inputs.push(input.into());
             } else {
                 return Ok(Async::Ready(None));
             }
@@ -157,7 +138,7 @@ impl Stream for PriorityMuxer {
 
         // Remove expired inputs
         while let Some(entry) = self.inputs.peek() {
-            if entry.deadline < now {
+            if entry.deadline.map(|d| d < now).unwrap_or(false) {
                 trace!("input {:?} has expired", entry.input);
                 self.inputs.pop();
                 expired_entries = true;
@@ -166,46 +147,65 @@ impl Stream for PriorityMuxer {
             }
         }
 
+        // Should we pop the top entry
+        let mut pop_top_entry = false;
+        let mut result = None;
+
         // Send non-forwarded top input if any
         if let Some(mut entry) = self.inputs.peek_mut() {
             // Replace with None marks this as forwarded without cloning
             let input = replace(&mut entry.input, None);
+            let deadline = entry.deadline;
 
             if let Some(input) = input {
-                if input.is_update() {
-                    trace!("forwarding input: {:?}", input);
-                    return Ok(Async::Ready(Some(input.into_update().into())));
-                } else if let Input::Effect {
-                    effect,
-                    priority,
-                    duration,
-                } = input
-                {
-                    let name = effect.name.clone();
-                    let args = effect.args.clone();
-                    let deadline = duration.map(|d| now + d);
+                match input {
+                    Input::UserInput { update, .. } => {
+                        // User input cancels running effects
+                        self.host.get_effect_engine().clear_all();
 
-                    let mut ee = self.host.get_effect_engine();
+                        // No duration => one shot
+                        pop_top_entry = deadline.is_none();
 
-                    // Stop current effects
-                    ee.clear_all();
-
-                    // Start next one
-                    match ee.launch(
-                        effect,
-                        priority,
-                        deadline,
-                        self.host.get_service_input_sender(),
-                        self.host.get_devices().get_led_count(),
-                    ) {
-                        Ok(()) => debug!(
-                            "launched effect {} with args {}",
-                            name,
-                            args.map(|a| serde_json::to_string(&a).unwrap())
-                                .unwrap_or_else(|| "null".to_owned())
-                        ),
-                        Err(error) => warn!("failed to launch effect {}: {}", name, error),
+                        // Forward input
+                        trace!("forwarding state update: {:?}", update);
+                        result = Some(Ok(Async::Ready(Some(update.into()))));
                     }
+                    Input::EffectInput { update } => {
+                        // No duration => one shot
+                        pop_top_entry = deadline.is_none();
+
+                        // Effect input, forward directly
+                        trace!("forwarding state update: {:?}", update);
+                        result = Some(Ok(Async::Ready(Some(update.into()))));
+                    }
+                    Input::Effect { effect, .. } => {
+                        let mut ee = self.host.get_effect_engine();
+
+                        let name = effect.name.clone();
+                        let args = effect.args.clone();
+
+                        // Remove effect entry so we can process user inputs
+                        pop_top_entry = true;
+
+                        // Launch effect request
+                        match ee.launch(
+                            effect,
+                            Some(deadline.unwrap_or_else(|| {
+                                Instant::now() + Duration::from_millis(1000 * 60 * 10)
+                            })),
+                            self.host.get_service_input_sender(),
+                            self.host.get_devices().get_led_count(),
+                        ) {
+                            Ok(()) => debug!(
+                                "launched effect {} with args {}",
+                                name,
+                                args.map(|a| serde_json::to_string(&a).unwrap())
+                                    .unwrap_or_else(|| "null".to_owned())
+                            ),
+                            Err(error) => warn!("failed to launch effect {}: {}", name, error),
+                        }
+                    }
+                    Input::Internal(_) => panic!("unexpected internal command in input processing"),
                 }
             }
         } else if expired_entries {
@@ -213,6 +213,17 @@ impl Stream for PriorityMuxer {
             return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
         }
 
+        // Pop one-shot top entry
+        if pop_top_entry {
+            self.inputs.pop();
+        }
+
+        // Return actual result
+        if let Some(result) = result {
+            return result;
+        }
+
+        // Not ready, no input
         Ok(Async::NotReady)
     }
 }

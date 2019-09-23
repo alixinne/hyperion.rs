@@ -10,32 +10,31 @@ use crate::servers::json::Effect;
 /// Hyperion input information
 #[derive(Debug, Clone)]
 pub enum Input {
-    /// One shot command, applied immediately once
-    OneShot(StateUpdate),
-    /// Priority-only command
-    Priority {
+    /// Command coming from outside sources
+    UserInput {
         /// Command to execute
         update: StateUpdate,
         /// Priority of the input
-        priority: i32,
-    },
-    /// Full command, applied for a duration if its priority is high enough
-    Full {
-        /// Command to execute
-        update: StateUpdate,
-        /// Priority of the input
-        priority: i32,
+        priority: Option<i32>,
         /// Duration to apply the input for
-        duration: Duration,
+        duration: Option<Duration>,
     },
     /// Effect command
     Effect {
         /// Effect to run
         effect: Effect,
         /// Priority of the input
-        priority: i32,
+        priority: Option<i32>,
         /// Duration to apply the effect for
         duration: Option<Duration>,
+    },
+    /// State change issued by an effect
+    ///
+    /// The priority is stored by the running effect engine,
+    /// and compared to when cancelling effects.
+    EffectInput {
+        /// Command to execute
+        update: StateUpdate,
     },
     /// Internal command, not a direct user input
     Internal(ServiceCommand),
@@ -45,85 +44,45 @@ impl Input {
     /// Get the duration of an input
     ///
     /// A very large value is returned if the input has no duration.
-    pub fn get_duration(&self) -> Duration {
+    pub fn get_duration(&self) -> Option<Duration> {
         match self {
-            Input::Full { duration, .. } => *duration,
-            Input::Effect {
-                duration: Some(duration),
-                ..
-            } => *duration,
-            _ => Duration::from_millis(u64::from(std::u32::MAX)),
+            Input::UserInput { duration, .. } | Input::Effect { duration, .. } => duration.clone(),
+            _ => None,
         }
     }
 
     /// Get the priority of an input
     ///
     /// Items without priority will return the highest priority (apply instantly)
-    pub fn get_priority(&self) -> i32 {
+    pub fn get_priority(&self) -> Option<i32> {
         match self {
-            Input::Full { priority, .. }
-            | Input::Priority { priority, .. }
-            | Input::Effect { priority, .. } => *priority,
-            _ => std::i32::MAX,
+            Input::UserInput { priority, .. } | Input::Effect { priority, .. } => priority.clone(),
+            _ => None,
         }
     }
 
-    /// Returns true if this input is a state update
-    pub fn is_update(&self) -> bool {
-        match self {
-            Input::OneShot(_) => true,
-            Input::Priority { .. } => true,
-            Input::Full { .. } => true,
-            _ => false,
-        }
-    }
-
-    /// Convert the input into its associated state update
-    pub fn into_update(self) -> StateUpdate {
-        match self {
-            Input::OneShot(update) => update,
-            Input::Priority { update, .. } => update,
-            Input::Full { update, .. } => update,
-            Input::Internal(_) => panic!("cannot turn internal command into state update"),
-            Input::Effect { .. } => panic!("cannot turn effect into state update"),
-        }
-    }
-
-    /// Create a new input
+    /// Create a new user input
     ///
     /// # Parameters
     ///
     /// * `update`: update contents
-    pub fn new(update: StateUpdate) -> Self {
-        Input::OneShot(update)
-    }
-
-    /// Create an input from priority value
-    ///
-    /// # Parameters
-    ///
-    /// * `update`: update contents
-    /// * `priority`: priority of the update
-    pub fn from_priority(update: StateUpdate, priority: i32) -> Self {
-        Input::Priority { update, priority }
-    }
-
-    /// Create an input from full input details
-    ///
-    /// # Parameters
-    ///
-    /// * `update`: update contents
-    /// * `priority`: priority of the update
-    /// * `duration`: duration of the update
-    pub fn from_full(update: StateUpdate, priority: i32, duration: Option<i32>) -> Self {
-        match duration {
-            Some(duration) if duration > 0 => Input::Full {
-                update,
-                priority,
-                duration: Duration::from_millis(duration.try_into().unwrap()),
-            },
-            _ => Input::Priority { update, priority },
+    /// * `priority`: update priority
+    /// * `duration`: update duration, in milliseconds
+    pub fn user_input(update: StateUpdate, priority: i32, duration: Option<i32>) -> Self {
+        Input::UserInput {
+            update,
+            priority: if priority >= 0 { Some(priority) } else { None },
+            duration: duration.and_then(|d| d.try_into().ok().map(|d| Duration::from_millis(d))),
         }
+    }
+
+    /// Create a new effect input
+    ///
+    /// # Parameters
+    ///
+    /// * `update`: update contents
+    pub fn effect_input(update: StateUpdate) -> Self {
+        Input::EffectInput { update }
     }
 
     /// Create an input from effect input details
@@ -136,7 +95,7 @@ impl Input {
     pub fn effect(priority: i32, duration: i32, effect: Effect) -> Self {
         Input::Effect {
             effect,
-            priority,
+            priority: Some(priority),
             duration: if duration > 0 {
                 Some(Duration::from_millis(duration.try_into().unwrap()))
             } else {

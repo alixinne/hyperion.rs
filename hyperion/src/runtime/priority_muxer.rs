@@ -133,6 +133,18 @@ impl Stream for PriorityMuxer {
             }
         }
 
+        // Receive inputs from the effect engine
+        {
+            let mut ee = self.host.get_effect_engine();
+            while let Async::Ready(value) = ee.poll()? {
+                if let Some(service_command) = value {
+                    return Ok(Async::Ready(Some(service_command.into())));
+                } else {
+                    return Ok(Async::Ready(None));
+                }
+            }
+        }
+
         let now = Instant::now();
         let mut expired_entries = false;
 

@@ -11,7 +11,9 @@ use std::sync::{
 };
 use std::time::Instant;
 
-use crate::hyperion::ServiceInputSender;
+use futures::{Async, Stream};
+
+use crate::hyperion::{ServiceCommand, ServiceInputSender};
 use crate::image::RawImage;
 use crate::servers::json::Effect as EffectName;
 
@@ -42,26 +44,22 @@ use serde_ext::*;
 pub struct EffectEngine {
     /// List of known effects
     effects: HashMap<String, EffectDefinition>,
-    /// List of running effects
-    running_effects: Vec<RunningEffect>,
+    /// Effect running currently
+    current_effect: Option<RunningEffect>,
+    /// Effects being terminated
+    terminating_effects: Vec<Option<RunningEffect>>,
 }
 
 /// Currently running effect
 struct RunningEffect {
     /// Abort flag
     join_requested: Arc<AtomicBool>,
+    /// Abort completed flag
+    effect_terminated: Arc<AtomicBool>,
     /// Thread object running the effect
     thread: Option<std::thread::JoinHandle<Result<(), String>>>,
-}
-
-impl Drop for RunningEffect {
-    fn drop(&mut self) {
-        self.join_requested.store(true, Ordering::SeqCst);
-
-        if let Err(error) = self.thread.take().unwrap().join().unwrap() {
-            warn!("python effect error: {}", error);
-        }
-    }
+    /// Effect name
+    name: String,
 }
 
 impl EffectEngine {
@@ -105,7 +103,8 @@ impl EffectEngine {
 
         Self {
             effects,
-            running_effects: Vec::new(),
+            current_effect: None,
+            terminating_effects: Vec::new(),
         }
     }
 
@@ -135,9 +134,13 @@ impl EffectEngine {
             let code = fs::read_to_string(effect.get_script().clone())?;
 
             // Spawn effect thread
-            let flag = Arc::new(AtomicBool::new(false));
+            let join_flag = Arc::new(AtomicBool::new(false));
+            let terminated_flag = Arc::new(AtomicBool::new(false));
+
             let running_effect = RunningEffect {
-                join_requested: flag.clone(),
+                name: effect_name.name.clone(),
+                join_requested: join_flag.clone(),
+                effect_terminated: terminated_flag.clone(),
                 thread: Some(std::thread::spawn(move || {
                     let res = Effect::run(
                         &code,
@@ -145,19 +148,19 @@ impl EffectEngine {
                         led_count,
                         args,
                         deadline,
-                        flag,
+                        join_flag,
                     );
 
-                    if res.is_err() {
-                        warn!("effect error: {:?}", res);
-                    }
-
+                    // Notify effect finished running
+                    terminated_flag.store(true, Ordering::SeqCst);
                     res
                 })),
             };
 
             // Add to running effects
-            self.running_effects.push(running_effect);
+            self.current_effect
+                .replace(running_effect)
+                .map(|previous_effect| self.terminate(previous_effect));
 
             Ok(())
         } else {
@@ -177,8 +180,69 @@ impl EffectEngine {
         effects
     }
 
+    /// Add the given effect to the termination list
+    ///
+    /// # Parameters
+    ///
+    /// * `effect`: effect to terminate
+    fn terminate(&mut self, effect: RunningEffect) {
+        // Request effect termination
+        effect.join_requested.store(true, Ordering::SeqCst);
+
+        // Add to termination list
+        self.terminating_effects.push(Some(effect));
+    }
+
     /// Abort all effects
     pub fn clear_all(&mut self) {
-        self.running_effects.clear();
+        self.current_effect
+            .take()
+            .map(|effect| self.terminate(effect));
+    }
+}
+
+impl Stream for EffectEngine {
+    type Item = ServiceCommand;
+    type Error = ();
+
+    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
+        let mut result = Ok(Async::NotReady);
+        let mut remove_idx = None;
+
+        for (i, effect) in self.terminating_effects.iter_mut().enumerate() {
+            let terminated = effect
+                .as_ref()
+                .map(|effect| effect.effect_terminated.load(Ordering::SeqCst))
+                .unwrap_or(false);
+
+            if terminated {
+                let mut effect = effect.take().unwrap();
+                result = Ok(Async::Ready(Some(ServiceCommand::EffectCompleted {
+                    name: effect.name,
+                    result: effect.thread.take().unwrap().join().unwrap(),
+                })));
+                remove_idx = Some(i);
+            }
+        }
+
+        if let Some(idx) = remove_idx {
+            self.terminating_effects.remove(idx);
+        } else {
+            // Check if the current effect finished early
+            if self
+                .current_effect
+                .as_ref()
+                .map(|e| e.effect_terminated.load(Ordering::SeqCst))
+                .unwrap_or(false)
+            {
+                let mut effect = self.current_effect.take().unwrap();
+                result = Ok(Async::Ready(Some(ServiceCommand::EffectCompleted {
+                    name: effect.name,
+                    result: effect.thread.take().unwrap().join().unwrap(),
+                })));
+            }
+        }
+
+        result
     }
 }

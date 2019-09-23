@@ -8,7 +8,7 @@ use std::time::Instant;
 
 use pyo3::prelude::*;
 use pyo3::types::*;
-use pyo3::{exceptions, PyErr};
+use pyo3::{exceptions, PyErr, PyErrValue};
 
 use super::*;
 
@@ -67,7 +67,18 @@ impl Effect {
                 err.print(py);
                 "Effect error".to_owned()
             } else {
-                format!("{:?}", err)
+                match err.pvalue {
+                    PyErrValue::None => "no error".to_owned(),
+                    PyErrValue::Value(object) => format!(
+                        "{}",
+                        object
+                            .call_method0(py, "__str__")
+                            .unwrap()
+                            .extract::<String>(py)
+                            .unwrap()
+                    ),
+                    _ => "other".to_owned(),
+                }
             }
         })
     }
@@ -78,11 +89,16 @@ impl Effect {
     }
 
     /// Checks the effect timeout, and requests aborting if necessary
-    fn check_deadline(&mut self) {
+    ///
+    /// Returns true if the effect should continue running, false otherwise.
+    fn check_deadline(&mut self) -> bool {
         if self.deadline.map(|d| Instant::now() > d).unwrap_or(false) {
             trace!("terminating effect because deadline expired");
             self.request_abort();
+            return false;
         }
+
+        true
     }
 }
 
@@ -104,7 +120,9 @@ impl Effect {
     /// Set LED colors from RGB data
     #[args(args = "*")]
     fn setColor(&mut self, py: Python, args: &PyTuple) -> PyResult<()> {
-        self.check_deadline();
+        if !self.check_deadline() {
+            return Ok(());
+        }
 
         if args.len() == 3 {
             let r: u8 = args.get_item(0).to_object(py).extract(py)?;
@@ -137,7 +155,9 @@ impl Effect {
 
     /// Set LED colors from image data
     fn setImage(&mut self, width: u32, height: u32, data: &PyByteArray) -> PyResult<()> {
-        self.check_deadline();
+        if !self.check_deadline() {
+            return Ok(());
+        }
 
         if data.len() == 3 * width as usize * height as usize {
             let image = RawImage::try_from((data.to_vec(), width, height))

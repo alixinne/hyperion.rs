@@ -107,6 +107,10 @@ impl Service {
                     error!("error while reloading device: {}", error);
                 }
             },
+            ServiceCommand::EffectCompleted { name, result } => match result {
+                Ok(_) => debug!("effect '{}' executed successfully", name),
+                Err(e) => warn!("effect '{}' encountered an error: {}", name, e),
+            },
         }
     }
 }

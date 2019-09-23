@@ -12,16 +12,19 @@ color_step = (
 )
 
 # fade color
-calcChannel = lambda i: min(max(int(colorStart[i] + color_step[i]*step),0),255)
 for step in range(256):
 	if hyperion.abort():
 		break
 
-	hyperion.setColor( calcChannel(0),calcChannel(1),calcChannel(2) )
+	hyperion.setColor(
+		min(max(int(colorStart[0] + color_step[0] * step), 0), 255),
+		min(max(int(colorStart[1] + color_step[1] * step), 0), 255),
+		min(max(int(colorStart[2] + color_step[2] * step), 0), 255),
+	)
 	time.sleep( fadeTime / 256 )
 
 # maintain color until effect end
-hyperion.setColor(colorEnd[0],colorEnd[1],colorEnd[2])
+hyperion.setColor(colorEnd[0], colorEnd[1], colorEnd[2])
 while not hyperion.abort():
 	time.sleep(1)
 

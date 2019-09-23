@@ -119,8 +119,6 @@ impl Stream for PriorityMuxer {
         // Receive incoming inputs
         while let Async::Ready(value) = self.receiver.poll()? {
             if let Some(input) = value {
-                trace!("received new input {:?}", input);
-
                 // Forward internal commands directly
                 if let Input::Internal(service_command) = input {
                     return Ok(Async::Ready(Some(service_command.into())));
@@ -179,7 +177,7 @@ impl Stream for PriorityMuxer {
                         pop_top_entry = deadline.is_none();
 
                         // Forward input
-                        trace!("forwarding state update: {:?}", update);
+                        trace!("forwarding state update: {:#?}", update);
                         result = Some(Ok(Async::Ready(Some(update.into()))));
                     }
                     Input::EffectInput { update } => {
@@ -187,7 +185,7 @@ impl Stream for PriorityMuxer {
                         pop_top_entry = deadline.is_none();
 
                         // Effect input, forward directly
-                        trace!("forwarding state update: {:?}", update);
+                        trace!("forwarding state update: {:#?}", update);
                         result = Some(Ok(Async::Ready(Some(update.into()))));
                     }
                     Input::Effect { effect, .. } => {

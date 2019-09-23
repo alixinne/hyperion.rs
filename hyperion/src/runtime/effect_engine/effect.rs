@@ -143,9 +143,17 @@ impl Effect {
             }
 
             trace!("effect: set_leds_rgb([{} bytes])", led_data.len());
-            self.listener.set_leds_rgb(unsafe {
-                &*(&led_data.to_vec()[..] as *const [u8] as *const [ByteRgb])
-            })
+            self.listener.set_leds_rgb(
+                &led_data
+                    .to_vec()
+                    .chunks(3)
+                    .map(|chunk| ByteRgb {
+                        r: chunk[0],
+                        g: chunk[1],
+                        b: chunk[2],
+                    })
+                    .collect::<Vec<_>>(),
+            )
         } else {
             Err(PyErr::new::<exceptions::RuntimeError, _>(
                 "Could not parse arguments as color",

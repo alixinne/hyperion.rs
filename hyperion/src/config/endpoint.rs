@@ -28,6 +28,12 @@ pub enum Endpoint {
         /// Device address
         address: String,
     },
+    /// Websocket protocol method
+    #[serde(rename = "ws")]
+    Ws {
+        /// Device address
+        address: String,
+    }
 }
 
 impl Validate for Endpoint {

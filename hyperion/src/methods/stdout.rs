@@ -48,7 +48,8 @@ impl Method for Stdout {
             output.push_str(&i.to_string());
             output.push_str(": [");
 
-            for (idx, comp) in formatted.into_iter().enumerate() {
+            for (idx, (comp, ch)) in formatted.into_iter().enumerate() {
+                output.push_str(&format!("{}: ", ch));
                 output.push_str(&((((1 << self.bits) - 1) as f32 * comp) as i32).to_string());
                 if idx < components - 1 {
                     output.push_str(", ");

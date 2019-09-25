@@ -32,5 +32,6 @@ pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, Meth
     match endpoint {
         Endpoint::Stdout { bits } => to_box(Stdout::new(*bits)),
         Endpoint::Udp { address } => to_box(Udp::new(address.to_owned())),
+        Endpoint::Ws { address } => Ok(Box::new(Ws::new(address.to_owned()))),
     }
 }

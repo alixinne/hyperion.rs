@@ -135,7 +135,7 @@ impl Udp {
             let device_color = current_color.to_device(format);
             let formatted = device_color.format(format);
 
-            for (idx, comp) in formatted.into_iter().enumerate() {
+            for (idx, (comp, _ch)) in formatted.into_iter().enumerate() {
                 rgb_buffer[i * components + idx] = (comp * 255.0f32) as u8;
             }
         }

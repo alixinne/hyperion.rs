@@ -14,3 +14,6 @@ pub use udp::Udp;
 
 mod stdout;
 pub use stdout::Stdout;
+
+mod ws;
+pub use ws::Ws;

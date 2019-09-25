@@ -98,6 +98,7 @@ Not implemented yet:
 This list details which devices are supported currently for outputting color data.
 
 * Raw 8-bit RGB UDP
+* WebSocket
 * Stdout (for debugging)
 
 Currently, both RGB and RGB+W LED arrangements are supported. The white component

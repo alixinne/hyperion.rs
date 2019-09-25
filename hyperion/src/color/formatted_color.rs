@@ -25,7 +25,7 @@ impl<'a> FormattedColor<'a> {
 }
 
 impl<'a> IntoIterator for FormattedColor<'a> {
-    type Item = f32;
+    type Item = (f32, char);
     type IntoIter = FormattedColorIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -45,7 +45,7 @@ pub struct FormattedColorIter<'a> {
 }
 
 impl<'a> Iterator for FormattedColorIter<'a> {
-    type Item = f32;
+    type Item = (f32, char);
 
     fn next(&mut self) -> Option<Self::Item> {
         let components = self.formatted_color.format.components();
@@ -60,15 +60,18 @@ impl<'a> Iterator for FormattedColorIter<'a> {
         self.pos += 1;
 
         // Get the next component
-        Some(
-            self.formatted_color
-                .format
-                .order()
-                .chars()
-                .nth(pos)
-                .map(|ch| self.formatted_color.color.get_component(ch))
-                .unwrap_or(None) // If string too short
-                .unwrap_or(0.), // If component not found
-        )
+        let (next_val, next_ch) = self
+            .formatted_color
+            .format
+            .order()
+            .chars()
+            .nth(pos)
+            .map(|ch| (self.formatted_color.color.get_component(ch), ch))
+            .unwrap_or((None, ' ')); // If string too short
+
+        Some((
+            next_val.unwrap_or(0.), // If component not found
+            next_ch,
+        ))
     }
 }

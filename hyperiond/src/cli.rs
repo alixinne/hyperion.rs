@@ -18,7 +18,7 @@ mod errors {
 
     error_chain! {
         links {
-            ConfigLoad(::hyperion::config::ConfigLoadError, ::hyperion::config::ConfigLoadErrorKind);
+            ConfigLoad(::hyperion::config::ConfigError, ::hyperion::config::ConfigErrorKind);
             JsonServer(::hyperion::servers::json::JsonServerError, ::hyperion::servers::json::JsonServerErrorKind);
             ProtoServer(::hyperion::servers::proto::ProtoServerError, ::hyperion::servers::proto::ProtoServerErrorKind);
             Host(::hyperion::runtime::host::Error, ::hyperion::runtime::host::ErrorKind);

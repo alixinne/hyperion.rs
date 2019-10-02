@@ -100,6 +100,20 @@ fn api_patch_device(req: Request) -> Box<impl Future<Item = Response, Error = Re
     )
 }
 
+/// POST /api/config/save
+fn api_config_save(req: Request) -> Result<Response, Response> {
+    // Get reference to config
+    let state = req.state::<State>().unwrap();
+    let config = state.host.get_config();
+
+    // Save configuration, propagate errors
+    json_try!(config.read().unwrap().save());
+    info!("saved configuration");
+
+    // Success
+    Ok(json_response!(StatusCode::OK, &json!({ "success": true })))
+}
+
 impl State {
     /// Create a new Hyper server state
     ///
@@ -130,6 +144,7 @@ pub fn build_router(webroot: PathBuf, host: HostHandle) -> Router {
         .add(Method::GET, r"^/api/server$", api_server)
         .add(Method::GET, r"^/api/devices$", api_devices)
         .add(Method::PATCH, r"^/api/devices/(\d+)$", api_patch_device)
+        .add(Method::POST, r"^/api/config/save$", api_config_save)
         .add(Method::GET, r"", |req: Request| {
             req.state::<State>()
                 .unwrap()

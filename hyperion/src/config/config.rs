@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use validator::Validate;
 
-use super::{ConfigHandle, ConfigLoadError, Correction, Device};
+use super::{ConfigError, ConfigHandle, Correction, Device};
 
 /// Config for an Hyperion instance
 #[derive(Debug, Validate, Serialize, Deserialize)]
@@ -29,7 +29,7 @@ impl Config {
     /// # Parameters
     ///
     /// * `path`: path to the configuration to load
-    pub fn read<P: AsRef<Path>>(path: P) -> Result<Config, ConfigLoadError> {
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<Config, ConfigError> {
         let src_path = path.as_ref().to_path_buf();
 
         // Open file and create reader
@@ -41,6 +41,22 @@ impl Config {
         config.validate()?;
 
         Ok(config)
+    }
+
+    /// Save the configuration to the file it was loaded from
+    ///
+    /// Writing is done atomically to prevent truncating the config file and failing to write
+    /// the configuration.
+    pub fn save(&self) -> Result<(), ConfigError> {
+        use atomicwrites::{AtomicFile, AllowOverwrite};
+
+        let af = AtomicFile::new(&self.path, AllowOverwrite);
+        af.write(|f| {
+            serde_yaml::to_writer(f, &self)?;
+            Ok(())
+        })?;
+
+        Ok(())
     }
 
     /// Turn this config object into a shared handle

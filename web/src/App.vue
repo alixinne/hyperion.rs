@@ -16,6 +16,9 @@
           </template>
 
           <template slot="end">
+            <b-navbar-item>
+              <save-config-button/>
+            </b-navbar-item>
           </template>
         </b-navbar>
       </div>
@@ -37,11 +40,13 @@
 </template>
 
 <script>
+import SaveConfigButton from './components/SaveConfigButton'
 import ServerHeader from './components/ServerHeader'
 
 export default {
   name: 'App',
   components: {
+    SaveConfigButton,
     ServerHeader
   }
 }

@@ -28,6 +28,10 @@ Vue.use(Vuelidate)
 
 Vue.config.productionTip = false
 
+// Assume the url ends with / for index.html
+window.hyperionRsBaseUrl = window.location.origin + window.location.pathname
+axios.defaults.baseURL = window.hyperionRsBaseUrl
+
 axios.interceptors.request.use((config) => {
   store.commit('loadStart')
   return config

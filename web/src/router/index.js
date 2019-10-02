@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Dashboard from '@/pages/Dashboard'
-import Devices from '@/pages/Devices'
-import NotFound from '@/pages/NotFound'
+import Dashboard from '@/views/Dashboard'
+import Devices from '@/views/Devices'
+import NotFound from '@/views/NotFound'
 
 Vue.use(Router)
 

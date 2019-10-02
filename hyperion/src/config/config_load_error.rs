@@ -11,6 +11,6 @@ error_chain! {
     foreign_links {
         Io(std::io::Error);
         InvalidSyntax(serde_yaml::Error);
-        InvalidConvig(validator::ValidationErrors);
+        InvalidConfig(validator::ValidationErrors);
     }
 }

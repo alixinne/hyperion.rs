@@ -48,7 +48,7 @@ impl Config {
     /// Writing is done atomically to prevent truncating the config file and failing to write
     /// the configuration.
     pub fn save(&self) -> Result<(), ConfigError> {
-        use atomicwrites::{AtomicFile, AllowOverwrite};
+        use atomicwrites::{AllowOverwrite, AtomicFile};
 
         let af = AtomicFile::new(&self.path, AllowOverwrite);
         af.write(|f| {

@@ -84,16 +84,7 @@ impl Devices {
     ) {
         // Update stored image
         image_processor
-            .with_devices(
-                self.devices
-                    .iter()
-                    .enumerate()
-                    .flat_map(|(device_idx, device)| {
-                        device
-                            .iter_leds()
-                            .map(move |(led_idx, led)| (device_idx, led, led_idx))
-                    }),
-            )
+            .with_devices(self.host.get_config().read().unwrap().devices.iter())
             .process_image(raw_image);
 
         // Mutable reference to devices to prevent the closure exclusive access
@@ -144,7 +135,7 @@ impl Devices {
                 break;
             }
 
-            for idx in 0..device.get_led_count() {
+            for idx in 0..device.get_data().read().unwrap().leds().len() {
                 if current_idx >= leds.len() {
                     break;
                 }
@@ -160,9 +151,9 @@ impl Devices {
 
     /// Get the total LED count for all devices
     pub fn get_led_count(&self) -> usize {
-        self.devices
-            .iter()
-            .fold(0usize, |s, device| s + device.get_led_count())
+        self.devices.iter().fold(0usize, |s, device| {
+            s + device.get_data().read().unwrap().leds().len()
+        })
     }
 }
 

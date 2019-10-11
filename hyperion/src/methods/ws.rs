@@ -10,10 +10,8 @@ use websocket::client::r#async::Client;
 use websocket::result::WebSocketError;
 use websocket::{ClientBuilder, OwnedMessage};
 
-use crate::config::ColorFormat;
-use crate::filters::ColorFilter;
 use crate::methods::Method;
-use crate::runtime::{IdleTracker, LedInstance};
+use crate::runtime::DeviceInstanceDataHandle;
 
 #[allow(missing_docs)]
 /// Internal error definitions
@@ -77,8 +75,8 @@ struct WsData {
     address: String,
     /// Current session
     state: SocketState,
-    /// Current message to be sent
-    current_message: String,
+    /// Current device data to be sent
+    current_data: Option<DeviceInstanceDataHandle>,
 }
 
 /// Handle to shared websocket state
@@ -101,54 +99,9 @@ impl Ws {
             data: Arc::new(Mutex::new(WsData {
                 address,
                 state: Default::default(),
-                current_message: "".to_owned(),
+                current_data: None,
             })),
         }
-    }
-
-    /// Obtain the message string for the given update
-    ///
-    /// # Parameters
-    ///
-    /// * `time`: instant at which the filtered LED values should be evaluated
-    /// * `filter`: filter to interpolate LED values
-    /// * `leds`: reference to the LED state
-    /// * `idle_tracker`: idle state tracker
-    /// * `format`: device color format
-    fn message_string(
-        time: Instant,
-        filter: &ColorFilter,
-        leds: &mut [LedInstance],
-        idle_tracker: &mut IdleTracker,
-        format: &ColorFormat,
-    ) -> String {
-        use serde_json::{Number, Value};
-
-        // Create list of LED data objects
-        let mut led_objects: Vec<Value> = Vec::with_capacity(leds.len());
-
-        for led in leds.iter_mut() {
-            let current_color = led.next_value(time, &filter, idle_tracker);
-            let device_color = current_color.to_device(format);
-            let formatted = device_color.format(format);
-
-            // JSON object for current LED
-            let mut led_map = serde_json::Map::with_capacity(format.components());
-            for (comp, ch) in formatted.into_iter() {
-                led_map.insert(
-                    ch.to_string(),
-                    Value::Number(
-                        Number::from_f64(comp.into())
-                            .unwrap_or_else(|| Number::from_f64(0.0f64).unwrap()),
-                    ),
-                );
-            }
-
-            led_objects.push(Value::Object(led_map));
-        }
-
-        serde_json::to_string(&json!({ "leds": Value::Array(led_objects) }))
-            .expect("failed to encode JSON message")
     }
 
     /// Start connecting the WebSocket
@@ -179,22 +132,59 @@ impl Ws {
     /// # Parameters
     ///
     /// * `write`: write part of the WebSocket
-    /// * `message`: message to send. Will be replaced with an empty string to consume the message.
+    /// * `device_data`: device instance to use for preparing the message
     /// * `data_handle`: handle to the shared state
-    fn start_send(write: WsWrite, message: &mut String, data_handle: WsDataHandle) {
+    ///
+    /// # Returns
+    ///
+    /// None if a message was queued, or Some(WsWrite) if no message is to be sent because the
+    /// device is idle.
+    #[must_use]
+    fn start_send(
+        write: WsWrite,
+        device_data: DeviceInstanceDataHandle,
+        data_handle: WsDataHandle,
+    ) -> Option<WsWrite> {
         let complete_data = data_handle.clone();
         let error_data = data_handle.clone();
 
-        // Spawn future for writing to device
-        tokio::spawn(
-            write
-                .send(OwnedMessage::Text(std::mem::replace(
-                    message,
-                    String::new(),
-                )))
-                .map(move |result| Self::on_send_complete(result, complete_data))
-                .map_err(move |error| Self::on_send_error(error, error_data)),
-        );
+        if let Some(message) = device_data.write().unwrap().pass(|stats, leds| {
+            use serde_json::{Number, Value};
+
+            // Create list of LED data objects
+            let mut led_objects: Vec<Value> = Vec::with_capacity(stats.led_count);
+
+            for led in leds {
+                // JSON object for current LED
+                let mut led_map = serde_json::Map::with_capacity(stats.components);
+                for (comp, ch) in led.formatted.into_iter() {
+                    led_map.insert(
+                        ch.to_string(),
+                        Value::Number(
+                            Number::from_f64(comp.into())
+                                .unwrap_or_else(|| Number::from_f64(0.0f64).unwrap()),
+                        ),
+                    );
+                }
+
+                led_objects.push(Value::Object(led_map));
+            }
+
+            serde_json::to_string(&json!({ "leds": Value::Array(led_objects) }))
+                .expect("failed to encode JSON message")
+        }) {
+            // Spawn future for writing to device
+            tokio::spawn(
+                write
+                    .send(OwnedMessage::Text(message))
+                    .map(move |result| Self::on_send_complete(result, complete_data))
+                    .map_err(move |error| Self::on_send_error(error, error_data)),
+            );
+
+            None
+        } else {
+            Some(write)
+        }
     }
 
     /// Start sending the given pong response over the WebSocket
@@ -221,21 +211,10 @@ impl Ws {
     ///
     /// # Parameters
     ///
-    /// * `time`: instant at which the filtered LED values should be evaluated
-    /// * `filter`: filter to interpolate LED values
-    /// * `leds`: reference to the LED state
-    /// * `idle_tracker`: idle state tracker
-    /// * `format`: device color format
-    fn try_write(
-        &self,
-        time: Instant,
-        filter: &ColorFilter,
-        leds: &mut [LedInstance],
-        idle_tracker: &mut IdleTracker,
-        format: &ColorFormat,
-    ) -> Result<(), WsError> {
+    /// * `device_data`: device instance to use for preparing the message
+    fn try_write(&self, device_data: DeviceInstanceDataHandle) -> Result<(), WsError> {
         let mut data = self.data.lock().unwrap();
-        data.current_message = Self::message_string(time, filter, leds, idle_tracker, format);
+        data.current_data = Some(device_data);
 
         let old_state = std::mem::replace(&mut data.state, Default::default());
         match old_state {
@@ -252,7 +231,11 @@ impl Ws {
                     pong_pending: None,
                 };
 
-                Self::start_send(write, &mut data.current_message, self.data.clone());
+                if let Some(write) =
+                    Self::start_send(write, data.current_data.take().unwrap(), self.data.clone())
+                {
+                    data.state = SocketState::Ready { write };
+                }
             }
             SocketState::Busy {
                 skipped_updates,
@@ -354,10 +337,12 @@ impl Ws {
 
         // As soon as we're connected, we can send the pending message, or just
         // switch to the ready state
-        if data_mut.current_message.is_empty() {
-            data_mut.state = SocketState::Ready { write };
+        if let Some(device_data) = data_mut.current_data.take() {
+            if let Some(write) = Self::start_send(write, device_data, data.clone()) {
+                data_mut.state = SocketState::Ready { write };
+            }
         } else {
-            Self::start_send(write, &mut data_mut.current_message, data.clone());
+            data_mut.state = SocketState::Ready { write };
         }
     }
 
@@ -383,23 +368,22 @@ impl Ws {
         let addr = data_mut.address.clone();
 
         // As soon as we've sent a message, check if we have more to send
-        if data_mut.current_message.is_empty() {
-            data_mut.state = SocketState::Ready { write };
-        } else {
+        if let Some(device_data) = data_mut.current_data.take() {
             if let SocketState::Busy {
                 skipped_updates,
                 pong_pending,
             } = &mut data_mut.state
             {
-                if *skipped_updates > 0 {
-                    trace!("ws({}): skipped {} updates", addr, skipped_updates);
-
-                    *skipped_updates = 0;
-                }
-
                 if let Some(pong_data) = pong_pending.take() {
+                    // We're sending a pong answer, so keep the send request for later
+                    data_mut.current_data = Some(device_data);
+
                     Self::start_pong(write, pong_data, data.clone());
                     return;
+                }
+
+                if *skipped_updates > 0 {
+                    trace!("ws({}): skipped {} updates", addr, skipped_updates);
                 }
             }
 
@@ -408,7 +392,11 @@ impl Ws {
                 pong_pending: None,
             };
 
-            Self::start_send(write, &mut data_mut.current_message, data.clone());
+            if let Some(write) = Self::start_send(write, device_data, data.clone()) {
+                data_mut.state = SocketState::Ready { write };
+            }
+        } else {
+            data_mut.state = SocketState::Ready { write };
         }
     }
 
@@ -429,15 +417,8 @@ impl Ws {
 }
 
 impl Method for Ws {
-    fn write(
-        &mut self,
-        time: Instant,
-        filter: &ColorFilter,
-        leds: &mut [LedInstance],
-        idle_tracker: &mut IdleTracker,
-        format: &ColorFormat,
-    ) {
-        if let Err(error) = self.try_write(time, filter, leds, idle_tracker, format) {
+    fn write(&mut self, data: DeviceInstanceDataHandle) {
+        if let Err(error) = self.try_write(data) {
             let mut data = self.data.lock().unwrap();
             warn!("ws({}): failed: {}", data.address, error);
 

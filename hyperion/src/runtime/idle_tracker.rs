@@ -120,16 +120,41 @@ impl IdleTracker {
         self.passes_since_last_change = 0;
     }
 
-    /// Starts a new pass
+    /// Starts a new pass for the given device
     ///
     /// This function should be called before updating LEDs in the device.
-    pub fn start_pass(&mut self) {
+    ///
+    /// # Parameters
+    ///
+    /// * `device_name`: name of the device being written to
+    ///
+    /// # Returns
+    ///
+    /// `true` if the device is not idle and should be written to.
+    pub fn start_pass(&mut self, device_name: &str) -> bool {
         assert!(!self.pass_started);
+
+        // The interval told us to check the device, but now
+        // check the change tracker to see if it's actually useful
+        let (changed, state) = self.update_state();
+
+        // Notify log of state changes
+        if changed {
+            debug!("device '{}' is now {}", device_name, state);
+        }
+
+        // Don't start pass if not necessary
+        if !state.should_write() {
+            return false;
+        }
 
         self.total_change = 0.0;
         self.nonzero_color_count = 0;
 
         self.pass_started = true;
+
+        // The pass actually started
+        true
     }
 
     /// Completes the current pass
@@ -200,7 +225,7 @@ impl IdleTracker {
     /// * `(changed, state)`: `changed` is true if the state changed to its current value `state`.
     /// The `changed` flag does not take into account the state of `update_required` on
     /// IdleColor.
-    pub fn update_state(&mut self) -> (bool, IdleState) {
+    fn update_state(&mut self) -> (bool, IdleState) {
         let now = Instant::now();
 
         let new_state =

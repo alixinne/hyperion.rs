@@ -82,7 +82,7 @@ impl DeviceColor {
     /// # Parameters
     ///
     /// * `format`: color format to use
-    pub fn format<'a>(&'a self, format: &'a config::ColorFormat) -> FormattedColor<'a> {
+    pub fn format(&self, format: &config::ColorFormat) -> FormattedColor {
         FormattedColor::new(self, format)
     }
 }

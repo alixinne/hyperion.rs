@@ -1,10 +1,6 @@
 //! Definition of the Method type
 
-use std::time::Instant;
-
-use crate::config::ColorFormat;
-use crate::filters::ColorFilter;
-use crate::runtime::{IdleTracker, LedInstance};
+use crate::runtime::DeviceInstanceDataHandle;
 
 /// A method for communicating with a device
 pub trait Method {
@@ -12,17 +8,6 @@ pub trait Method {
     ///
     /// # Parameters
     ///
-    /// * `time`: instant at which the filtered LED values should be evaluated
-    /// * `filter`: filter to interpolate LED values
-    /// * `leds`: reference to the LED state
-    /// * `idle_tracker`: idle state tracker
-    /// * `format`: device color format
-    fn write(
-        &mut self,
-        time: Instant,
-        filter: &ColorFilter,
-        leds: &mut [LedInstance],
-        idle_tracker: &mut IdleTracker,
-        format: &ColorFormat,
-    );
+    /// * `data`: handle to the device instance data
+    fn write(&mut self, data: DeviceInstanceDataHandle);
 }

@@ -27,7 +27,7 @@ pub trait Filter<T: Copy> {
 }
 
 /// Linear RGB color filter implementation
-pub type ColorFilter = Box<dyn Filter<color::ColorPoint> + Send>;
+pub type ColorFilter = Box<dyn Filter<color::ColorPoint> + Send + Sync>;
 
 /// Filter configuration
 type FilterConfig = crate::config::Filter;

@@ -13,13 +13,10 @@ use tokio::net::udp::UdpSocket;
 
 use futures::Future;
 
-use crate::config::ColorFormat;
-use crate::filters::ColorFilter;
 use crate::methods::Method;
-use crate::runtime::{IdleTracker, LedInstance};
+use crate::runtime::DeviceInstanceDataHandle;
 
 /// State of the UDP socket in the async runtime
-#[derive(Debug)]
 enum SocketState {
     /// Empty state
     Idle {
@@ -32,7 +29,7 @@ enum SocketState {
     Busy,
     /// The socket is busy sending data, and new data is available
     /// Tracks the number of discarded updates.
-    Pending(Vec<u8>, usize),
+    Pending(DeviceInstanceDataHandle, usize),
 }
 
 impl Default for SocketState {
@@ -93,10 +90,6 @@ pub struct Udp {
     address: Arc<String>,
     /// Current session
     session: SessionState,
-    /// UDP packet buffer A
-    rgb_buffer_a: Vec<u8>,
-    /// UDP packet buffer B
-    rgb_buffer_b: Vec<u8>,
 }
 
 impl Udp {
@@ -109,36 +102,7 @@ impl Udp {
         Ok(Self {
             address: Arc::new(address),
             session: Arc::new(Mutex::new(Session::empty())),
-            rgb_buffer_a: Vec::new(),
-            rgb_buffer_b: Vec::new(),
         })
-    }
-
-    /// Fill the target buffer with device LED data
-    fn fill_buffer(
-        rgb_buffer: &mut Vec<u8>,
-        time: Instant,
-        filter: &ColorFilter,
-        leds: &mut [LedInstance],
-        idle_tracker: &mut IdleTracker,
-        format: &ColorFormat,
-    ) {
-        // Number of components per LED
-        let components = format.components();
-
-        // Set correct buffer size
-        rgb_buffer.resize(leds.len() * components, 0);
-
-        // Fill buffer with data
-        for (i, led) in leds.iter_mut().enumerate() {
-            let current_color = led.next_value(time, &filter, idle_tracker);
-            let device_color = current_color.to_device(format);
-            let formatted = device_color.format(format);
-
-            for (idx, (comp, _ch)) in formatted.into_iter().enumerate() {
-                rgb_buffer[i * components + idx] = (comp * 255.0f32) as u8;
-            }
-        }
     }
 
     /// State updater for send_dgram completions
@@ -154,7 +118,7 @@ impl Udp {
 
         session.state = match old_state {
             SocketState::Busy => SocketState::Ready(socket),
-            SocketState::Pending(buffer, skipped_updates) => {
+            SocketState::Pending(data, skipped_updates) => {
                 if skipped_updates > 0 {
                     trace!(
                         "udp({}): skipped {} updates",
@@ -163,7 +127,7 @@ impl Udp {
                     );
                 }
 
-                Self::send_buffer(socket, buffer, address, &session, session_ref.clone());
+                Self::send_data(socket, data, address, &session, session_ref.clone());
 
                 SocketState::Busy
             }
@@ -196,44 +160,62 @@ impl Udp {
         *session_ref.lock().unwrap() = Session::empty();
     }
 
-    /// Send a byte buffer on the target UDP socket
+    /// Send a frame on the target UDP socket
     ///
     /// # Parameters
     ///
     /// * `socket`: UDP socket object
-    /// * `buffer`: datagram to send
+    /// * `data`: device instance to use for preparing the datagram
     /// * `address': source address of the device
     /// * `session_locked`: reference to the locked session (prevents recursive locking of `session`)
     /// * `session`: reference to the UDP session
-    fn send_buffer(
+    ///
+    /// # Returns
+    ///
+    /// New socket state.
+    fn send_data(
         socket: UdpSocket,
-        buffer: Vec<u8>,
+        data: DeviceInstanceDataHandle,
         address: Arc<String>,
         session_locked: &MutexGuard<Session>,
         session: SessionState,
-    ) {
-        let session_ref = Arc::clone(&session);
-        let remote_addr = session_locked.remote_addr;
-        let address_ref = address.clone();
+    ) -> SocketState {
+        if let Some(buffer) = data.write().unwrap().pass(|stats, leds| {
+            // Create buffer with correct size
+            let mut buffer = Vec::new();
+            buffer.resize(stats.led_count * stats.components, 0);
 
-        tokio::spawn(
-            socket
-                .send_dgram(buffer, &remote_addr)
-                .map(move |result| Self::on_send_dgram_complete(result, address, session))
-                .map_err(move |error| Self::on_send_dgram_error(error, address_ref, session_ref)),
-        );
+            // Fill buffer with data
+            for led in leds {
+                for (idx, (comp, _ch)) in led.formatted.into_iter().enumerate() {
+                    buffer[led.index * stats.components + idx] = (comp * 255.0f32) as u8;
+                }
+            }
+
+            buffer
+        }) {
+            let session_ref = Arc::clone(&session);
+            let remote_addr = session_locked.remote_addr;
+            let address_ref = address.clone();
+
+            tokio::spawn(
+                socket
+                    .send_dgram(buffer, &remote_addr)
+                    .map(move |result| Self::on_send_dgram_complete(result, address, session))
+                    .map_err(move |error| {
+                        Self::on_send_dgram_error(error, address_ref, session_ref)
+                    }),
+            );
+
+            SocketState::Busy
+        } else {
+            SocketState::Ready(socket)
+        }
     }
 }
 
 impl Method for Udp {
-    fn write(
-        &mut self,
-        time: Instant,
-        filter: &ColorFilter,
-        leds: &mut [LedInstance],
-        idle_tracker: &mut IdleTracker,
-        format: &ColorFormat,
-    ) {
+    fn write(&mut self, data: DeviceInstanceDataHandle) {
         let mut session = self.session.lock().unwrap();
         let old_state = replace(&mut session.state, SocketState::default());
 
@@ -279,39 +261,22 @@ impl Method for Udp {
         session.state = match old_state {
             SocketState::Idle { error_signaled } => SocketState::Idle { error_signaled },
             SocketState::Ready(socket) => {
-                // Socket ready for sending, prepare a buffer and start sending it
-
-                let mut buffer = replace(&mut self.rgb_buffer_a, Vec::new());
-
-                Self::fill_buffer(&mut buffer, time, filter, leds, idle_tracker, format);
-
-                Self::send_buffer(
+                // Socket ready for sending, start sending the message
+                Self::send_data(
                     socket,
-                    buffer,
+                    data,
                     self.address.clone(),
                     &session,
                     self.session.clone(),
-                );
-
-                SocketState::Busy
+                )
             }
             SocketState::Busy => {
-                // Socket busy, prepare a secondary buffer to send when the socket
-                // is ready again
-
-                let mut buffer = replace(&mut self.rgb_buffer_b, Vec::new());
-
-                Self::fill_buffer(&mut buffer, time, filter, leds, idle_tracker, format);
-
-                SocketState::Pending(buffer, 0)
+                // Socket busy, queue the write operation
+                SocketState::Pending(data, 0)
             }
-            SocketState::Pending(mut buffer, skipped_updates) => {
-                // Socket busy, replace the existing secondary buffer with up-to-date
-                // data to send when the socket is ready again
-
-                Self::fill_buffer(&mut buffer, time, filter, leds, idle_tracker, format);
-
-                SocketState::Pending(buffer, skipped_updates + 1)
+            SocketState::Pending(_data, skipped_updates) => {
+                // Socket busy, just increment the number of skipped updates
+                SocketState::Pending(data, skipped_updates + 1)
             }
         };
     }

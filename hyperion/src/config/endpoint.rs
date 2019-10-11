@@ -33,7 +33,7 @@ pub enum Endpoint {
     Ws {
         /// Device address
         address: String,
-    }
+    },
 }
 
 impl Validate for Endpoint {

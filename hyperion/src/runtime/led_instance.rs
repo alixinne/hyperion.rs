@@ -36,6 +36,11 @@ impl LedInstance {
         }
     }
 
+    /// Get the current color of this LED
+    pub fn current_color(&self) -> color::ColorPoint {
+        self.current_color
+    }
+
     /// Reload an LED's configuration from a new instance
     ///
     /// This will preserve the current value store, and update it to the
@@ -69,7 +74,7 @@ impl LedInstance {
         self.values.push_sample(Sample::new(time, new_color), false);
     }
 
-    /// Get the current value of the LED using the given filter
+    /// Update the current value of the LED using the given filter
     ///
     /// # Parameters
     ///
@@ -81,7 +86,7 @@ impl LedInstance {
         time: Instant,
         filter: &ColorFilter,
         idle_tracker: &mut IdleTracker,
-    ) -> color::ColorPoint {
+    ) {
         // Compute new value
         let new_value = filter.current_value(time, &self.values);
 
@@ -93,8 +98,5 @@ impl LedInstance {
 
         // Update stored color
         self.current_color = new_value;
-
-        // Return new value
-        self.current_color
     }
 }

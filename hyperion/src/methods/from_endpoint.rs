@@ -30,7 +30,7 @@ pub fn from_endpoint(endpoint: &Endpoint) -> Result<Box<dyn Method + Send>, Meth
     trace!("creating method for {:?}", endpoint);
 
     match endpoint {
-        Endpoint::Stdout { bits } => to_box(Stdout::new(*bits)),
+        Endpoint::Stdout { bits } => Ok(Box::new(Stdout::new(*bits))),
         Endpoint::Udp { address } => to_box(Udp::new(address.to_owned())),
         Endpoint::Ws { address } => Ok(Box::new(Ws::new(address.to_owned()))),
     }

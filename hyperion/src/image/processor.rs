@@ -1,7 +1,6 @@
 //! Definition of the Processor type
 
 use crate::color;
-use crate::runtime::LedInstance;
 use std::cmp::min;
 
 use num_traits::Float;
@@ -80,13 +79,13 @@ pub struct Processor<T: Float + AddAssign + Default + std::fmt::Display> {
 pub struct ProcessorWithDevices<
     'p,
     'a,
-    I: Iterator<Item = (usize, &'a LedInstance, usize)>,
+    I: Iterator<Item = &'a crate::config::Device>,
     T: Float + AddAssign + Default + std::fmt::Display,
 > {
     /// Image processor
     processor: &'p mut Processor<T>,
-    /// Device LEDs iterator
-    leds: I,
+    /// Devices iterator
+    devices: I,
 }
 
 impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
@@ -101,7 +100,7 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
         &mut self,
         width: u32,
         height: u32,
-        leds: impl Iterator<Item = (usize, &'a LedInstance, usize)>,
+        devices: impl Iterator<Item = &'a crate::config::Device>,
     ) {
         let width = width as usize;
         let height = height as usize;
@@ -113,57 +112,48 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
         }
 
         // Add leds whose area overlap the current pixel
-        let mut count = 0;
-        for (index, led) in leds.enumerate() {
-            for j in min(
-                height - 1,
-                (led.1.spec.vscan.min * height as f32).floor() as usize,
-            )
-                ..min(
-                    height,
-                    (led.1.spec.vscan.max * height as f32).ceil() as usize,
-                )
-            {
-                // Vertical scan range
-                let y_min = j as f32 / height as f32;
-                let y_max = (j + 1) as f32 / height as f32;
-
-                for i in min(
-                    width - 1,
-                    (led.1.spec.hscan.min * width as f32).floor() as usize,
-                )
-                    ..min(width, (led.1.spec.hscan.max * width as f32).ceil() as usize)
+        let mut index = 0;
+        for (device_idx, device) in devices.enumerate() {
+            for (led_idx, led) in device.leds.iter().enumerate() {
+                for j in min(height - 1, (led.vscan.min * height as f32).floor() as usize)
+                    ..min(height, (led.vscan.max * height as f32).ceil() as usize)
                 {
-                    // Horizontal scan range
-                    let x_min = i as f32 / width as f32;
-                    let x_max = (i + 1) as f32 / width as f32;
+                    // Vertical scan range
+                    let y_min = j as f32 / height as f32;
+                    let y_max = (j + 1) as f32 / height as f32;
 
-                    let map_index = j * width + i;
-
-                    if led.1.spec.hscan.min < x_max
-                        && led.1.spec.hscan.max >= x_min
-                        && led.1.spec.vscan.min < y_max
-                        && led.1.spec.vscan.max >= y_min
+                    for i in min(width - 1, (led.hscan.min * width as f32).floor() as usize)
+                        ..min(width, (led.hscan.max * width as f32).ceil() as usize)
                     {
-                        // Compute area of pixel covered by scan parameter
-                        let x_range =
-                            x_max.min(led.1.spec.hscan.max) - x_min.max(led.1.spec.hscan.min);
-                        let y_range =
-                            y_max.min(led.1.spec.vscan.max) - y_min.max(led.1.spec.vscan.min);
-                        let area = x_range * y_range;
-                        let factor = T::from(area).unwrap()
-                            / (T::from(1.0).unwrap() / T::from(width * height).unwrap());
+                        // Horizontal scan range
+                        let x_min = i as f32 / width as f32;
+                        let x_max = (i + 1) as f32 / width as f32;
 
-                        led_map[map_index].push((index, led.0, led.2, factor));
+                        let map_index = j * width + i;
+
+                        if led.hscan.min < x_max
+                            && led.hscan.max >= x_min
+                            && led.vscan.min < y_max
+                            && led.vscan.max >= y_min
+                        {
+                            // Compute area of pixel covered by scan parameter
+                            let x_range = x_max.min(led.hscan.max) - x_min.max(led.hscan.min);
+                            let y_range = y_max.min(led.vscan.max) - y_min.max(led.vscan.min);
+                            let area = x_range * y_range;
+                            let factor = T::from(area).unwrap()
+                                / (T::from(1.0).unwrap() / T::from(width * height).unwrap());
+
+                            led_map[map_index].push((index, device_idx, led_idx, factor));
+                        }
                     }
                 }
-            }
 
-            count += 1;
+                index += 1;
+            }
         }
 
         // Color map for computation
-        let color_map = vec![Pixel::default(); count];
+        let color_map = vec![Pixel::default(); index];
 
         *self = Self {
             width,
@@ -197,14 +187,14 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
     ///
     /// # Parameters
     ///
-    /// * `leds`: iterator returning `(device_idx, led_instance, led_idx)` tuples
-    pub fn with_devices<'p, 'a, I: Iterator<Item = (usize, &'a LedInstance, usize)>>(
+    /// * `devices`: iterator returning device specifications
+    pub fn with_devices<'p, 'a, I: Iterator<Item = &'a crate::config::Device>>(
         &'p mut self,
-        leds: I,
+        devices: I,
     ) -> ProcessorWithDevices<'p, 'a, I, T> {
         ProcessorWithDevices {
             processor: self,
-            leds,
+            devices,
         }
     }
 
@@ -254,7 +244,7 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
 impl<
         'p,
         'a,
-        I: Iterator<Item = (usize, &'a LedInstance, usize)>,
+        I: Iterator<Item = &'a crate::config::Device>,
         T: Float + AddAssign + Default + std::fmt::Display,
     > ProcessorWithDevices<'p, 'a, I, T>
 {
@@ -268,7 +258,7 @@ impl<
 
         // Check that this processor has the right size
         if !self.processor.matches(width, height) {
-            self.processor.alloc(width, height, self.leds);
+            self.processor.alloc(width, height, self.devices);
         }
 
         self.processor.process_image(raw_image);

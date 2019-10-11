@@ -69,14 +69,11 @@ impl Effect {
             } else {
                 match err.pvalue {
                     PyErrValue::None => "no error".to_owned(),
-                    PyErrValue::Value(object) => format!(
-                        "{}",
-                        object
-                            .call_method0(py, "__str__")
-                            .unwrap()
-                            .extract::<String>(py)
-                            .unwrap()
-                    ),
+                    PyErrValue::Value(object) => object
+                        .call_method0(py, "__str__")
+                        .unwrap()
+                        .extract::<String>(py)
+                        .unwrap(),
                     _ => "other".to_owned(),
                 }
             }

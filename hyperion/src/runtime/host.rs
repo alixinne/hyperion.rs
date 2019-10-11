@@ -38,18 +38,10 @@ pub struct Host {
 }
 
 /// Handle to Hyperion components
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct HostHandle(Option<Arc<Host>>);
 
 impl HostHandle {
-    /// Create a new host handle
-    ///
-    /// This handle will initially be empty, and should be later
-    /// resolved by the Host when all components have been created.
-    pub fn new() -> Self {
-        Self(None)
-    }
-
     /// Load the actual host handle
     ///
     /// # Parameters

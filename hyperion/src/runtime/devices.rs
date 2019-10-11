@@ -45,7 +45,7 @@ impl Devices {
 
         Ok(Self {
             devices,
-            host: HostHandle::new(),
+            host: HostHandle::default(),
         })
     }
 

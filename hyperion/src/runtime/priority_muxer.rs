@@ -101,7 +101,7 @@ impl PriorityMuxer {
         Self {
             receiver,
             inputs: BinaryHeap::new(),
-            host: HostHandle::new(),
+            host: HostHandle::default(),
         }
     }
 
@@ -134,7 +134,7 @@ impl Stream for PriorityMuxer {
         // Receive inputs from the effect engine
         {
             let mut ee = self.host.get_effect_engine();
-            while let Async::Ready(value) = ee.poll()? {
+            if let Async::Ready(value) = ee.poll()? {
                 if let Some(service_command) = value {
                     return Ok(Async::Ready(Some(service_command.into())));
                 } else {

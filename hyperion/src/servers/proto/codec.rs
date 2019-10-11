@@ -92,7 +92,7 @@ impl Decoder for ProtoCodec {
                         Some(message).map(HyperionRequest::ClearAllRequest)
                     }
                 }
-                .ok_or(HyperionMessageErrorKind::InvalidMessage.into())
+                .ok_or_else(|| HyperionMessageErrorKind::InvalidMessage.into())
             }
             Err(parse_error) => Err(parse_error.into()),
         };

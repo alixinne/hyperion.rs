@@ -46,7 +46,7 @@ impl Input {
     /// A very large value is returned if the input has no duration.
     pub fn get_duration(&self) -> Option<Duration> {
         match self {
-            Input::UserInput { duration, .. } | Input::Effect { duration, .. } => duration.clone(),
+            Input::UserInput { duration, .. } | Input::Effect { duration, .. } => *duration,
             _ => None,
         }
     }
@@ -56,7 +56,7 @@ impl Input {
     /// Items without priority will return the highest priority (apply instantly)
     pub fn get_priority(&self) -> Option<i32> {
         match self {
-            Input::UserInput { priority, .. } | Input::Effect { priority, .. } => priority.clone(),
+            Input::UserInput { priority, .. } | Input::Effect { priority, .. } => *priority,
             _ => None,
         }
     }
@@ -72,7 +72,7 @@ impl Input {
         Input::UserInput {
             update,
             priority: if priority >= 0 { Some(priority) } else { None },
-            duration: duration.and_then(|d| d.try_into().ok().map(|d| Duration::from_millis(d))),
+            duration: duration.and_then(|d| d.try_into().ok().map(Duration::from_millis)),
         }
     }
 

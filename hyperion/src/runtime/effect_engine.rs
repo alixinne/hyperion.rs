@@ -158,9 +158,9 @@ impl EffectEngine {
             };
 
             // Add to running effects
-            self.current_effect
-                .replace(running_effect)
-                .map(|previous_effect| self.terminate(previous_effect));
+            if let Some(previous_effect) = self.current_effect.replace(running_effect) {
+                self.terminate(previous_effect);
+            }
 
             Ok(())
         } else {
@@ -195,9 +195,9 @@ impl EffectEngine {
 
     /// Abort all effects
     pub fn clear_all(&mut self) {
-        self.current_effect
-            .take()
-            .map(|effect| self.terminate(effect));
+        if let Some(previous_effect) = self.current_effect.take() {
+            self.terminate(previous_effect);
+        }
     }
 }
 

@@ -165,8 +165,9 @@ pub fn bind(
                         let effects = host.get_effect_engine().get_definitions();
 
                         HyperionResponse::server_info(
-                            hostname::get_hostname()
-                                .unwrap_or_else(|| "<unknown hostname>".to_owned()),
+                            hostname::get()
+                                .map(|h| String::from(h.to_string_lossy()))
+                                .unwrap_or_else(|_| "<unknown hostname>".to_owned()),
                             effects,
                             option_env!("HYPERION_VERSION_ID")
                                 .unwrap_or("<unknown version>")

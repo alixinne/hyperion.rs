@@ -18,7 +18,7 @@ use crate::config;
 #[derive(Default, Debug, Clone, Copy)]
 pub struct ColorPoint {
     /// Value of this color point
-    value: palette::Color,
+    value: palette::LinSrgb,
     /// Type of the value (for serialization only)
     format: ColorPointType,
 }
@@ -42,7 +42,7 @@ impl ColorPoint {
     /// Return the sRGB whitepoint
     pub fn srgb_white() -> Self {
         Self {
-            value: palette::Color::from(super::srgb_white()),
+            value: super::srgb_white(),
             format: ColorPointType::KelvinValue(6600.0),
         }
     }
@@ -54,14 +54,14 @@ impl ColorPoint {
     /// * `temperature`: color temperature, in Kelvin
     pub fn from_kelvin(temperature: f32) -> Self {
         Self {
-            value: palette::Color::from(super::kelvin_to_rgb(temperature)),
+            value: super::kelvin_to_rgb(temperature),
             format: ColorPointType::KelvinValue(temperature),
         }
     }
 
     /// Return the linear RGB components of this color point
     pub fn as_rgb(&self) -> (f32, f32, f32) {
-        LinSrgb::from(self.value).into_components()
+        self.value.into_components()
     }
 
     /// Return a number indicating the difference between the this color and the other
@@ -79,7 +79,7 @@ impl ColorPoint {
 
     /// Return true if this color is pure black
     pub fn is_black(&self) -> bool {
-        ulps_eq!(self.value, palette::Color::default())
+        ulps_eq!(self.value, LinSrgb::default())
     }
 
     /// Apply a saturation and lightness power gain
@@ -94,13 +94,11 @@ impl ColorPoint {
     /// * `lightness`: lightness gain
     pub fn sl_gain(self, saturation: f32, lightness: f32) -> Self {
         let (h, s, l) = Hsl::from(self.value).into_components();
+        let hsl: Hsl<palette::encoding::Srgb> =
+            Hsl::from_components((h, s.powf(1.0 / saturation), l.powf(1.0 / lightness)));
 
         Self {
-            value: palette::Color::from(Hsl::from_components((
-                h,
-                s.powf(1.0 / saturation),
-                l.powf(1.0 / lightness),
-            ))),
+            value: hsl.into(),
             format: ColorPointType::RgbValue,
         }
     }
@@ -117,8 +115,10 @@ impl ColorPoint {
             l = 0.0;
         }
 
+        let hsl: Hsl<palette::encoding::Srgb> = Hsl::from_components((h, s, l));
+
         Self {
-            value: palette::Color::from(Hsl::from_components((h, s, l))),
+            value: hsl.into(),
             format: ColorPointType::RgbValue,
         }
     }
@@ -137,7 +137,7 @@ impl ColorPoint {
         b = b.powf(gb);
 
         Self {
-            value: palette::Color::from(LinSrgb::from_components((r, g, b))),
+            value: LinSrgb::from_components((r, g, b)),
             format: ColorPointType::RgbValue,
         }
     }
@@ -154,8 +154,7 @@ impl ColorPoint {
             ColorFormat::Rgb(RgbFormat { rgb, gamma, .. }) => {
                 // Whitebalance the RGB white
                 let (r, g, b) =
-                    whitebalance(LinSrgb::from(self.value), rgb.value.into(), srgb_white())
-                        .into_components();
+                    whitebalance(self.value, rgb.value.into(), srgb_white()).into_components();
 
                 DeviceColor::Rgb {
                     r: r.powf(gamma.r),
@@ -166,7 +165,7 @@ impl ColorPoint {
             ColorFormat::Rgbw(RgbwFormat {
                 rgb, white, gamma, ..
             }) => {
-                let rgb_value = LinSrgb::from(self.value);
+                let rgb_value = self.value;
                 let dest_white = white.value.into();
 
                 // Move RGB value to white space
@@ -192,8 +191,7 @@ impl ColorPoint {
             ColorFormat::Rgbcw(RgbcwFormat { rgb, gamma, .. }) => {
                 // Whitebalance the RGB white
                 let (r, g, b) =
-                    whitebalance(LinSrgb::from(self.value), rgb.value.into(), srgb_white())
-                        .into_components();
+                    whitebalance(self.value, rgb.value.into(), srgb_white()).into_components();
 
                 // TODO: Implement RGBCW
                 DeviceColor::Rgbcw {
@@ -216,11 +214,11 @@ impl From<(u8, u8, u8)> for ColorPoint {
     /// * `rgb`: RGB component values
     fn from(rgb: (u8, u8, u8)) -> Self {
         Self {
-            value: palette::Color::linear_rgb(
+            value: LinSrgb::from_components((
                 f32::from(rgb.0) / 255.0,
                 f32::from(rgb.1) / 255.0,
                 f32::from(rgb.2) / 255.0,
-            ),
+            )),
             format: ColorPointType::RgbValue,
         }
     }
@@ -234,7 +232,7 @@ impl From<(f32, f32, f32)> for ColorPoint {
     /// * `rgb`: RGB component values
     fn from(rgb: (f32, f32, f32)) -> Self {
         Self {
-            value: palette::Color::linear_rgb(rgb.0, rgb.1, rgb.2),
+            value: LinSrgb::from_components((rgb.0, rgb.1, rgb.2)),
             format: ColorPointType::RgbValue,
         }
     }
@@ -243,7 +241,7 @@ impl From<(f32, f32, f32)> for ColorPoint {
 impl From<LinSrgb> for ColorPoint {
     fn from(color: LinSrgb) -> Self {
         Self {
-            value: palette::Color::from(color),
+            value: color,
             format: ColorPointType::RgbValue,
         }
     }
@@ -272,7 +270,7 @@ impl Mul<f32> for ColorPoint {
 
     fn mul(self, rhs: f32) -> Self {
         Self {
-            value: palette::Color::from(LinSrgb::from(self.value) * rhs),
+            value: LinSrgb::from(self.value) * rhs,
             format: ColorPointType::RgbValue,
         }
     }

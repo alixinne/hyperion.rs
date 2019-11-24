@@ -47,7 +47,7 @@ macro_rules! json_try {
 fn api_server(_: Request) -> Result<Response, Response> {
     Ok(json_response!(
         StatusCode::OK,
-        &json!({ "version": VERSION, "hostname": hostname::get_hostname() })
+        &json!({ "version": VERSION, "hostname": hostname::get().map(|val| String::from(val.to_string_lossy())).unwrap_or_else(|_| "".into()) })
     ))
 }
 

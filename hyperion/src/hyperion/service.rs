@@ -1,154 +1,110 @@
-//! Definition of the Service type
+//! Main service future implementation
 
 use std::time::Instant;
 
-use futures::sync::mpsc;
-use futures::{Async, Future, Poll, Stream};
+use futures::{future::FutureExt, select, StreamExt};
 
-use crate::color;
-use crate::config::ReloadHints;
-use crate::runtime::{HostHandle, MuxedInput};
+use super::{Input, ServiceCommand, ServiceError, StateUpdate};
+use crate::color::ColorPoint;
+use crate::runtime::{Devices, EffectEngine, MuxedInput, PriorityMuxer};
+use crate::{config, image, servers};
 
-use super::*;
+/// Run the Hyperion service
+///
+/// This is a future which completes when the service stops.
+///
+/// # Parameters
+///
+/// * `json_addr`: address to bind the JSON server to
+/// * `proto_addr`: address to bind the Protobuf server to
+/// * `config`: parsed service and device configuration
+pub async fn run(
+    json_addr: impl tokio::net::ToSocketAddrs,
+    proto_addr: impl tokio::net::ToSocketAddrs,
+    config: config::Config,
+) -> Result<(), ServiceError> {
+    // Initialize effect engine
+    let mut effect_engine = EffectEngine::new(vec!["effects/".into()]);
 
-/// Hyperion service state
-pub struct Service {
-    /// Components host
-    host: HostHandle,
-    /// Debug listener
-    debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
-}
+    // Initialize servers
+    let json_rx = servers::bind_json(json_addr, effect_engine.get_definitions()).await?;
+    let proto_rx = servers::bind_proto(proto_addr).await?;
 
-/// Type of the sender end of the channel for Hyperion inputs
-pub type ServiceInputSender = mpsc::UnboundedSender<Input>;
-/// Type of the receiver end of the channel for Hyperion inputs
-pub type ServiceInputReceiver = mpsc::UnboundedReceiver<Input>;
+    // Channel for effect engine updates
+    let (effect_tx, effect_rx) = tokio::sync::mpsc::channel::<Input>(60);
 
-impl Service {
-    /// Create a new Service instance
-    ///
-    /// # Parameters
-    ///
-    /// * `host`: components host
-    /// * `debug_listener`: channel to send debug updates to.
-    pub fn new(
-        host: HostHandle,
-        debug_listener: Option<std::sync::mpsc::Sender<DebugMessage>>,
-    ) -> Self {
-        Self {
-            host,
-            debug_listener,
-        }
-    }
+    // Initialize image processor
+    let mut image_processor: image::Processor<f32> = Default::default();
 
-    /// Handle an incoming state update
-    ///
-    /// # Parameters
-    ///
-    /// * `update`: state update message
-    fn handle_update(&self, update: StateUpdate) {
-        // Forward state update to the debug listener if we have one
-        if let Some(debug_listener) = self.debug_listener.as_ref() {
-            debug_listener
-                .send(DebugMessage::StateUpdate(update.clone()))
-                .unwrap_or_else(|e| {
-                    error!("failed to forward state update to listener: {:?}", e);
-                });
-        }
+    // Initialize devices
+    let mut devices = Devices::new(&config);
 
-        let now = Instant::now();
+    // Initialize priority muxer from server and effect inputs
+    let mut priority_muxer = PriorityMuxer::new(Box::pin(futures::stream::select_all(vec![
+        json_rx, proto_rx, effect_rx,
+    ])));
 
-        let mut devices = self.host.get_devices();
+    loop {
+        // Process completed future
+        select! {
+            muxed_input = priority_muxer.next().fuse() => {
+                let update_time = Instant::now();
+                debug!("state update: {:?}", muxed_input);
 
-        match update {
-            StateUpdate::Clear => {
-                debug!("clearing all leds");
-                devices.set_all_leds(now, color::ColorPoint::default(), false);
-            }
-            StateUpdate::SolidColor { color } => {
-                debug!("setting all leds to {}", color);
-                devices.set_all_leds(now, color, false);
-            }
-            StateUpdate::Image(raw_image) => {
-                let (width, height) = raw_image.get_dimensions();
-                debug!("incoming {}x{} image", width, height);
-
-                let mut image_processor = self.host.get_image_processor();
-                devices.set_from_image(now, &mut image_processor, raw_image, false);
-            }
-            StateUpdate::LedData(leds) => {
-                debug!("setting {} leds from color data", leds.len());
-                devices.set_leds(now, leds, false)
-            }
-        }
-    }
-
-    /// Handle an incoming service command
-    ///
-    /// # Parameters
-    ///
-    /// * `service_command`: command to handle
-    fn handle_command(&self, service_command: ServiceCommand) {
-        let mut devices = self.host.get_devices();
-
-        match service_command {
-            ServiceCommand::ReloadDevice {
-                device_index,
-                reload_hints,
-            } => match devices.reload_device(device_index, reload_hints) {
-                Ok(_) => {
-                    if reload_hints.contains(ReloadHints::DEVICE_LEDS) {
-                        // Reload the image processor if the LEDs changed
-                        trace!("clearing the image processor cache");
-                        *self.host.get_image_processor() = Default::default();
-                    }
-                }
-                Err(error) => {
-                    error!("error while reloading device: {}", error);
-                }
-            },
-            ServiceCommand::EffectCompleted { name, result } => match result {
-                Ok(_) => debug!("effect '{}' executed successfully", name),
-                Err(e) => warn!("effect '{}' encountered an error: {}", name, e),
-            },
-        }
-    }
-}
-
-impl Future for Service {
-    type Item = ();
-    type Error = tokio::timer::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        // Poll channel for state updates
-        let mut priority_muxer = self.host.get_priority_muxer();
-        // Unwrap because the priority muxer never fails (Error = ())
-        while let Async::Ready(value) = priority_muxer.poll().unwrap() {
-            if let Some(muxed_input) = value {
                 match muxed_input {
-                    MuxedInput::StateUpdate(state_update) => self.handle_update(state_update),
-                    MuxedInput::Internal(service_command) => self.handle_command(service_command),
+                    Some(MuxedInput::StateUpdate { update, clear_effects }) => {
+                        if clear_effects {
+                            effect_engine.clear_all();
+                        }
+
+                        match update {
+                            StateUpdate::Clear => {
+                                devices.set_all_leds(update_time, ColorPoint::black(), false);
+                            },
+                            StateUpdate::SolidColor { color } => {
+                                devices.set_all_leds(update_time, color, false);
+                            },
+                            StateUpdate::Image(raw_image) => {
+                                devices.set_from_image(update_time, &mut image_processor, raw_image, false);
+                            },
+                            StateUpdate::LedData(led_data) => {
+                                devices.set_leds(update_time, led_data, false);
+                            }
+                        }
+                    }
+                    Some(MuxedInput::LaunchEffect { effect, deadline }) => {
+                        let name = effect.name.clone();
+                        let args = effect.args.clone();
+
+                        match effect_engine.launch(
+                            effect,
+                            deadline,
+                            effect_tx.clone(),
+                            devices.get_led_count(),
+                        ) {
+                            Ok(()) => info!(
+                                "launched effect {} with args {}",
+                                name,
+                                args.map(|a| serde_json::to_string(&a).unwrap())
+                                    .unwrap_or_else(|| "null".to_owned())
+                            ),
+                            Err(error) => warn!("failed to launch effect {}: {}", name, error),
+                        }
+                    }
+                    Some(MuxedInput::Internal(service_command)) => {
+                        match service_command {
+                            ServiceCommand::EffectCompleted { name, result } => {
+                                info!("effect '{}' has completed: {:?}", name, result);
+                            }
+                        }
+                    }
+                    None => break
                 }
-            } else {
-                return Ok(Async::Ready(()));
-            }
-        }
+            },
 
-        // Update devices
-        try_ready!(self.host.get_devices().poll());
-
-        Ok(Async::NotReady)
+            timeout = devices.write_next().fuse() => {}
+        };
     }
-}
 
-impl Drop for Service {
-    fn drop(&mut self) {
-        if let Some(debug_listener) = self.debug_listener.as_ref() {
-            debug_listener
-                .send(DebugMessage::Terminating)
-                .unwrap_or_else(|e| {
-                    error!("failed to send Terminating message to listener: {:?}", e);
-                });
-        }
-    }
+    Ok(())
 }

@@ -30,9 +30,6 @@ pub use idle_settings::*;
 mod led;
 pub use led::*;
 
-mod reload_hints;
-pub use reload_hints::*;
-
 mod scan_range;
 pub use scan_range::*;
 
@@ -53,6 +50,7 @@ mod tests {
             frequency: -2.0,
             idle: IdleSettings::default(),
             filter: Filter::default(),
+            latency: Duration::from_millis(0),
         };
 
         assert!(device.validate().is_err());
@@ -72,6 +70,7 @@ mod tests {
                 ..Default::default()
             },
             filter: Filter::default(),
+            latency: Duration::from_millis(0),
         };
 
         assert!(device.validate().is_err());

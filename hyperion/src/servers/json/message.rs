@@ -229,15 +229,17 @@ impl HyperionResponse {
     }
 
     /// Return an error response
-    pub fn error(error: String) -> Self {
+    pub fn error(error: impl ToString) -> Self {
         HyperionResponse::ErrorResponse {
             success: false,
-            error,
+            error: error.to_string(),
         }
     }
 
     /// Return a server information response
     pub fn server_info(hostname: String, effects: Vec<EffectDefinition>, version: String) -> Self {
+        use serde_json::json;
+
         HyperionResponse::ServerInfoResponse {
             success: true,
             info: Box::new(ServerInfo {

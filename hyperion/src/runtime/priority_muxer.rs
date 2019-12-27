@@ -2,14 +2,19 @@
 
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::pin::Pin;
 
 use std::mem::replace;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
-use futures::{Async, Poll, Stream};
+use futures::prelude::*;
+use futures::task::Poll;
 
-use crate::hyperion::{Input, ServiceCommand, ServiceInputReceiver, StateUpdate};
-use crate::runtime::HostHandle;
+use crate::hyperion::{Input, ServiceCommand, StateUpdate};
+use crate::servers::json::Effect;
+
+/// Boxed stream of service inputs
+pub type ServiceInputReceiver = Pin<Box<dyn Stream<Item = Input>>>;
 
 /// Priority muxer
 ///
@@ -19,28 +24,27 @@ pub struct PriorityMuxer {
     receiver: ServiceInputReceiver,
     /// Priority queue of inputs
     inputs: BinaryHeap<MuxerEntry>,
-    /// Components host
-    host: HostHandle,
 }
 
 /// Result of service inputs muxed by priority
+#[derive(Debug, Clone)]
 pub enum MuxedInput {
     /// Lighting system state update
-    StateUpdate(StateUpdate),
+    StateUpdate {
+        /// LED state update details
+        update: StateUpdate,
+        /// true if currently running effects should be cleared
+        clear_effects: bool,
+    },
+    /// Effect launch request
+    LaunchEffect {
+        /// Details of the effect being launched
+        effect: Effect,
+        /// End time of the effect
+        deadline: Option<Instant>,
+    },
     /// Internal service update
     Internal(ServiceCommand),
-}
-
-impl From<StateUpdate> for MuxedInput {
-    fn from(state_update: StateUpdate) -> Self {
-        MuxedInput::StateUpdate(state_update)
-    }
-}
-
-impl From<ServiceCommand> for MuxedInput {
-    fn from(service_command: ServiceCommand) -> Self {
-        MuxedInput::Internal(service_command)
-    }
 }
 
 /// Entry in the muxer queue
@@ -101,45 +105,29 @@ impl PriorityMuxer {
         Self {
             receiver,
             inputs: BinaryHeap::new(),
-            host: HostHandle::default(),
         }
-    }
-
-    /// Get a reference to the host handle
-    pub fn get_host_mut(&mut self) -> &mut HostHandle {
-        &mut self.host
     }
 }
 
 impl Stream for PriorityMuxer {
     type Item = MuxedInput;
-    type Error = ();
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+    fn poll_next(
+        mut self: Pin<&mut Self>,
+        ctx: &mut std::task::Context,
+    ) -> Poll<Option<Self::Item>> {
         // Receive incoming inputs
-        while let Async::Ready(value) = self.receiver.poll()? {
+        while let Poll::Ready(value) = Stream::poll_next(Pin::new(&mut self.receiver), ctx) {
             if let Some(input) = value {
                 // Forward internal commands directly
                 if let Input::Internal(service_command) = input {
-                    return Ok(Async::Ready(Some(service_command.into())));
+                    return Poll::Ready(Some(MuxedInput::Internal(service_command)));
                 }
 
                 // Push inputs into queue
                 self.inputs.push(input.into());
             } else {
-                return Ok(Async::Ready(None));
-            }
-        }
-
-        // Receive inputs from the effect engine
-        {
-            let mut ee = self.host.get_effect_engine();
-            if let Async::Ready(value) = ee.poll()? {
-                if let Some(service_command) = value {
-                    return Ok(Async::Ready(Some(service_command.into())));
-                } else {
-                    return Ok(Async::Ready(None));
-                }
+                return Poll::Ready(None);
             }
         }
 
@@ -170,15 +158,17 @@ impl Stream for PriorityMuxer {
             if let Some(input) = input {
                 match input {
                     Input::UserInput { update, .. } => {
-                        // User input cancels running effects
-                        self.host.get_effect_engine().clear_all();
+                        // User input cancels running effects (clear_effects: true)
 
                         // No duration => one shot
                         pop_top_entry = deadline.is_none();
 
                         // Forward input
                         trace!("forwarding state update: {:#?}", update);
-                        result = Some(Ok(Async::Ready(Some(update.into()))));
+                        result = Some(MuxedInput::StateUpdate {
+                            update,
+                            clear_effects: true,
+                        });
                     }
                     Input::EffectInput { update } => {
                         // No duration => one shot
@@ -186,41 +176,27 @@ impl Stream for PriorityMuxer {
 
                         // Effect input, forward directly
                         trace!("forwarding state update: {:#?}", update);
-                        result = Some(Ok(Async::Ready(Some(update.into()))));
+                        result = Some(MuxedInput::StateUpdate {
+                            update,
+                            clear_effects: false,
+                        });
                     }
                     Input::Effect { effect, .. } => {
-                        let mut ee = self.host.get_effect_engine();
-
-                        let name = effect.name.clone();
-                        let args = effect.args.clone();
-
                         // Remove effect entry so we can process user inputs
                         pop_top_entry = true;
 
                         // Launch effect request
-                        match ee.launch(
-                            effect,
-                            Some(deadline.unwrap_or_else(|| {
-                                Instant::now() + Duration::from_millis(1000 * 60 * 10)
-                            })),
-                            self.host.get_service_input_sender(),
-                            self.host.get_devices().get_led_count(),
-                        ) {
-                            Ok(()) => debug!(
-                                "launched effect {} with args {}",
-                                name,
-                                args.map(|a| serde_json::to_string(&a).unwrap())
-                                    .unwrap_or_else(|| "null".to_owned())
-                            ),
-                            Err(error) => warn!("failed to launch effect {}: {}", name, error),
-                        }
+                        result = Some(MuxedInput::LaunchEffect { effect, deadline });
                     }
                     Input::Internal(_) => panic!("unexpected internal command in input processing"),
                 }
             }
         } else if expired_entries {
             // We expired entries and now there are none, clear everything
-            return Ok(Async::Ready(Some(StateUpdate::Clear.into())));
+            return Poll::Ready(Some(MuxedInput::StateUpdate {
+                update: StateUpdate::Clear,
+                clear_effects: false,
+            }));
         }
 
         // Pop one-shot top entry
@@ -230,10 +206,10 @@ impl Stream for PriorityMuxer {
 
         // Return actual result
         if let Some(result) = result {
-            return result;
+            return Poll::Ready(Some(result));
         }
 
         // Not ready, no input
-        Ok(Async::NotReady)
+        Poll::Pending
     }
 }

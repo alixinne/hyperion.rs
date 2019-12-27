@@ -5,7 +5,7 @@ use std::time::Instant;
 use crate::color;
 use crate::config::Led;
 use crate::filters::{ColorFilter, Sample, ValueStore};
-use crate::runtime::IdleTracker;
+use crate::runtime::IdlePass;
 
 /// Instance of a LED at runtime
 ///
@@ -41,22 +41,6 @@ impl LedInstance {
         self.current_color
     }
 
-    /// Reload an LED's configuration from a new instance
-    ///
-    /// This will preserve the current value store, and update it to the
-    /// required capacity.
-    ///
-    /// # Parameters
-    ///
-    /// * `new_led`: new LED instance to pull settings from
-    pub fn reload(&mut self, led: Led, capacity: (usize, usize)) {
-        // Update spec
-        self.spec = led;
-
-        // Update capacity
-        self.values.set_capacity(capacity);
-    }
-
     /// Updates this LED's color
     ///
     /// # Parameters
@@ -80,18 +64,13 @@ impl LedInstance {
     ///
     /// * `time`: instant to evaluate the color at
     /// * `filter`: filter to use for computing the value
-    /// * `idle_tracker`: idle state tracker
-    pub fn next_value(
-        &mut self,
-        time: Instant,
-        filter: &ColorFilter,
-        idle_tracker: &mut IdleTracker,
-    ) {
+    /// * `idle_pass`: idle state tracker
+    pub fn next_value(&mut self, time: Instant, filter: &ColorFilter, idle_pass: &mut IdlePass) {
         // Compute new value
         let new_value = filter.current_value(time, &self.values);
 
         // Notify value change
-        idle_tracker.update_color(&self.current_color, &new_value);
+        idle_pass.update_color(&self.current_color, &new_value);
 
         // Add the value to the store
         self.values.push_sample(Sample::new(time, new_value), true);

@@ -306,6 +306,8 @@ mod tests {
 
     #[test]
     fn test_args() {
+        use serde_json::json;
+
         let listener = Box::new(DebugListener::new());
         let abort_requested = Arc::new(AtomicBool::new(false));
         Effect::run(

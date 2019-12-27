@@ -19,7 +19,6 @@ lighting software.
 ## Requirements
 
 * [Rust **nightly**](https://rustup.rs/)
-* [protobuf compiler](https://github.com/protocolbuffers/protobuf/releases), `protobuf-compiler` on Debian distributions
 
 ## Usage
 
@@ -98,7 +97,8 @@ Not implemented yet:
 This list details which devices are supported currently for outputting color data.
 
 * Raw 8-bit RGB UDP
-* WebSocket
+* WebSocket (see [colorui.rs](https://github.com/vtavernier/colorui.rs) for an
+  example device implementation)
 * Stdout (for debugging)
 
 Currently, both RGB and RGB+W LED arrangements are supported. The white component
@@ -187,6 +187,9 @@ Grabbing is not planned yet for hyperion.rs.
 ### Web interface
 
 The web interface for hyperion.rs is currently under development.
+
+**Note**: the web interface is currently not available (after the tokio 0.2
+rewrite) while waiting for an updated web framework to be available.
 
 ## Authors
 

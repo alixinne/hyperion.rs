@@ -42,7 +42,7 @@ my $tt = Template->new({ INCLUDE_PATH => '.' });
 
 say STDERR "fetching help output";
 my $vars = {
-  'cargo_run_output' => prefix_string('    ', `cargo run -q -- server --help`),
+  'cargo_run_output' => prefix_string('    ', `cargo run -q -- --help`),
 };
 
 if (($? >> 8) == 0) {

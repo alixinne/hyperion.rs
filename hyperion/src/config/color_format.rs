@@ -1,5 +1,6 @@
 //! Definition of the ColorFormat type
 
+use lazy_static::lazy_static;
 use regex::Regex;
 use validator::{Validate, ValidationErrors};
 

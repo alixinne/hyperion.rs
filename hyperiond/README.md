@@ -9,20 +9,21 @@ written from scratch both as an experiment and as a way to add more features.
 For now, the CLI is only able to start the hyperion server implementation:
 
     $ cargo run -- server --help
-    hyperiond-server 0.1.1
-    Starts the server daemon
+    hyperiond 0.2.0
 
     USAGE:
-        hyperiond --config <FILE> server --bind <ADDRESS> --json-port <PORT> --proto-port <PORT> --web-port <PORT>
+        hyperiond [OPTIONS]
 
     FLAGS:
-        -h, --help    Prints help information
+        -h, --help       Prints help information
+        -V, --version    Prints version information
 
     OPTIONS:
-            --bind <ADDRESS>       IP address to bind the servers to [default: 127.0.0.1]
-            --json-port <PORT>     TCP port for the JSON server [default: 19444]
-            --proto-port <PORT>    TCP port for the Protobuf server [default: 19445]
-            --web-port <PORT>      TCP port for the Web interface [default: 19080]
+        -b, --bind <bind>                IP address to bind the servers to [default: 127.0.0.1]
+        -c, --config <config>            Path to the configuration file [default: config.yml]
+        -j, --json-port <json-port>      TCP port for the JSON server [default: 19444]
+        -p, --proto-port <proto-port>    TCP port for the Protobuf server [default: 19445]
+        -w, --web-port <web-port>        TCP port for the Web interface
 
 Logging is set using the HYPERION_LOG environment variable, which can be set to the desired
 logging level (trace, debug, info, warn, error). Note that this will affect logging of all

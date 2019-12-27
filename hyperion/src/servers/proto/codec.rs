@@ -1,11 +1,10 @@
 use error_chain::error_chain;
 
-use tokio::codec::{Decoder, Encoder};
+use tokio_util::codec::{Decoder, Encoder};
 
 use super::message;
 
-use byteorder::{BigEndian, ByteOrder};
-use bytes::{BufMut, BytesMut};
+use bytes::{Buf, BufMut, BytesMut};
 
 use prost::Message;
 
@@ -41,13 +40,9 @@ error_chain! {
 }
 
 /// tokio Codec to decode incoming Hyperion protobuf messages
-pub struct ProtoCodec {}
-
-impl ProtoCodec {
-    /// Create a new ProtoCodec
-    pub fn new() -> Self {
-        Self {}
-    }
+#[derive(Default)]
+pub struct ProtoCodec {
+    buf: Vec<u8>,
 }
 
 impl Decoder for ProtoCodec {
@@ -56,22 +51,29 @@ impl Decoder for ProtoCodec {
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         // Check that there is a size to be read
-        if src.len() < 4 {
+        if src.remaining() < 4 {
             return Ok(None);
         }
 
-        let size = BigEndian::read_u32(&src[0..4]) as usize;
+        let size = src.get_u32() as usize;
 
         // Check that we have the full message before decoding
-        if src.len() - 4 < size {
+        if src.remaining() < size {
             return Ok(None);
         }
 
         trace!("{} bytes message", size);
 
+        // Extend working buffer
+        if size > self.buf.len() {
+            self.buf.resize(size, 0);
+        }
+
+        // Copy message into buffer
+        src.copy_to_slice(&mut self.buf[..]);
+
         // Attempt to parse using protobuf
-        let range = &src[4..(4 + size)];
-        let parsed = message::HyperionRequest::decode(range);
+        let parsed = message::HyperionRequest::decode(&self.buf[..]);
 
         // Process parse result
         let result = match parsed {
@@ -97,10 +99,6 @@ impl Decoder for ProtoCodec {
             Err(parse_error) => Err(parse_error.into()),
         };
 
-        // Consume the message from the buffer: since it's complete, the parsing
-        // success does not depend on more data arriving
-        src.advance(4 + size);
-
         result.map(Option::Some)
     }
 }
@@ -117,7 +115,7 @@ impl Encoder for ProtoCodec {
         dst.reserve(4 + message_size as usize);
 
         // Write message size
-        dst.put_u32_be(message_size as u32);
+        dst.put_u32(message_size as u32);
 
         // Write message contents
         item.encode(dst)?;

@@ -5,16 +5,8 @@
 
 ## Structure
 
-The different components of this crate are implemented as futures which are run using a tokio
-runtime by the `hyperiond` program. The various components are:
-
-* Servers: respond to requests from Hyperion clients (either JSON or protobuf)
-* Hyperion instance: handles state updates from servers and effects, and forwards them to
-devices
-
-These components are backed by methods, which implement the actual protocol used to talk to LED
-devices. Methods can be written in Rust and compiled in to this crate, or as extensible Lua
-scripts using the provided API (work in progress).
+This is a complete rewrite of the previous hyperion.rs code using `async/await` and
+tokio 0.2. This documentation will be updated when the program structure is stabilized.
 
 ## Authors
 

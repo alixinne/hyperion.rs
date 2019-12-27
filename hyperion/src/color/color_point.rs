@@ -6,6 +6,7 @@ use std::ops::{Add, Mul};
 use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
 
+use approx::ulps_eq;
 use palette::{Blend, Hsl, LinSrgb};
 
 use super::*;
@@ -44,6 +45,14 @@ impl ColorPoint {
         Self {
             value: super::srgb_white(),
             format: ColorPointType::KelvinValue(6600.0),
+        }
+    }
+
+    /// Return RGB black
+    pub fn black() -> Self {
+        Self {
+            value: palette::LinSrgb::from_components((0., 0., 0.)),
+            format: ColorPointType::RgbValue,
         }
     }
 

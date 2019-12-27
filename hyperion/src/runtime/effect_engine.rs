@@ -5,15 +5,19 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 use std::time::Instant;
 
-use futures::{Async, Stream};
+use futures::prelude::*;
+use futures::task::{Context, Poll};
 
-use crate::hyperion::{ServiceCommand, ServiceInputSender};
+use tokio::sync::mpsc;
+
+use crate::hyperion::{Input, ServiceCommand};
 use crate::image::RawImage;
 use crate::servers::json::Effect as EffectName;
 
@@ -38,12 +42,29 @@ use hyperion_listener::*;
 mod serde_ext;
 use serde_ext::*;
 
+/// Handle to the effect definitions storage
+pub type EffectDefinitionsHandle = Arc<Mutex<EffectDefinitions>>;
+
+/// Type to hold effect definitions
+pub struct EffectDefinitions {
+    /// List of known effects
+    effects: HashMap<String, EffectDefinition>,
+}
+
+impl std::ops::Deref for EffectDefinitions {
+    type Target = HashMap<String, EffectDefinition>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.effects
+    }
+}
+
 /// Effect engine
 ///
 /// Hosts the Python interpreter to run effects on this hyperion instance.
 pub struct EffectEngine {
-    /// List of known effects
-    effects: HashMap<String, EffectDefinition>,
+    /// Effect definition storage
+    effect_definitions: Arc<Mutex<EffectDefinitions>>,
     /// Effect running currently
     current_effect: Option<RunningEffect>,
     /// Effects being terminated
@@ -96,13 +117,13 @@ impl EffectEngine {
             }
         }
 
-        let effects = effects
+        let effects: HashMap<_, _> = effects
             .into_iter()
             .map(|spec| (spec.get_name().to_owned(), spec))
             .collect();
 
         Self {
-            effects,
+            effect_definitions: Arc::new(Mutex::new(EffectDefinitions { effects })),
             current_effect: None,
             terminating_effects: Vec::new(),
         }
@@ -120,10 +141,12 @@ impl EffectEngine {
         &mut self,
         effect_name: EffectName,
         deadline: Option<Instant>,
-        sender: ServiceInputSender,
+        sender: mpsc::Sender<Input>,
         led_count: usize,
     ) -> Result<(), EffectError> {
-        if let Some(effect) = self.effects.get(&effect_name.name) {
+        let effects = self.effect_definitions.lock().unwrap();
+
+        if let Some(effect) = effects.get(&effect_name.name) {
             // Construct args object
             let args = Some(
                 effect_name
@@ -157,6 +180,9 @@ impl EffectEngine {
                 })),
             };
 
+            // Release borrow
+            drop(effects);
+
             // Add to running effects
             if let Some(previous_effect) = self.current_effect.replace(running_effect) {
                 self.terminate(previous_effect);
@@ -169,15 +195,8 @@ impl EffectEngine {
     }
 
     /// Build and return a list of known effect definitions
-    pub fn get_definitions(&self) -> Vec<crate::servers::json::EffectDefinition> {
-        let mut effects: Vec<_> = self
-            .effects
-            .iter()
-            .map(|(_k, v)| (*v.get_definition()).clone())
-            .collect();
-
-        effects.sort_by(|a, b| a.name.cmp(&b.name));
-        effects
+    pub fn get_definitions(&self) -> EffectDefinitionsHandle {
+        self.effect_definitions.clone()
     }
 
     /// Add the given effect to the termination list
@@ -203,10 +222,9 @@ impl EffectEngine {
 
 impl Stream for EffectEngine {
     type Item = ServiceCommand;
-    type Error = ();
 
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        let mut result = Ok(Async::NotReady);
+    fn poll_next(mut self: Pin<&mut Self>, _ctx: &mut Context) -> Poll<Option<Self::Item>> {
+        let mut result = Poll::Pending;
         let mut remove_idx = None;
 
         for (i, effect) in self.terminating_effects.iter_mut().enumerate() {
@@ -217,10 +235,10 @@ impl Stream for EffectEngine {
 
             if terminated {
                 let mut effect = effect.take().unwrap();
-                result = Ok(Async::Ready(Some(ServiceCommand::EffectCompleted {
+                result = Poll::Ready(Some(ServiceCommand::EffectCompleted {
                     name: effect.name,
                     result: effect.thread.take().unwrap().join().unwrap(),
-                })));
+                }));
                 remove_idx = Some(i);
             }
         }
@@ -236,10 +254,10 @@ impl Stream for EffectEngine {
                 .unwrap_or(false)
             {
                 let mut effect = self.current_effect.take().unwrap();
-                result = Ok(Async::Ready(Some(ServiceCommand::EffectCompleted {
+                result = Poll::Ready(Some(ServiceCommand::EffectCompleted {
                     name: effect.name,
                     result: effect.thread.take().unwrap().join().unwrap(),
-                })));
+                }));
             }
         }
 

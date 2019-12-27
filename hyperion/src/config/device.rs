@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use lazy_static::lazy_static;
 use regex::Regex;
 use validator::{Validate, ValidationError};
 
@@ -78,29 +79,6 @@ pub struct Device {
     pub format: ColorFormat,
 }
 
-/// Update to a device instance
-#[derive(Debug, Deserialize)]
-pub struct DeviceUpdate {
-    /// True if this device is enabled
-    pub enabled: Option<bool>,
-    /// Name of the device
-    pub name: Option<String>,
-    /// Target endpoint to contact
-    pub endpoint: Option<Endpoint>,
-    /// List of LED specifications
-    pub leds: Option<Vec<Led>>,
-    /// Update frequency (Hz)
-    pub frequency: Option<f64>,
-    /// Update latency
-    pub latency: Option<Duration>,
-    /// Idle timeout
-    pub idle: Option<IdleSettings>,
-    /// Filtering method
-    pub filter: Option<Filter>,
-    /// Color format
-    pub format: Option<ColorFormat>,
-}
-
 /// Ensures the configuration of the device is valid
 fn validate_device(device: &Device) -> Result<(), ValidationError> {
     // Clamp frequency to 1/hour Hz
@@ -123,101 +101,10 @@ fn validate_device(device: &Device) -> Result<(), ValidationError> {
         return Err(error);
     }
 
-    Ok(())
-}
-
-macro_rules! update_field {
-    ($field:ident, $device_update:ident, $cloned_self:ident, $changed_flags:ident, $extra_bits:expr) => {
-        if let Some($field) = $device_update.$field {
-            $cloned_self.$field = $field;
-            $changed_flags |= $extra_bits;
-        }
-    };
-}
-
-impl Device {
-    /// Update a device configuration
-    ///
-    /// # Parameters
-    ///
-    /// * `device_update`: set of possible updates to the device configuration
-    pub fn update(
-        &mut self,
-        device_update: DeviceUpdate,
-    ) -> Result<ReloadHints, validator::ValidationErrors> {
-        // Clone self
-        let mut cloned_self = self.clone();
-        let mut changed_flags = ReloadHints::empty();
-
-        // Apply changes
-        update_field!(
-            enabled,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_GENERIC
-        );
-        update_field!(
-            name,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_GENERIC
-        );
-        update_field!(
-            endpoint,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_ENDPOINT
-        );
-        update_field!(
-            leds,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_LEDS
-        );
-        update_field!(
-            frequency,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_FREQUENCY
-        );
-        update_field!(
-            latency,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_LATENCY
-        );
-        update_field!(
-            idle,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_IDLE
-        );
-        update_field!(
-            filter,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_FILTER
-        );
-        update_field!(
-            format,
-            device_update,
-            cloned_self,
-            changed_flags,
-            ReloadHints::DEVICE_FORMAT
-        );
-
-        // Validate changes
-        cloned_self.validate()?;
-
-        *self = cloned_self;
-        Ok(changed_flags)
+    // There should be at least 1 LED
+    if device.leds.is_empty() {
+        return Err(ValidationError::new("empty_leds"));
     }
+
+    Ok(())
 }

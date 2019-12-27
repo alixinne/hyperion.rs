@@ -24,6 +24,16 @@ impl FormattedColor {
                 .collect(),
         )
     }
+
+    /// Get the number of components for this formatted color
+    pub fn components(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Obtain an iterator the components of this formatted color
+    pub fn iter(&self) -> impl Iterator<Item = &(f32, char)> {
+        self.0.iter()
+    }
 }
 
 impl IntoIterator for FormattedColor {

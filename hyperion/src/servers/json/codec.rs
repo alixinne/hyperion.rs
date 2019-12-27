@@ -1,11 +1,9 @@
 use error_chain::error_chain;
 
 use bytes::BytesMut;
-use tokio::codec::{Decoder, Encoder, LinesCodec};
+use tokio_util::codec::{Decoder, Encoder, LinesCodec};
 
 use super::message;
-
-use std::io;
 
 /// Parse an incoming request as JSON into the corresponding message type
 ///
@@ -41,22 +39,15 @@ error_chain! {
     foreign_links {
         Io(::std::io::Error);
         Decode(serde_json::Error);
+        LinesCodec(tokio_util::codec::LinesCodecError);
     }
 }
 
 /// JSON tokio codec
+#[derive(Default)]
 pub struct JsonCodec {
     /// Line parsing codec
     lines: LinesCodec,
-}
-
-impl JsonCodec {
-    /// Create a new JsonCodec
-    pub fn new() -> Self {
-        Self {
-            lines: LinesCodec::new(),
-        }
-    }
 }
 
 impl Decoder for JsonCodec {
@@ -76,11 +67,11 @@ impl Decoder for JsonCodec {
 
 impl Encoder for JsonCodec {
     type Item = message::HyperionResponse;
-    type Error = io::Error;
+    type Error = HyperionMessageError;
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
         match encode_reply(&item) {
-            Ok(encoded) => self.lines.encode(encoded, dst),
+            Ok(encoded) => self.lines.encode(encoded, dst).map_err(Into::into),
             Err(encode_error) => Err(encode_error.into()),
         }
     }

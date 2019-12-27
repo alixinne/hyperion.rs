@@ -1,192 +1,27 @@
 //! Definition of the IdleTracker type
 
 use std::fmt;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::color;
 use crate::config::IdleSettings;
+use crate::methods::{WriteError, WriteResult};
 
-/// RGB LED idle tracker
-pub struct IdleTracker {
-    /// Duration after which the device is considered idle
-    idle_settings: IdleSettings,
+/// Idle pass statistics
+pub struct IdlePass<'t> {
+    /// Referenced idle tracker
+    tracker: &'t mut IdleTracker,
+    /// Device name for logging
+    device_name: &'t str,
     /// Total change in all color components in the current pass
     total_change: f64,
     /// Number of LEDs with non-zero color value
     nonzero_color_count: usize,
-    /// Instant of the last change in any LED value
-    last_change: Instant,
-    /// Number of write passes since the last change
-    passes_since_last_change: u32,
-    /// true if an update pass is running
-    pass_started: bool,
-    /// Current state of the tracker
-    current_state: IdleState,
-    /// Is an update pending?
-    update_pending: bool,
+    /// Write completion state
+    completion_state: Option<WriteResult>,
 }
 
-/// Current state of the tracked device
-#[derive(Clone)]
-pub enum IdleState {
-    /// The device is actively being updated
-    Active,
-    /// The device is idle and turned off
-    IdleBlack,
-    /// The device is idle but with a solid color
-    IdleColor {
-        /// true if the device should be updated to prevent it
-        /// from turning off after its inactivity timeout.
-        update_required: bool,
-    },
-}
-
-impl IdleState {
-    /// Returns true if the state requires updating the target device
-    pub fn should_write(&self) -> bool {
-        match self {
-            IdleState::Active
-            | IdleState::IdleColor {
-                update_required: true,
-            } => true,
-            _ => false,
-        }
-    }
-
-    /// Returns true if the two states are different variants
-    ///
-    /// # Parameters
-    ///
-    /// * `other`: state to compare this state to
-    pub fn has_changed(&self, other: &IdleState) -> bool {
-        match self {
-            IdleState::Active => match other {
-                IdleState::Active => false,
-                _ => true,
-            },
-            IdleState::IdleBlack => match other {
-                IdleState::IdleBlack => false,
-                _ => true,
-            },
-            IdleState::IdleColor { .. } => match other {
-                IdleState::IdleColor { .. } => false,
-                _ => true,
-            },
-        }
-    }
-}
-
-impl fmt::Display for IdleState {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            IdleState::Active => write!(f, "active"),
-            IdleState::IdleColor { .. } => write!(f, "idle (active)"),
-            IdleState::IdleBlack => write!(f, "idle (inactive)"),
-        }
-    }
-}
-
-impl From<IdleSettings> for IdleTracker {
-    /// Create a new idle tracker
-    ///
-    /// # Parameters
-    ///
-    /// * `idle_settings`: settings for device idle modes
-    fn from(idle_settings: IdleSettings) -> Self {
-        Self {
-            idle_settings,
-            total_change: 0.0,
-            nonzero_color_count: 0,
-            last_change: Instant::now(),
-            passes_since_last_change: 0,
-            pass_started: false,
-            current_state: IdleState::Active,
-            update_pending: false,
-        }
-    }
-}
-
-impl IdleTracker {
-    /// Loads new settings in the IdleTracker
-    ///
-    /// # Parameters
-    ///
-    /// * `idle_settings`: new settings to load
-    pub fn reload(&mut self, idle_settings: IdleSettings) {
-        self.idle_settings = idle_settings;
-
-        // Trigger new check on next pass
-        self.current_state = IdleState::Active;
-        self.passes_since_last_change = 0;
-    }
-
-    /// Starts a new pass for the given device
-    ///
-    /// This function should be called before updating LEDs in the device.
-    ///
-    /// # Parameters
-    ///
-    /// * `device_name`: name of the device being written to
-    ///
-    /// # Returns
-    ///
-    /// `true` if the device is not idle and should be written to.
-    pub fn start_pass(&mut self, device_name: &str) -> bool {
-        assert!(!self.pass_started);
-
-        // The interval told us to check the device, but now
-        // check the change tracker to see if it's actually useful
-        let (changed, state) = self.update_state();
-
-        // Notify log of state changes
-        if changed {
-            debug!("device '{}' is now {}", device_name, state);
-        }
-
-        // Don't start pass if not necessary
-        if !state.should_write() {
-            return false;
-        }
-
-        self.total_change = 0.0;
-        self.nonzero_color_count = 0;
-
-        self.pass_started = true;
-
-        // The pass actually started
-        true
-    }
-
-    /// Completes the current pass
-    ///
-    /// This function should be called after the LEDs have been updated.
-    pub fn end_pass(&mut self) {
-        assert!(self.pass_started);
-
-        self.last_change = Instant::now();
-
-        // Update change values
-        if self.total_change > 2.0f64.powf(-f64::from(self.idle_settings.resolution)) {
-            self.passes_since_last_change = 1;
-        } else if self.passes_since_last_change < self.idle_settings.retries {
-            self.passes_since_last_change += 1;
-        }
-
-        trace!(
-            "end pass: total_change: {}, last_change: {:?}, passes_since_last_change: {}",
-            self.total_change,
-            self.last_change,
-            self.passes_since_last_change
-        );
-
-        self.pass_started = false;
-    }
-
-    /// Notifies the tracker that LED state has changed and should be checked again
-    pub fn notify_changed(&mut self) {
-        self.update_pending = true;
-    }
-
+impl<'t> IdlePass<'t> {
     /// Notifies of an update on an LED color
     ///
     /// This function should be called for every LED color update. Note that this only tracks
@@ -214,44 +49,243 @@ impl IdleTracker {
         }
     }
 
-    /// Update the current state of this tracker
+    /// Adds the device write completion state to this pass
     ///
-    /// Note that if this method returns a state that expects the device to be written to,
-    /// the internal change tracker state will be updated assuming the caller does actually
-    /// write to the device.
+    /// This allows scheduling the next write time appropriately
+    ///
+    /// # Parameters
+    ///
+    /// * `completion_state`: result from the method write call
+    pub fn complete(&mut self, completion_state: WriteResult) {
+        self.completion_state = Some(completion_state);
+    }
+}
+
+impl<'t> Drop for IdlePass<'t> {
+    fn drop(&mut self) {
+        self.tracker.end_pass(
+            self.total_change,
+            self.nonzero_color_count,
+            self.device_name,
+            self.completion_state.take(),
+        );
+    }
+}
+
+/// RGB LED idle tracker
+pub struct IdleTracker {
+    /// Duration after which the device is considered idle
+    idle_settings: IdleSettings,
+    /// Update period (derived from device frequency)
+    update_period: Duration,
+    /// Number of write passes since the last change
+    passes_since_last_change: u32,
+    /// Current state of the tracker
+    current_state: IdleState,
+    /// Next write
+    next_write: Option<Instant>,
+}
+
+/// Current state of the tracked device
+#[derive(Clone, PartialEq)]
+enum IdleState {
+    /// The device is actively being updated
+    Active,
+    /// The device is idle and turned off
+    IdleBlack,
+    /// The device is idle but with a solid color
+    IdleColor,
+    /// The device encountered an error and will be woken up later
+    Errored { error: String },
+}
+
+impl IdleState {
+    pub fn is_errored(&self) -> bool {
+        match self {
+            IdleState::Errored { .. } => true,
+            _ => false,
+        }
+    }
+}
+
+impl fmt::Display for IdleState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            IdleState::Active => write!(f, "active"),
+            IdleState::IdleColor => write!(f, "idle (active)"),
+            IdleState::IdleBlack => write!(f, "idle (inactive)"),
+            IdleState::Errored { error } => write!(f, "errored ({})", error),
+        }
+    }
+}
+
+impl IdleTracker {
+    /// Create a new idle tracker
+    ///
+    /// # Parameters
+    ///
+    /// * `idle_settings`: settings for device idle modes
+    /// * `frequency`: device update frequency in Hz
+    pub fn new(idle_settings: IdleSettings, frequency: f64) -> Self {
+        Self {
+            idle_settings,
+            update_period: Duration::from_nanos((1_000_000_000f64 / frequency) as u64),
+            passes_since_last_change: 0,
+            current_state: IdleState::Active,
+            next_write: Some(Instant::now()),
+        }
+    }
+
+    /// Notify of a recent state change
+    ///
+    /// This should be call when new input data is available, thus a potentially
+    /// idle device needs to be updated as soon as possible
+    ///
+    /// # Parameters
+    ///
+    /// * `time`: instant at which the updated occurred
     ///
     /// # Returns
     ///
-    /// * `(changed, state)`: `changed` is true if the state changed to its current value `state`.
-    /// The `changed` flag does not take into account the state of `update_required` on
-    /// IdleColor.
-    fn update_state(&mut self) -> (bool, IdleState) {
-        let now = Instant::now();
+    /// `true` if the device had to change state because of this notification.
+    pub fn update_write(&mut self, time: Instant) -> bool {
+        let update_instant = match self.current_state {
+            IdleState::Active | IdleState::Errored { .. } => None,
+            IdleState::IdleBlack | IdleState::IdleColor => Some(time),
+        };
 
-        let new_state =
-            // Only consider idle stats if idling is enabled, and we are not waiting on a oneshot
-            // update
-            if !self.update_pending && self.idle_settings.enabled && self.passes_since_last_change >= self.idle_settings.retries {
-                if self.nonzero_color_count > 0 {
-                    // When a color is displayed, we only require an update every delay
-                    // if the device needs periodic updates to stay on.
-                    IdleState::IdleColor {
-                        update_required: !self.idle_settings.holds
-                            && (now - self.last_change) > self.idle_settings.delay,
+        // Switch to active state
+        if !self.current_state.is_errored() {
+            self.current_state = IdleState::Active;
+        }
+
+        // Update next write
+        if update_instant.is_some() {
+            self.next_write = update_instant;
+        }
+
+        update_instant.is_some()
+    }
+
+    /// Starts a new pass for the given device
+    ///
+    /// The given object should be used to track changes to LED values in an update pass.
+    pub fn start_pass<'t>(&'t mut self, device_name: &'t str) -> IdlePass<'t> {
+        IdlePass {
+            tracker: self,
+            device_name,
+            total_change: 0.,
+            nonzero_color_count: 0,
+            completion_state: None,
+        }
+    }
+
+    /// Get the time at which the scheduler should write to the associated device again
+    pub fn next_write(&self) -> Option<Instant> {
+        self.next_write
+    }
+
+    /// Completes the current pass
+    fn end_pass(
+        &mut self,
+        total_change: f64,
+        nonzero_color_count: usize,
+        device_name: &str,
+        completion_state: Option<WriteResult>,
+    ) {
+        let (new_state, update_delay) =
+            if completion_state.as_ref().map(Result::is_ok).unwrap_or(true) {
+                // Write to device disabled OR write to device was a success
+
+                // Update change values
+                if total_change > 2.0f64.powf(-f64::from(self.idle_settings.resolution)) {
+                    self.passes_since_last_change = 1;
+                } else if self.passes_since_last_change < self.idle_settings.retries {
+                    self.passes_since_last_change += 1;
+                }
+
+                if !self.idle_settings.enabled
+                    || self.passes_since_last_change >= self.idle_settings.retries
+                {
+                    // Nothing changed recently
+                    if nonzero_color_count > 0 {
+                        // When a color is displayed, we only require an update every delay
+                        // if the device needs periodic updates to stay on.
+                        (
+                            IdleState::IdleColor,
+                            if self.idle_settings.holds {
+                                None
+                            } else {
+                                Some(self.idle_settings.delay)
+                            },
+                        )
+                    } else {
+                        (IdleState::IdleBlack, None)
                     }
                 } else {
-                    IdleState::IdleBlack
+                    (IdleState::Active, Some(self.update_period))
                 }
             } else {
-                IdleState::Active
+                // completion_state is Some(Err()) from above if
+                let completion_state = completion_state.unwrap().unwrap_err();
+
+                match completion_state {
+                    WriteError::NotReady => {
+                        // Temporary error, we should try again soon
+
+                        (
+                            if !self.idle_settings.enabled
+                                || self.passes_since_last_change >= self.idle_settings.retries
+                            {
+                                // Nothing changed recently
+                                if nonzero_color_count > 0 {
+                                    IdleState::IdleColor
+                                } else {
+                                    IdleState::IdleBlack
+                                }
+                            } else {
+                                IdleState::Active
+                            },
+                            Some(self.update_period),
+                        )
+                    }
+                    WriteError::Errored { error } => {
+                        // Permanent error, try again after some timeout
+
+                        (IdleState::Errored { error }, Some(Duration::from_secs(60)))
+                    }
+                }
             };
 
-        // Acknowledge update notifications
-        self.update_pending = false;
+        trace!(
+            "end pass: total_change: {}, passes_since_last_change: {}",
+            total_change,
+            self.passes_since_last_change
+        );
 
-        let changed = new_state.has_changed(&self.current_state);
+        let changed = new_state != self.current_state;
         self.current_state = new_state;
 
-        (changed, self.current_state.clone())
+        // Notify log of state changes
+        if changed {
+            log!(
+                if self.current_state.is_errored() {
+                    log::Level::Error
+                } else {
+                    log::Level::Debug
+                },
+                "device '{}' is now {}{}",
+                device_name,
+                self.current_state,
+                if let Some(duration) = update_delay {
+                    format!(", next update in {}", humantime::Duration::from(duration))
+                } else {
+                    "".to_owned()
+                }
+            );
+        }
+
+        // Update next write deadline
+        self.next_write = update_delay.map(|d| Instant::now() + d);
     }
 }

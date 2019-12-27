@@ -32,7 +32,7 @@ pub enum Endpoint {
     #[serde(rename = "ws")]
     Ws {
         /// Device address
-        address: String,
+        address: url::Url,
     },
 }
 

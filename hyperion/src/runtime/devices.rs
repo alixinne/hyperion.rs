@@ -133,13 +133,11 @@ impl<'conf> Devices<'conf> {
         raw_image: RawImage,
         immediate: bool,
     ) {
-        // Image processing is compute-heavy
-        tokio::task::block_in_place(|| {
-            // Update stored image
-            image_processor
-                .with_devices(self.config.devices.iter())
-                .process_image(raw_image);
-        });
+        // TODO: Run on thread pool?
+        // Update stored image
+        image_processor
+            .with_devices(self.config.devices.iter())
+            .process_image(raw_image);
 
         // Mutable reference to devices to prevent the closure exclusive access
         let devices = &mut self.devices;

@@ -55,13 +55,16 @@ impl Decoder for ProtoCodec {
             return Ok(None);
         }
 
-        let size = src.get_u32() as usize;
+        // Peek at the size to see if we have enough
+        let size = (&src[0..4]).get_u32() as usize;
 
         // Check that we have the full message before decoding
         if src.remaining() < size {
             return Ok(None);
         }
 
+        // Consume size
+        assert!(src.get_u32() as usize == size);
         trace!("{} bytes message", size);
 
         // Extend working buffer

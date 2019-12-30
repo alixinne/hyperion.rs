@@ -25,7 +25,7 @@ pub struct Correction {
 }
 
 /// Trigger an effect by name
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Effect {
     /// Effect name
     pub name: String,

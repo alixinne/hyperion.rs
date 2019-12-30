@@ -2,6 +2,7 @@
 
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::fmt;
 use std::pin::Pin;
 
 use std::mem::replace;
@@ -45,6 +46,32 @@ pub enum MuxedInput {
     },
     /// Internal service update
     Internal(ServiceCommand),
+}
+
+impl fmt::Display for MuxedInput {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MuxedInput::StateUpdate {
+                update,
+                clear_effects,
+            } => write!(
+                f,
+                "state update{} {:?}",
+                if *clear_effects {
+                    " (clearing effects)"
+                } else {
+                    ""
+                },
+                update
+            ),
+            MuxedInput::LaunchEffect { effect, .. } => write!(
+                f,
+                "effect launch {}",
+                serde_json::to_string(effect).unwrap()
+            ),
+            MuxedInput::Internal(command) => write!(f, "internal {:?}", command),
+        }
+    }
 }
 
 /// Entry in the muxer queue

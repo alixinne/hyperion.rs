@@ -1,10 +1,8 @@
 //! Main service future implementation
 
-use std::time::Instant;
-
 use futures::{future::FutureExt, select, StreamExt};
 
-use super::{Input, ServiceCommand, ServiceError, StateUpdate, StateUpdateKind};
+use super::{Input, ServiceCommand, ServiceError, StateUpdateKind};
 use crate::color::ColorPoint;
 use crate::runtime::{Devices, EffectEngine, MuxedInput, PriorityMuxer};
 use crate::{config, image, servers};
@@ -48,7 +46,9 @@ pub async fn run(
         // Process completed future
         select! {
             muxed_input = priority_muxer.next().fuse() => {
-                debug!("state update: {:?}", muxed_input);
+                if let Some(input) = &muxed_input {
+                    debug!("processing: {}", input);
+                }
 
                 match muxed_input {
                     Some(MuxedInput::StateUpdate { update, clear_effects }) => {
@@ -57,6 +57,8 @@ pub async fn run(
                         }
 
                         let update_time = update.initiated;
+                        trace!("muxing latency: {}", humantime::Duration::from(update_time.elapsed()));
+
                         match update.kind {
                             StateUpdateKind::Clear => {
                                 devices.set_all_leds(update_time, ColorPoint::black(), false);
@@ -71,6 +73,8 @@ pub async fn run(
                                 devices.set_leds(update_time, led_data, false);
                             }
                         }
+
+                        trace!("updating latency: {}", humantime::Duration::from(update_time.elapsed()));
                     }
                     Some(MuxedInput::LaunchEffect { effect, deadline }) => {
                         let name = effect.name.clone();

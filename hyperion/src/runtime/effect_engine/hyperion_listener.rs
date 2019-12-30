@@ -30,9 +30,10 @@ impl HyperionListener {
 
 impl EffectListener for HyperionListener {
     fn set_rgb(&mut self, rgb: (u8, u8, u8)) -> PyResult<()> {
-        futures::executor::block_on(self.sender.send(Input::effect_input(
-            StateUpdate::solid(rgb.into()),
-        )))
+        futures::executor::block_on(
+            self.sender
+                .send(Input::effect_input(StateUpdate::solid(rgb.into()))),
+        )
         .map_err(|error| PyErr::new::<exceptions::RuntimeError, _>(error.to_string()))
     }
 

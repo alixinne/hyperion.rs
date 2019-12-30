@@ -36,6 +36,8 @@ pub struct DeviceInstance {
     idle_tracker: IdleTracker,
     /// Formatted LED data cache
     led_data: Vec<LedData>,
+    /// Time of last input
+    last_input: Option<Instant>,
 }
 
 #[allow(missing_docs)]
@@ -85,6 +87,7 @@ impl DeviceInstance {
             format: device.format.clone(),
             idle_tracker: IdleTracker::new(device.idle.clone(), device.frequency),
             led_data: Vec::with_capacity(led_count),
+            last_input: None,
         }
     }
 
@@ -94,6 +97,8 @@ impl DeviceInstance {
     }
 
     fn update_write(&mut self, time: Instant) {
+        self.last_input = Some(time);
+
         if self.idle_tracker.update_write(time) {
             debug!("activating device {}", self.name);
         }
@@ -192,9 +197,25 @@ impl DeviceInstance {
             LedData { index, formatted }
         }));
 
+        if let Some(instant) = self.last_input {
+            trace!(
+                "{}: pre-write latency: {}",
+                self.name,
+                humantime::Duration::from(instant.elapsed())
+            );
+        }
+
         if write_to_device {
             // Write to device and take back buffer
             pass.complete(self.method.write(led_data).await);
+        }
+
+        if let Some(instant) = self.last_input.take() {
+            trace!(
+                "{}: post-write latency: {}",
+                self.name,
+                humantime::Duration::from(instant.elapsed())
+            );
         }
     }
 

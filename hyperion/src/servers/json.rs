@@ -55,14 +55,14 @@ async fn process(
         let reply = match request {
             Ok(HyperionMessage::ClearAll) => {
                 // Update state
-                tx.send(Input::user_input(StateUpdate::Clear, 0, None))
+                tx.send(Input::user_input(StateUpdate::clear(), 0, None))
                     .await?;
 
                 HyperionResponse::success()
             }
             Ok(HyperionMessage::Clear { priority }) => {
                 // Update state
-                tx.send(Input::user_input(StateUpdate::Clear, priority, None))
+                tx.send(Input::user_input(StateUpdate::clear(), priority, None))
                     .await?;
 
                 HyperionResponse::success()
@@ -72,13 +72,11 @@ async fn process(
                 duration,
                 color,
             }) => {
-                let update = StateUpdate::SolidColor {
-                    color: color::ColorPoint::from((
-                        f32::from(color[0]) / 255.0,
-                        f32::from(color[1]) / 255.0,
-                        f32::from(color[2]) / 255.0,
-                    )),
-                };
+                let update = StateUpdate::solid(color::ColorPoint::from((
+                    f32::from(color[0]) / 255.0,
+                    f32::from(color[1]) / 255.0,
+                    f32::from(color[2]) / 255.0,
+                )));
 
                 // Update state
                 tx.send(Input::user_input(update, priority, duration))
@@ -102,7 +100,7 @@ async fn process(
                         {
                             // Update state
                             tx.send(Input::user_input(
-                                StateUpdate::Image(raw_image),
+                                StateUpdate::image(raw_image),
                                 priority,
                                 duration,
                             ))

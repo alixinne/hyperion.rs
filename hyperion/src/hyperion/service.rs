@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use futures::{future::FutureExt, select, StreamExt};
 
-use super::{Input, ServiceCommand, ServiceError, StateUpdate};
+use super::{Input, ServiceCommand, ServiceError, StateUpdate, StateUpdateKind};
 use crate::color::ColorPoint;
 use crate::runtime::{Devices, EffectEngine, MuxedInput, PriorityMuxer};
 use crate::{config, image, servers};
@@ -48,7 +48,6 @@ pub async fn run(
         // Process completed future
         select! {
             muxed_input = priority_muxer.next().fuse() => {
-                let update_time = Instant::now();
                 debug!("state update: {:?}", muxed_input);
 
                 match muxed_input {
@@ -57,17 +56,18 @@ pub async fn run(
                             effect_engine.clear_all();
                         }
 
-                        match update {
-                            StateUpdate::Clear => {
+                        let update_time = update.initiated;
+                        match update.kind {
+                            StateUpdateKind::Clear => {
                                 devices.set_all_leds(update_time, ColorPoint::black(), false);
                             },
-                            StateUpdate::SolidColor { color } => {
+                            StateUpdateKind::SolidColor { color } => {
                                 devices.set_all_leds(update_time, color, false);
                             },
-                            StateUpdate::Image(raw_image) => {
+                            StateUpdateKind::Image(raw_image) => {
                                 devices.set_from_image(update_time, &mut image_processor, raw_image, false);
                             },
-                            StateUpdate::LedData(led_data) => {
+                            StateUpdateKind::LedData(led_data) => {
                                 devices.set_leds(update_time, led_data, false);
                             }
                         }

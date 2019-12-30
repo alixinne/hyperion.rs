@@ -69,7 +69,7 @@ async fn process(
         let reply = match request {
             Ok(HyperionRequest::ClearAllRequest(_)) => {
                 // Update state
-                tx.send(Input::user_input(StateUpdate::Clear, 0, None))
+                tx.send(Input::user_input(StateUpdate::clear(), 0, None))
                     .await?;
 
                 success_response()
@@ -77,7 +77,7 @@ async fn process(
             Ok(HyperionRequest::ClearRequest(clear_request)) => {
                 // Update state
                 tx.send(Input::user_input(
-                    StateUpdate::Clear,
+                    StateUpdate::clear(),
                     clear_request.priority,
                     None,
                 ))
@@ -95,9 +95,7 @@ async fn process(
 
                 // Update state
                 tx.send(Input::user_input(
-                    StateUpdate::SolidColor {
-                        color: color::ColorPoint::from((color.0, color.1, color.2)),
-                    },
+                    StateUpdate::solid(color::ColorPoint::from((color.0, color.1, color.2))),
                     color_request.priority,
                     color_request.duration,
                 ))
@@ -119,7 +117,7 @@ async fn process(
                         if let Ok(raw_image) = RawImage::try_from((data, imagewidth, imageheight)) {
                             // Update state
                             tx.send(Input::user_input(
-                                StateUpdate::Image(raw_image),
+                                StateUpdate::image(raw_image),
                                 priority,
                                 duration,
                             ))

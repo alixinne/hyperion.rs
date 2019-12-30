@@ -164,6 +164,11 @@ impl Stream for PriorityMuxer {
                         pop_top_entry = deadline.is_none();
 
                         // Forward input
+                        let update = if expired_entries {
+                            update.recreate()
+                        } else {
+                            update
+                        };
                         trace!("forwarding state update: {:#?}", update);
                         result = Some(MuxedInput::StateUpdate {
                             update,
@@ -175,6 +180,11 @@ impl Stream for PriorityMuxer {
                         pop_top_entry = deadline.is_none();
 
                         // Effect input, forward directly
+                        let update = if expired_entries {
+                            update.recreate()
+                        } else {
+                            update
+                        };
                         trace!("forwarding state update: {:#?}", update);
                         result = Some(MuxedInput::StateUpdate {
                             update,
@@ -194,7 +204,7 @@ impl Stream for PriorityMuxer {
         } else if expired_entries {
             // We expired entries and now there are none, clear everything
             return Poll::Ready(Some(MuxedInput::StateUpdate {
-                update: StateUpdate::Clear,
+                update: StateUpdate::clear(),
                 clear_effects: false,
             }));
         }

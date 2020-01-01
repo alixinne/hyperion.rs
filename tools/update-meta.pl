@@ -140,7 +140,7 @@ hyperiond_readme:
     
     For now, the CLI is only able to start the hyperion server implementation:
     
-        $ cargo run -- server --help
+        $ cargo run -- --help
     [% cargo_run_output %]
     Logging is set using the HYPERION_LOG environment variable, which can be set to the desired
     logging level (trace, debug, info, warn, error). Note that this will affect logging of all

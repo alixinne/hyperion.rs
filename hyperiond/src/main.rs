@@ -6,7 +6,7 @@
 //!
 //! For now, the CLI is only able to start the hyperion server implementation:
 //!
-//!     $ cargo run -- server --help
+//!     $ cargo run -- --help
 //!     hyperiond 0.2.0
 //!     
 //!     USAGE:

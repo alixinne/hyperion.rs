@@ -41,13 +41,17 @@ if (($? >> 8) == 0 && $head_tag) {
 my $tt = Template->new({ INCLUDE_PATH => '.' });
 
 say STDERR "fetching help output";
-my $vars = {
-  'cargo_run_output' => prefix_string('    ', `cargo run -q -- --help`),
-};
 
 if (($? >> 8) == 0) {
   while (my ($key, $value) = each %$details) {
     next unless exists $value->{template};
+
+    my $basename = $key;
+    $basename =~ s{_readme$}{};
+
+    my $vars = {
+      'cargo_run_output' => prefix_string('    ', `cargo run -q -p $basename -- --help`),
+    };
 
     my $target = $value->{target};
     my $template = $value->{template};
@@ -124,10 +128,32 @@ __DATA__
 toml:
   files:
     - hyperion/Cargo.toml
+    - hyperionc-udp/Cargo.toml
     - hyperiond/Cargo.toml
 hyperion_readme:
   target: hyperion/src/lib.rs
   readme: hyperion/README.md
+hyperionc-udp_readme:
+  target: hyperionc-udp/src/main.rs
+  readme: hyperionc-udp/README.md
+  template: |
+    `hyperionc-udp` is an implementation of the raw UDP protocol for debugging.
+    
+    Values received through the bound socket are forwarded to the standard
+    output in CSV format (tab separated, for gnuplot).
+    
+    # Usage
+    
+       $ cargo run -- --help
+    [% cargo_run_output %]
+    
+    # Authors
+    
+    * [Vincent Tavernier](https://github.com/vtavernier)
+    
+    # License
+    
+    This source code is released under the [MIT-License](https://opensource.org/licenses/MIT)
 hyperiond_readme:
   target: hyperiond/src/main.rs
   readme: hyperiond/README.md

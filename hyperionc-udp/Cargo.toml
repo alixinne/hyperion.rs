@@ -1,0 +1,11 @@
+[package]
+name = "hyperionc-udp"
+version = "0.1.0"
+authors = ["Vincent Tavernier <vince.tavernier@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+structopt = { version = "0.3.7", features = [ "paw" ] }
+paw = "1.0.0"
+csv = "1.1.1"
+ctrlc = "3.1.3"

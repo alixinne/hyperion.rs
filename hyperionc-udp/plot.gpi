@@ -1,0 +1,8 @@
+set key autotitle columnheader
+set style line 1 lc rgb '#ff0000' ps 1
+set style line 2 lc rgb '#00ff00' ps 1
+set style line 3 lc rgb '#0000ff' ps 1
+
+plot 'out.csv' u 1:3 w linespoints ls 1,\
+     'out.csv' u 1:4 w linespoints ls 2,\
+     'out.csv' u 1:5 w linespoints ls 3

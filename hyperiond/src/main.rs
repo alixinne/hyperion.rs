@@ -58,6 +58,10 @@ error_chain! {
         Hyperion(hyperion::hyperion::ServiceError, hyperion::hyperion::ServiceErrorKind);
     }
 
+    foreign_links {
+        Io(std::io::Error);
+    }
+
     errors {
         InvalidBindAddress(t: String) {
             description("invalid bind address")
@@ -89,11 +93,9 @@ struct Opt {
     web_port: Option<u16>,
 }
 
+#[paw::main]
 #[tokio::main]
-async fn main() -> Result<(), HyperionError> {
-    // Load options
-    let opt = Opt::from_args();
-
+async fn main(opt: Opt) -> Result<(), HyperionError> {
     // Initialize logging, default to info
     env_logger::from_env(Env::default().filter_or("HYPERION_LOG", "hyperion=info")).init();
 

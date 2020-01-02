@@ -133,6 +133,11 @@ pub struct RgbwFormat {
     pub white: ColorPoint,
     /// Gamma values
     pub gamma: RgbwGamma,
+    /// Relative power of the white LED
+    ///
+    /// 1.0 means the white LED emits the same amount of power as the RGB LED when fully lit. 2.0
+    ///   means the white LED emits twice as much light as the RGB LED for the same input level.
+    pub white_factor: f32,
 }
 
 impl Default for RgbwFormat {
@@ -142,6 +147,7 @@ impl Default for RgbwFormat {
             rgb: ColorPoint::srgb_white(),
             white: ColorPoint::srgb_white(),
             gamma: Default::default(),
+            white_factor: 1.0,
         }
     }
 }

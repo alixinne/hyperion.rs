@@ -172,7 +172,11 @@ impl ColorPoint {
                 }
             }
             ColorFormat::Rgbw(RgbwFormat {
-                rgb, white, gamma, ..
+                rgb,
+                white,
+                gamma,
+                white_factor,
+                ..
             }) => {
                 let rgb_value = self.value;
                 let dest_white = white.value.into();
@@ -184,7 +188,10 @@ impl ColorPoint {
                 let w = color_min(white_rgb);
 
                 // Adjust value
-                let rgb_value = white_rgb - LinSrgb::from_components((w, w, w));
+                let rgb_value = {
+                    let w = white_factor / 3.0 * w;
+                    white_rgb - LinSrgb::from_components((w, w, w))
+                };
 
                 // Whitebalance the RGB white
                 let (r, g, b) =

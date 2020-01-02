@@ -94,9 +94,7 @@ impl Default for RgbcwGamma {
 }
 
 lazy_static! {
-    static ref RGB_REGEX: Regex = Regex::new(r"^[rgb]*$").unwrap();
-    static ref RGBW_REGEX: Regex = Regex::new(r"^[rgbw]*$").unwrap();
-    static ref RGBCW_REGEX: Regex = Regex::new(r"^[rgbcw]*$").unwrap();
+    static ref ORDER_REGEX: Regex = Regex::new(r"^[rgbcw]*$").unwrap();
 }
 
 /// RGB format data
@@ -104,7 +102,7 @@ lazy_static! {
 #[serde(default)]
 pub struct RgbFormat {
     /// LED order string
-    #[validate(regex = "RGB_REGEX")]
+    #[validate(regex = "ORDER_REGEX")]
     pub order: String,
     /// RGB White point
     pub rgb: ColorPoint,
@@ -127,7 +125,7 @@ impl Default for RgbFormat {
 #[serde(default)]
 pub struct RgbwFormat {
     /// LED order string
-    #[validate(regex = "RGBW_REGEX")]
+    #[validate(regex = "ORDER_REGEX")]
     pub order: String,
     /// RGB White temperature
     pub rgb: ColorPoint,
@@ -153,7 +151,7 @@ impl Default for RgbwFormat {
 #[serde(default)]
 pub struct RgbcwFormat {
     /// LED order string
-    #[validate(regex = "RGBCW_REGEX")]
+    #[validate(regex = "ORDER_REGEX")]
     pub order: String,
     /// RGB White temperature
     pub rgb: ColorPoint,

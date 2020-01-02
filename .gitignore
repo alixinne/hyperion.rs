@@ -1,3 +1,6 @@
+.gdbinit
+commands*.txt
+config*.yml
 /target
 **/*.rs.bk
 /*.tar.gz

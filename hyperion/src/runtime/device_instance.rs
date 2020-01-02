@@ -194,6 +194,7 @@ impl DeviceInstance {
             let device_color = led.current_color().to_device(&format);
             let formatted = device_color.format(&format);
 
+            trace!("{}: {:?} -> {:?}", index, led.current_color(), formatted);
             LedData { index, formatted }
         }));
 

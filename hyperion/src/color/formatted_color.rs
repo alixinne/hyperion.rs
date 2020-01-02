@@ -5,6 +5,7 @@ use super::DeviceColor;
 use crate::config::ColorFormat;
 
 /// A device color in a given format
+#[derive(Debug)]
 pub struct FormattedColor(Vec<(f32, char)>);
 
 impl FormattedColor {

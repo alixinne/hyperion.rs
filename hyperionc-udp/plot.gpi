@@ -2,9 +2,13 @@ set key autotitle columnheader
 set style line 1 lc rgb '#ff0000' ps 1
 set style line 2 lc rgb '#00ff00' ps 1
 set style line 3 lc rgb '#0000ff' ps 1
+set style line 4 lc rgb '#b2c6ff' ps 1
+set style line 5 lc rgb '#ffbb7b' ps 1
 
 if (!exists("filename")) filename='out.csv'
 
+set title filename
 plot filename u 1:3 w linespoints ls 1,\
      filename u 1:4 w linespoints ls 2,\
-     filename u 1:5 w linespoints ls 3
+     filename u 1:5 w linespoints ls 3,\
+     filename u 1:6 w linespoints ls 4

@@ -137,16 +137,29 @@ fn main(opt: Opt) -> Result<()> {
                 // Number of available components per LED
                 let read_components = read / opt.led_count;
 
+                // Number of non-zero values
+                let mut nonzero = 0;
+
                 // Read available components
                 for led_idx in 0..opt.led_count {
                     for component in 0..opt.components {
-                        led_data[led_idx][component] = if component < read_components {
+                        let item = &mut led_data[led_idx][component];
+                        *item = if component < read_components {
                             buf[led_idx * read_components + component]
                         } else {
                             // Extra components are set to 0
                             0
                         };
+
+                        if *item != 0 {
+                            nonzero += 1;
+                        }
                     }
+                }
+
+                // Ignore record if it's some initial zeros
+                if nonzero == 0 {
+                    continue;
                 }
 
                 // Write record

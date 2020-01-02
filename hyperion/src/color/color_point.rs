@@ -1,7 +1,7 @@
 //! ColorPoint type definition
 
 use std::fmt;
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 
 use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
@@ -269,6 +269,17 @@ impl Add<ColorPoint> for ColorPoint {
     fn add(self, rhs: Self) -> Self {
         Self {
             value: self.value.plus(rhs.value),
+            format: ColorPointType::RgbValue,
+        }
+    }
+}
+
+impl Sub<ColorPoint> for ColorPoint {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        Self {
+            value: self.value.sub(rhs.value),
             format: ColorPointType::RgbValue,
         }
     }

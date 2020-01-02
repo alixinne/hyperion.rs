@@ -1,6 +1,6 @@
 //! Definition of the Linear type
 
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 use std::time::{Duration, Instant};
 
 use super::{Filter, Sample, ValueStore};
@@ -35,7 +35,10 @@ fn t(d: Duration) -> f32 {
 
 use std::fmt::Debug;
 
-impl<T: Debug + Default + Copy + Add<T, Output = T> + Mul<f32, Output = T>> Filter<T> for Linear {
+impl<
+        T: Debug + Default + Copy + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T>,
+    > Filter<T> for Linear
+{
     fn current_value(&self, time: Instant, value_store: &ValueStore<T>) -> T {
         let period = 1.0 / self.frequency;
 
@@ -56,19 +59,26 @@ impl<T: Debug + Default + Copy + Add<T, Output = T> + Mul<f32, Output = T>> Filt
                     &default_sample
                 };
 
-            // The time difference between the current time and the target point
-            let time_diff = t(time - last_target_sample.instant);
-
-            if time_diff >= period {
-                // Linear filtering period over
-                last_target_sample.value
+            // Target point b
+            let (b_t, b) = (last_target_sample.instant, last_target_sample.value);
+            // Origin point a
+            let (a_t, a) = (current_sample.instant, current_sample.value);
+            // Time difference between a and b, in seconds
+            let a_to_b_t = if b_t > a_t {
+                t(b_t - a_t) + period
             } else {
-                let time_factor = time_diff / period;
+                -t(a_t - b_t) + period
+            };
+            // Time difference to now
+            let a_to_now_t = t(time - a_t);
 
-                // Linear filtering in effect
-                current_sample.value
-                    + last_target_sample.value * time_factor
-                    + current_sample.value * (-time_factor)
+            if a_to_now_t > a_to_b_t {
+                // Linear filtering period over
+                b
+            } else {
+                // Filter linearly (a + (b - a) * t)
+                let t = a_to_now_t / a_to_b_t;
+                a + (b - a) * t
             }
         } else {
             // No target sample found

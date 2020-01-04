@@ -88,7 +88,7 @@ impl Decoder for ProtoCodec {
         }
 
         // Copy message into buffer
-        src.copy_to_slice(&mut self.buf[..]);
+        src.copy_to_slice(&mut self.buf[..size]);
 
         // Attempt to parse using protobuf
         let parsed = message::HyperionRequest::decode(&self.buf[..]);

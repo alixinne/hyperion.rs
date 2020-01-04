@@ -32,7 +32,7 @@ pub async fn run(
     let (effect_tx, effect_rx) = tokio::sync::mpsc::channel::<Input>(60);
 
     // Initialize image processor
-    let mut image_processor: image::Processor = Default::default();
+    let mut image_processor = image::Processor::default();
 
     // Initialize devices
     let mut devices = Devices::new(&config);

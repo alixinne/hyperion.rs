@@ -202,7 +202,7 @@ impl DeviceInstance {
             trace!(
                 "{}: pre-write latency: {}",
                 self.name,
-                humantime::Duration::from(instant.elapsed())
+                instant.elapsed().as_secs_f64(),
             );
         }
 
@@ -215,7 +215,7 @@ impl DeviceInstance {
             trace!(
                 "{}: post-write latency: {}",
                 self.name,
-                humantime::Duration::from(instant.elapsed())
+                instant.elapsed().as_secs_f64(),
             );
         }
     }

@@ -57,7 +57,7 @@ pub async fn run(
                         }
 
                         let update_time = update.initiated;
-                        trace!("muxing latency: {}", humantime::Duration::from(update_time.elapsed()));
+                        trace!("muxing latency: {}", update_time.elapsed().as_secs_f64());
 
                         match update.kind {
                             StateUpdateKind::Clear => {
@@ -74,7 +74,7 @@ pub async fn run(
                             }
                         }
 
-                        trace!("updating latency: {}", humantime::Duration::from(update_time.elapsed()));
+                        trace!("updating latency: {}", update_time.elapsed().as_secs_f64());
                     }
                     Some(MuxedInput::LaunchEffect { effect, deadline }) => {
                         let name = effect.name.clone();

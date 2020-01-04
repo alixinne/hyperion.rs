@@ -9,7 +9,6 @@ use bytes::{Buf, BufMut, BytesMut};
 use prost::Message;
 
 /// Wrapper type that covers all possible protobuf encoded Hyperion messages
-#[derive(Debug)]
 pub enum HyperionRequest {
     /// Solid color request
     ColorRequest(message::ColorRequest),
@@ -19,6 +18,23 @@ pub enum HyperionRequest {
     ClearRequest(message::ClearRequest),
     /// Clear all colors request
     ClearAllRequest(message::HyperionRequest),
+}
+
+use std::fmt;
+impl fmt::Debug for HyperionRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            HyperionRequest::ColorRequest(color) => write!(f, "ColorRequest({:?})", color),
+            HyperionRequest::ImageRequest(image) => write!(f, "ImageRequest(ImageRequest {{ priority: {priority}, imagewidth: {imagewidth}, imageheight: {imageheight}, imagedata: [{imagedata} bytes], duration: {duration:?} }})",
+                priority = image.priority,
+                imagewidth = image.imagewidth,
+                imageheight = image.imageheight,
+                imagedata = image.imagedata.len(),
+                duration = image.duration),
+            HyperionRequest::ClearRequest(clear) => write!(f, "ClearRequest({:?})", clear),
+            HyperionRequest::ClearAllRequest(clear_all) => write!(f, "ClearAllRequest({:?})", clear_all),
+        }
+    }
 }
 
 error_chain! {

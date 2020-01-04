@@ -196,7 +196,7 @@ impl Stream for PriorityMuxer {
                         } else {
                             update
                         };
-                        trace!("forwarding state update: {:#?}", update);
+
                         result = Some(MuxedInput::StateUpdate {
                             update,
                             clear_effects: true,
@@ -212,7 +212,7 @@ impl Stream for PriorityMuxer {
                         } else {
                             update
                         };
-                        trace!("forwarding state update: {:#?}", update);
+
                         result = Some(MuxedInput::StateUpdate {
                             update,
                             clear_effects: false,

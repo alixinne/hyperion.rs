@@ -81,7 +81,6 @@ impl Decoder for ProtoCodec {
 
         // Consume size
         assert!(src.get_u32() as usize == size);
-        trace!("{} bytes message", size);
 
         // Extend working buffer
         if size > self.buf.len() {

@@ -135,6 +135,14 @@ async fn process(
                 }
             }
             Err(error) => {
+                if let HyperionMessageErrorKind::Io(io_error) = error.kind() {
+                    if let std::io::ErrorKind::ConnectionReset = io_error.kind() {
+                        // Client disconnect
+                        info!("proto({}): client disconnected", peer_addr);
+                        break;
+                    }
+                }
+
                 warn!("proto({}): {:?}", peer_addr, error);
                 error_response(error)
             }

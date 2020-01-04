@@ -77,6 +77,7 @@ impl fmt::Display for MuxedInput {
 }
 
 /// Entry in the muxer queue
+#[derive(Debug)]
 struct MuxerEntry {
     /// Input data, None when it was sent as a StateUpdate
     input: Option<Input>,

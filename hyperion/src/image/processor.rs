@@ -3,21 +3,18 @@
 use crate::color;
 use std::cmp::min;
 
-use num_traits::Float;
-use std::ops::AddAssign;
-
 use super::RawImage;
 
 /// Image pixel accumulator
 #[derive(Default, Clone)]
-struct Pixel<T: Float + AddAssign + Default + std::fmt::Display> {
+struct Pixel {
     /// Accumulated color
-    color: [T; 3],
+    color: [f32; 3],
     /// Number of samples
-    count: T,
+    count: f32,
 }
 
-impl<T: Float + AddAssign + Default + std::fmt::Display> Pixel<T> {
+impl Pixel {
     /// Reset this pixels' value and sample count
     pub fn reset(&mut self) {
         *self = Self::default();
@@ -30,11 +27,9 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Pixel<T> {
     /// * `(r, g, b)`: sampled RGB values
     /// * `area_factor`: weight of the current sample. 1.0 is the weight of a sample which covers
     /// the entire matching LED area.
-    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), mut area_factor: T) {
-        use num_traits::NumCast;
-
-        let min = NumCast::from(0.0).unwrap();
-        let max = NumCast::from(1.0).unwrap();
+    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), mut area_factor: f32) {
+        let min = 0.0;
+        let max = 1.0;
 
         if area_factor < min {
             area_factor = min;
@@ -42,20 +37,18 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Pixel<T> {
             area_factor = max;
         }
 
-        self.color[0] += area_factor * T::from(r).unwrap() / NumCast::from(255.0).unwrap();
-        self.color[1] += area_factor * T::from(g).unwrap() / NumCast::from(255.0).unwrap();
-        self.color[2] += area_factor * T::from(b).unwrap() / NumCast::from(255.0).unwrap();
+        self.color[0] += area_factor * f32::from(r) / 255.0f32;
+        self.color[1] += area_factor * f32::from(g) / 255.0f32;
+        self.color[2] += area_factor * f32::from(b) / 255.0f32;
         self.count += area_factor;
     }
 
     /// Compute the mean of this pixel
     pub fn mean(&self) -> color::ColorPoint {
-        use num_traits::NumCast;
-
         let rgb: (f32, f32, f32) = (
-            NumCast::from(self.color[0] / self.count).unwrap(),
-            NumCast::from(self.color[1] / self.count).unwrap(),
-            NumCast::from(self.color[2] / self.count).unwrap(),
+            self.color[0] / self.count,
+            self.color[1] / self.count,
+            self.color[2] / self.count,
         );
 
         color::ColorPoint::from(rgb)
@@ -64,15 +57,15 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Pixel<T> {
 
 /// Raw image data processor
 #[derive(Default)]
-pub struct Processor<T: Float + AddAssign + Default + std::fmt::Display> {
+pub struct Processor {
     /// Width of the LED map
     width: usize,
     /// Height of the LED map
     height: usize,
     /// 2D row-major list of (color_idx, device_idx, led_idx, area_factor)
-    led_map: Vec<Vec<(usize, usize, usize, T)>>,
+    led_map: Vec<Vec<(usize, usize, usize, f32)>>,
     /// Color storage for every known LED
-    color_map: Vec<Pixel<T>>,
+    color_map: Vec<Pixel>,
 }
 
 /// Image processor reference with LED details
@@ -80,15 +73,14 @@ pub struct ProcessorWithDevices<
     'p,
     'a,
     I: Iterator<Item = &'a crate::config::Device>,
-    T: Float + AddAssign + Default + std::fmt::Display,
 > {
     /// Image processor
-    processor: &'p mut Processor<T>,
+    processor: &'p mut Processor,
     /// Devices iterator
     devices: I,
 }
 
-impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
+impl Processor {
     /// Allocates the image processor working memory
     ///
     /// # Parameters
@@ -140,8 +132,7 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
                             let x_range = x_max.min(led.hscan.max) - x_min.max(led.hscan.min);
                             let y_range = y_max.min(led.vscan.max) - y_min.max(led.vscan.min);
                             let area = x_range * y_range;
-                            let factor = T::from(area).unwrap()
-                                / (T::from(1.0).unwrap() / T::from(width * height).unwrap());
+                            let factor = area * (width * height) as f32;
 
                             led_map[map_index].push((index, device_idx, led_idx, factor));
                         }
@@ -191,7 +182,7 @@ impl<T: Float + AddAssign + Default + std::fmt::Display> Processor<T> {
     pub fn with_devices<'p, 'a, I: Iterator<Item = &'a crate::config::Device>>(
         &'p mut self,
         devices: I,
-    ) -> ProcessorWithDevices<'p, 'a, I, T> {
+    ) -> ProcessorWithDevices<'p, 'a, I> {
         ProcessorWithDevices {
             processor: self,
             devices,
@@ -245,15 +236,14 @@ impl<
         'p,
         'a,
         I: Iterator<Item = &'a crate::config::Device>,
-        T: Float + AddAssign + Default + std::fmt::Display,
-    > ProcessorWithDevices<'p, 'a, I, T>
+    > ProcessorWithDevices<'p, 'a, I>
 {
     /// Process incoming image data into led colors
     ///
     /// # Parameters
     ///
     /// * `raw_image`: raw RGB image
-    pub fn process_image(self, raw_image: RawImage) -> &'p mut Processor<T> {
+    pub fn process_image(self, raw_image: RawImage) -> &'p mut Processor {
         let (width, height) = raw_image.get_dimensions();
 
         // Check that this processor has the right size

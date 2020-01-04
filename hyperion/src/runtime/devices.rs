@@ -6,7 +6,6 @@ use futures::prelude::*;
 
 use tokio::time::{delay_queue::Key, DelayQueue};
 
-use num_traits::Float;
 use std::ops::AddAssign;
 
 use crate::color;
@@ -126,10 +125,10 @@ impl<'conf> Devices<'conf> {
     /// * `image_processor`: image processor instance
     /// * `raw_image`: raw RGB image
     /// * `immediate`: apply change immediately (skipping filtering)
-    pub fn set_from_image<T: Float + AddAssign + Default + std::fmt::Display>(
+    pub fn set_from_image(
         &mut self,
         time: Instant,
-        image_processor: &mut Processor<T>,
+        image_processor: &mut Processor,
         raw_image: RawImage,
         immediate: bool,
     ) {

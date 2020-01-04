@@ -117,6 +117,7 @@ impl Ord for MuxerEntry {
         self.priority
             .cmp(&other.priority)
             .then_with(|| self.duration.cmp(&other.duration))
+            .reverse()
     }
 }
 
@@ -147,6 +148,8 @@ impl Stream for PriorityMuxer {
         mut self: Pin<&mut Self>,
         ctx: &mut std::task::Context,
     ) -> Poll<Option<Self::Item>> {
+        let mut pushed_new_entries = false;
+
         // Receive incoming inputs
         while let Poll::Ready(value) = Stream::poll_next(Pin::new(&mut self.receiver), ctx) {
             if let Some(input) = value {
@@ -156,10 +159,15 @@ impl Stream for PriorityMuxer {
                 }
 
                 // Push inputs into queue
+                pushed_new_entries = true;
                 self.inputs.push(input.into());
             } else {
                 return Poll::Ready(None);
             }
+        }
+
+        if (pushed_new_entries) {
+            trace!("inputs: {:#?}", self.inputs);
         }
 
         // Number of entries before processing
@@ -172,11 +180,14 @@ impl Stream for PriorityMuxer {
             // Check that the entry is not expired
             if entry.duration.is_expired(now) {
                 // Go look at the next entry
+                trace!("entry expired: {:?}", entry);
                 continue;
             }
 
             // Pull the input from the entry
             if let Some(input) = entry.input.take() {
+                trace!("new entry: {:?}", entry);
+
                 let result = match input {
                     Input::UserInput { update, .. } => {
                         // User input, forward
@@ -205,7 +216,12 @@ impl Stream for PriorityMuxer {
                 };
 
                 // If it's a clear, empty the whole input heap
-                if let MuxedInput::StateUpdate { update: StateUpdate::Clear, .. } = &result {
+                if let MuxedInput::StateUpdate {
+                    update: StateUpdate::Clear,
+                    ..
+                } = &result
+                {
+                    trace!("clearing all entries");
                     self.inputs.clear();
                 }
 
@@ -215,18 +231,34 @@ impl Stream for PriorityMuxer {
 
                     if let Some(deadline) = entry.duration.deadline() {
                         // The current entry will expire
-                        while self.inputs.peek().map(|entry| entry.duration.is_expired(deadline)).unwrap_or(false) {
-                            self.inputs.pop();
+                        while self
+                            .inputs
+                            .peek()
+                            .map(|item| {
+                                item.priority == entry.priority
+                                    || item.duration.is_expired(deadline)
+                            })
+                            .unwrap_or(false)
+                        {
+                            let entry = self.inputs.pop();
+                            trace!("removed invisible entry: {:?}", entry);
                         }
                     } else {
                         // The current entry will never expire, so clear everything of the same
                         // priority
-                        while self.inputs.peek().map(|item| item.priority == entry.priority).unwrap_or(false) {
-                            self.inputs.pop();
+                        while self
+                            .inputs
+                            .peek()
+                            .map(|item| item.priority == entry.priority)
+                            .unwrap_or(false)
+                        {
+                            let entry = self.inputs.pop();
+                            trace!("removed same-priority invisible entry: {:?}", entry);
                         }
                     }
 
                     // Push back the running operation on the heap
+                    trace!("pushing back entry: {:?}", entry);
                     self.inputs.push(entry);
                 }
 
@@ -234,6 +266,38 @@ impl Stream for PriorityMuxer {
             } else {
                 // The input was already taken, so this is just a token for a running operation.
                 // Push it back and stop popping entries.
+                assert!(!entry.duration.is_oneshot());
+
+                // Try to pop the following entries if we'll never see them
+                // i.e., if this entry will outlast them
+
+                if let Some(deadline) = entry.duration.deadline() {
+                    // The current entry will expire
+                    while self
+                        .inputs
+                        .peek()
+                        .map(|item| {
+                            item.priority == entry.priority || item.duration.is_expired(deadline)
+                        })
+                        .unwrap_or(false)
+                    {
+                        let entry = self.inputs.pop();
+                        trace!("removed invisible entry: {:?}", entry);
+                    }
+                } else {
+                    // The current entry will never expire, so clear everything of the same
+                    // priority
+                    while self
+                        .inputs
+                        .peek()
+                        .map(|item| item.priority == entry.priority)
+                        .unwrap_or(false)
+                    {
+                        let entry = self.inputs.pop();
+                        trace!("removed same-priority invisible entry: {:?}", entry);
+                    }
+                }
+
                 self.inputs.push(entry);
                 break;
             }

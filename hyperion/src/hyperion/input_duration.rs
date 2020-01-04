@@ -73,22 +73,17 @@ impl Ord for InputDuration {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.kind {
             InputDurationKind::OneShot => match other.kind {
-                InputDurationKind::OneShot => self.start.cmp(&other.start),
+                InputDurationKind::OneShot => other.start.cmp(&self.start),
                 InputDurationKind::Endless | InputDurationKind::Limited { .. } => Ordering::Less,
             },
             InputDurationKind::Endless => match other.kind {
-                InputDurationKind::OneShot => Ordering::Greater,
                 InputDurationKind::Endless => other.start.cmp(&self.start),
-                InputDurationKind::Limited { duration: _ } => Ordering::Greater,
+                InputDurationKind::OneShot | InputDurationKind::Limited { .. } => Ordering::Greater,
             },
-            InputDurationKind::Limited {
-                duration: self_duration,
-            } => match other.kind {
+            InputDurationKind::Limited { .. } => match other.kind {
                 InputDurationKind::OneShot => Ordering::Greater,
                 InputDurationKind::Endless => Ordering::Less,
-                InputDurationKind::Limited { duration } => {
-                    (self.start + self_duration).cmp(&(other.start + duration))
-                }
+                InputDurationKind::Limited { .. } => other.start.cmp(&self.start),
             },
         }
     }

@@ -90,6 +90,8 @@ pub struct Udp {
     address: Arc<String>,
     /// Current session
     session: SessionState,
+    /// Buffer for UDP packets
+    buffer: Vec<u8>,
 }
 
 impl Udp {
@@ -105,6 +107,7 @@ impl Udp {
         let mut this = Self {
             address,
             session: Arc::new(Mutex::new(Session::new())),
+            buffer: Vec::new(),
         };
 
         // Start resolving and binding as soon as possible
@@ -122,17 +125,17 @@ impl Udp {
     ///
     /// # Parameters
     ///
+    /// * `buffer`: reusable buffer
     /// * `socket`: UDP socket object
     /// * `data`: device instance to use for preparing the datagram
     /// * `remote_addr': target address of the device
     async fn send_data(
+        buffer: &mut Vec<u8>,
         socket: &mut UdpSocket,
         data: &Vec<LedData>,
         remote_addr: &SocketAddr,
     ) -> Result<usize> {
         // Create buffer with correct size
-        // TODO: Reuse buffer
-        let mut buffer = Vec::new();
         let components = data[0].formatted.components();
         buffer.resize(data.len() * components, 0);
 
@@ -194,7 +197,7 @@ impl Method for Udp {
         }
 
         // If we get to that point, everything is ready for writing
-        match Udp::send_data(s.as_mut().unwrap(), led_data, ra.as_ref().unwrap()).await {
+        match Udp::send_data(&mut self.buffer, s.as_mut().unwrap(), led_data, ra.as_ref().unwrap()).await {
             Ok(_written) => {
                 *self.session.lock().unwrap() = Session::Bound {
                     remote_addr: ra.unwrap(),

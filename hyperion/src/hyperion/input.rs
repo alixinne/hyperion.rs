@@ -1,9 +1,8 @@
 //! Input type definition
 
-use std::convert::TryInto;
-use std::time::Duration;
+use std::time::Instant;
 
-use super::{ServiceCommand, StateUpdate};
+use super::{InputDuration, ServiceCommand, StateUpdate};
 
 use crate::servers::json::Effect;
 
@@ -17,7 +16,7 @@ pub enum Input {
         /// Priority of the input
         priority: Option<i32>,
         /// Duration to apply the input for
-        duration: Option<Duration>,
+        duration: InputDuration,
     },
     /// Effect command
     Effect {
@@ -26,7 +25,7 @@ pub enum Input {
         /// Priority of the input
         priority: Option<i32>,
         /// Duration to apply the effect for
-        duration: Option<Duration>,
+        duration: InputDuration,
     },
     /// State change issued by an effect
     ///
@@ -41,12 +40,10 @@ pub enum Input {
 }
 
 impl Input {
-    /// Get the duration of an input
-    ///
-    /// A very large value is returned if the input has no duration.
-    pub fn get_duration(&self) -> Option<Duration> {
+    /// Get the duration and reference date of an input
+    pub fn get_duration(&self) -> Option<InputDuration> {
         match self {
-            Input::UserInput { duration, .. } | Input::Effect { duration, .. } => *duration,
+            Input::UserInput { duration, .. } | Input::Effect { duration, .. } => Some(*duration),
             _ => None,
         }
     }
@@ -72,7 +69,7 @@ impl Input {
         Input::UserInput {
             update,
             priority: if priority >= 0 { Some(priority) } else { None },
-            duration: duration.and_then(|d| d.try_into().ok().map(Duration::from_millis)),
+            duration: InputDuration::from((Instant::now(), duration)),
         }
     }
 
@@ -92,15 +89,11 @@ impl Input {
     /// * `priority`: priority of the update
     /// * `duration`: duration of the update
     /// * `effect`: effect to run
-    pub fn effect(priority: i32, duration: i32, effect: Effect) -> Self {
+    pub fn effect(priority: i32, duration: Option<i32>, effect: Effect) -> Self {
         Input::Effect {
             effect,
             priority: Some(priority),
-            duration: if duration > 0 {
-                Some(Duration::from_millis(duration.try_into().unwrap()))
-            } else {
-                None
-            },
+            duration: InputDuration::from((Instant::now(), duration)),
         }
     }
 }

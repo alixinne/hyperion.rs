@@ -5,13 +5,12 @@ use std::collections::BinaryHeap;
 use std::fmt;
 use std::pin::Pin;
 
-use std::mem::replace;
 use std::time::Instant;
 
 use futures::prelude::*;
 use futures::task::Poll;
 
-use crate::hyperion::{Input, ServiceCommand, StateUpdate};
+use crate::hyperion::{Input, InputDuration, ServiceCommand, StateUpdate};
 use crate::servers::json::Effect;
 
 /// Boxed stream of service inputs
@@ -36,13 +35,15 @@ pub enum MuxedInput {
         update: StateUpdate,
         /// true if currently running effects should be cleared
         clear_effects: bool,
+        /// Time at which the update was requested
+        update_time: Instant,
     },
     /// Effect launch request
     LaunchEffect {
         /// Details of the effect being launched
         effect: Effect,
-        /// End time of the effect
-        deadline: Option<Instant>,
+        /// Duration of the effect
+        duration: InputDuration,
     },
     /// Internal service update
     Internal(ServiceCommand),
@@ -54,6 +55,7 @@ impl fmt::Display for MuxedInput {
             MuxedInput::StateUpdate {
                 update,
                 clear_effects,
+                ..
             } => write!(
                 f,
                 "state update{} {:?}",
@@ -79,22 +81,23 @@ struct MuxerEntry {
     /// Input data, None when it was sent as a StateUpdate
     input: Option<Input>,
     /// Expiration date of the entry
-    deadline: Option<Instant>,
+    duration: InputDuration,
     /// Priority of the entry
     priority: i32,
 }
 
 impl From<Input> for MuxerEntry {
     fn from(input: Input) -> Self {
-        // Use duration or 24h from now as a default timeout
-        let deadline = input.get_duration().map(|d| Instant::now() + d);
+        let duration = input
+            .get_duration()
+            .unwrap_or(InputDuration::from((Instant::now(), None)));
 
         // Default priority
         let priority = input.get_priority().unwrap_or(1000);
 
         Self {
             input: Some(input),
-            deadline,
+            duration,
             priority,
         }
     }
@@ -104,7 +107,7 @@ impl Eq for MuxerEntry {}
 
 impl PartialEq for MuxerEntry {
     fn eq(&self, other: &Self) -> bool {
-        self.deadline == other.deadline && self.priority == other.priority
+        self.duration == other.duration && self.priority == other.priority
     }
 }
 
@@ -112,7 +115,7 @@ impl Ord for MuxerEntry {
     fn cmp(&self, other: &Self) -> Ordering {
         self.priority
             .cmp(&other.priority)
-            .then_with(|| self.deadline.cmp(&other.deadline))
+            .then_with(|| self.duration.cmp(&other.duration))
     }
 }
 
@@ -158,92 +161,91 @@ impl Stream for PriorityMuxer {
             }
         }
 
-        let now = Instant::now();
-        let mut expired_entries = false;
+        // Number of entries before processing
+        let entries_before = self.inputs.len();
 
-        // Remove expired inputs
-        while let Some(entry) = self.inputs.peek() {
-            if entry.deadline.map(|d| d < now).unwrap_or(false) {
-                trace!("input {:?} has expired", entry.input);
-                self.inputs.pop();
-                expired_entries = true;
+        let now = Instant::now();
+
+        // Pop the top entry
+        while let Some(mut entry) = self.inputs.pop() {
+            // Check that the entry is not expired
+            if entry.duration.is_expired(now) {
+                // Go look at the next entry
+                continue;
+            }
+
+            // Pull the input from the entry
+            if let Some(input) = entry.input.take() {
+                let result = match input {
+                    Input::UserInput { update, .. } => {
+                        // User input, forward
+                        MuxedInput::StateUpdate {
+                            update,
+                            update_time: entry.duration.start(),
+                            clear_effects: true, // User input cancels running effects
+                        }
+                    }
+                    Input::EffectInput { update } => {
+                        // Effect input, forward
+                        MuxedInput::StateUpdate {
+                            update,
+                            update_time: entry.duration.start(),
+                            clear_effects: false, // Don't clear effects, this is an input from an effect
+                        }
+                    }
+                    Input::Effect { effect, .. } => {
+                        // Launch effect request
+                        MuxedInput::LaunchEffect {
+                            effect,
+                            duration: entry.duration,
+                        }
+                    }
+                    Input::Internal(_) => panic!("unexpected internal command in input processing"),
+                };
+
+                // If it's a clear, empty the whole input heap
+                if let MuxedInput::StateUpdate { update: StateUpdate::Clear, .. } = &result {
+                    self.inputs.clear();
+                }
+
+                if !entry.duration.is_oneshot() {
+                    // Try to pop the following entries if we'll never see them
+                    // i.e., if this entry will outlast them
+
+                    if let Some(deadline) = entry.duration.deadline() {
+                        // The current entry will expire
+                        while self.inputs.peek().map(|entry| entry.duration.is_expired(deadline)).unwrap_or(false) {
+                            self.inputs.pop();
+                        }
+                    } else {
+                        // The current entry will never expire, so clear everything of the same
+                        // priority
+                        while self.inputs.peek().map(|item| item.priority == entry.priority).unwrap_or(false) {
+                            self.inputs.pop();
+                        }
+                    }
+
+                    // Push back the running operation on the heap
+                    self.inputs.push(entry);
+                }
+
+                return Poll::Ready(Some(result));
             } else {
+                // The input was already taken, so this is just a token for a running operation.
+                // Push it back and stop popping entries.
+                self.inputs.push(entry);
                 break;
             }
         }
 
-        // Should we pop the top entry
-        let mut pop_top_entry = false;
-        let mut result = None;
-
-        // Send non-forwarded top input if any
-        if let Some(mut entry) = self.inputs.peek_mut() {
-            // Replace with None marks this as forwarded without cloning
-            let input = replace(&mut entry.input, None);
-            let deadline = entry.deadline;
-
-            if let Some(input) = input {
-                match input {
-                    Input::UserInput { update, .. } => {
-                        // User input cancels running effects (clear_effects: true)
-
-                        // No duration => one shot
-                        pop_top_entry = deadline.is_none();
-
-                        // Forward input
-                        let update = if expired_entries {
-                            update.recreate()
-                        } else {
-                            update
-                        };
-
-                        result = Some(MuxedInput::StateUpdate {
-                            update,
-                            clear_effects: true,
-                        });
-                    }
-                    Input::EffectInput { update } => {
-                        // No duration => one shot
-                        pop_top_entry = deadline.is_none();
-
-                        // Effect input, forward directly
-                        let update = if expired_entries {
-                            update.recreate()
-                        } else {
-                            update
-                        };
-
-                        result = Some(MuxedInput::StateUpdate {
-                            update,
-                            clear_effects: false,
-                        });
-                    }
-                    Input::Effect { effect, .. } => {
-                        // Remove effect entry so we can process user inputs
-                        pop_top_entry = true;
-
-                        // Launch effect request
-                        result = Some(MuxedInput::LaunchEffect { effect, deadline });
-                    }
-                    Input::Internal(_) => panic!("unexpected internal command in input processing"),
-                }
-            }
-        } else if expired_entries {
-            // We expired entries and now there are none, clear everything
+        // Check if we emptied the queue
+        if entries_before > 0 && self.inputs.is_empty() {
+            // We expired entries, clear everything
             return Poll::Ready(Some(MuxedInput::StateUpdate {
                 update: StateUpdate::clear(),
+                update_time: Instant::now(),
                 clear_effects: false,
             }));
-        }
-
-        // Pop one-shot top entry
-        if pop_top_entry {
-            self.inputs.pop();
-        }
-
-        // Return actual result
-        if let Some(result) = result {
-            return Poll::Ready(Some(result));
         }
 
         // Not ready, no input

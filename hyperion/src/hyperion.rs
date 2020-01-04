@@ -3,6 +3,9 @@
 mod input;
 pub use input::*;
 
+mod input_duration;
+pub use input_duration::*;
+
 mod service_error;
 pub use service_error::*;
 

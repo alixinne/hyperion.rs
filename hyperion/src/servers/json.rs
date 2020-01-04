@@ -187,7 +187,9 @@ pub async fn bind(
     let mut listener = TcpListener::bind(address).await?;
     info!("server listening on {}", listener.local_addr().unwrap());
 
-    let (tx, rx) = mpsc::channel(60);
+    // Capacity is 1 because all inputs have to be processed as soon as possible
+    // which means buffering makes no sense
+    let (tx, rx) = mpsc::channel(1);
 
     tokio::spawn(async move {
         loop {

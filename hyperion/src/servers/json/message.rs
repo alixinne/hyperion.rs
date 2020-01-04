@@ -114,7 +114,7 @@ pub enum HyperionMessage {
         /// Command priority
         priority: i32,
         /// Command duration
-        duration: i32,
+        duration: Option<i32>,
         /// Effect parameters
         effect: Effect,
     },

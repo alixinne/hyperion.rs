@@ -2,7 +2,7 @@
 
 use futures::{future::FutureExt, select, StreamExt};
 
-use super::{Input, ServiceCommand, ServiceError, StateUpdateKind};
+use super::{Input, ServiceCommand, ServiceError, StateUpdate};
 use crate::color::ColorPoint;
 use crate::runtime::{Devices, EffectEngine, MuxedInput, PriorityMuxer};
 use crate::{config, image, servers};
@@ -51,38 +51,37 @@ pub async fn run(
                 }
 
                 match muxed_input {
-                    Some(MuxedInput::StateUpdate { update, clear_effects }) => {
+                    Some(MuxedInput::StateUpdate { update, update_time, clear_effects }) => {
                         if clear_effects {
                             effect_engine.clear_all();
                         }
 
-                        let update_time = update.initiated;
                         trace!("muxing latency: {}", update_time.elapsed().as_secs_f64());
 
-                        match update.kind {
-                            StateUpdateKind::Clear => {
+                        match update {
+                            StateUpdate::Clear => {
                                 devices.set_all_leds(update_time, ColorPoint::black(), false);
                             },
-                            StateUpdateKind::SolidColor { color } => {
+                            StateUpdate::SolidColor { color } => {
                                 devices.set_all_leds(update_time, color, false);
                             },
-                            StateUpdateKind::Image(raw_image) => {
+                            StateUpdate::Image(raw_image) => {
                                 devices.set_from_image(update_time, &mut image_processor, raw_image, false);
                             },
-                            StateUpdateKind::LedData(led_data) => {
+                            StateUpdate::LedData(led_data) => {
                                 devices.set_leds(update_time, led_data, false);
                             }
                         }
 
                         trace!("updating latency: {}", update_time.elapsed().as_secs_f64());
                     }
-                    Some(MuxedInput::LaunchEffect { effect, deadline }) => {
+                    Some(MuxedInput::LaunchEffect { effect, duration }) => {
                         let name = effect.name.clone();
                         let args = effect.args.clone();
 
                         match effect_engine.launch(
                             effect,
-                            deadline,
+                            duration.deadline(),
                             effect_tx.clone(),
                             devices.get_led_count(),
                         ) {

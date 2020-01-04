@@ -6,8 +6,6 @@ use futures::prelude::*;
 
 use tokio::time::{delay_queue::Key, DelayQueue};
 
-use std::ops::AddAssign;
-
 use crate::color;
 use crate::config::*;
 use crate::image::*;

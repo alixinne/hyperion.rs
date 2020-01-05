@@ -1,5 +1,8 @@
 //! Definition of the Processor type
 
+// TODO: Implement black border detection
+// TODO: Use SIMD
+
 use crate::color;
 use std::cmp::min;
 
@@ -62,6 +65,7 @@ pub struct Processor {
     width: usize,
     /// Height of the LED map
     height: usize,
+    // TODO: use a proper 2D interval tree
     /// 2D row-major list of (color_idx, device_idx, led_idx, area_factor)
     led_map: Vec<Vec<(usize, usize, usize, f32)>>,
     /// Color storage for every known LED

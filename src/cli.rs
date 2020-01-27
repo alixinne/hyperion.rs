@@ -1,5 +1,5 @@
-pub mod server;
 pub mod client;
+pub mod server;
 
 use error_chain::error_chain;
 

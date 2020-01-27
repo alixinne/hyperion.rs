@@ -13,10 +13,6 @@
 [Hyperion](https://github.com/hyperion-project/hyperion) open-source ambient
 lighting software.
 
-* [`hyperion/`](hyperion): core functionality implementation
-* [`hyperionc-udp/`](hyperionc-udp): implementation of UDP target for debugging
-* [`hyperiond/`](hyperiond): daemon program and usage instructions
-
 ## Requirements
 
 * [Rust **nightly**](https://rustup.rs/)
@@ -67,10 +63,10 @@ rustup override set nightly
 sudo apt install python3-dev python-dev
 
 # Build and run
-HYPERION_LOG=hyperion=debug cargo run -p hyperiond -- -c config.yml --bind 0.0.0.0
+HYPERION_LOG=hyperion=debug cargo run -- server -c config.yml --bind 0.0.0.0
 
 # Run release version (without cargo)
-HYPERION_LOG=hyperion=debug ./target/release/hyperiond -c config.yml s --bind 0.0.0.0
+HYPERION_LOG=hyperion=debug ./target/release/hyperion server -c config.yml s --bind 0.0.0.0
 ```
 
 The Android app can be used to send commands to this server, which should result
@@ -81,7 +77,7 @@ you can use this command to build a deployable archive of hyperion.rs:
 
 ```bash
 # Build hyperion.rs-release.tar.gz
-cargo make --no-workspace package-release
+cargo make package-release
 ```
 
 ## Status

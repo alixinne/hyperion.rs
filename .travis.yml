@@ -28,12 +28,12 @@ script:
     bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
   - |
     # Build project
-    cargo make --no-workspace package-ci-flow
+    cargo make package-ci-flow
 after_success: |
   [ $TRAVIS_BRANCH = master ] &&
   [ $TRAVIS_PULL_REQUEST = false ] &&
   [ $TRAVIS_OS_NAME = linux ] &&
-  cargo doc &&
+  cargo doc --no-deps &&
   echo '<meta http-equiv=refresh content=0;url="hyperion/">' > target/doc/index.html &&
   pip install --user ghp-import &&
   ghp-import -n target/doc &&

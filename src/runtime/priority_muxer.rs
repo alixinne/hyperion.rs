@@ -166,7 +166,7 @@ impl Stream for PriorityMuxer {
             }
         }
 
-        if (pushed_new_entries) {
+        if pushed_new_entries {
             trace!("inputs: {:#?}", self.inputs);
         }
 

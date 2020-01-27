@@ -197,7 +197,14 @@ impl Method for Udp {
         }
 
         // If we get to that point, everything is ready for writing
-        match Udp::send_data(&mut self.buffer, s.as_mut().unwrap(), led_data, ra.as_ref().unwrap()).await {
+        match Udp::send_data(
+            &mut self.buffer,
+            s.as_mut().unwrap(),
+            led_data,
+            ra.as_ref().unwrap(),
+        )
+        .await
+        {
             Ok(_written) => {
                 *self.session.lock().unwrap() = Session::Bound {
                     remote_addr: ra.unwrap(),

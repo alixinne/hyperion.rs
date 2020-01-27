@@ -73,11 +73,7 @@ pub struct Processor {
 }
 
 /// Image processor reference with LED details
-pub struct ProcessorWithDevices<
-    'p,
-    'a,
-    I: Iterator<Item = &'a crate::config::Device>,
-> {
+pub struct ProcessorWithDevices<'p, 'a, I: Iterator<Item = &'a crate::config::Device>> {
     /// Image processor
     processor: &'p mut Processor,
     /// Devices iterator
@@ -94,13 +90,10 @@ impl Processor {
     /// * `leds`: LED specification for target devices
     fn alloc<'a>(
         &mut self,
-        width: u32,
-        height: u32,
+        width: usize,
+        height: usize,
         devices: impl Iterator<Item = &'a crate::config::Device>,
     ) {
-        let width = width as usize;
-        let height = height as usize;
-
         // Initialize led map data structure
         let mut led_map = Vec::with_capacity(width * height);
         for _ in 0..(width * height) {
@@ -168,10 +161,7 @@ impl Processor {
     /// # Return value
     ///
     /// `true` if this image process supports this size, `false` otherwise
-    fn matches(&self, width: u32, height: u32) -> bool {
-        let width = width as usize;
-        let height = height as usize;
-
+    fn matches(&self, width: usize, height: usize) -> bool {
         self.width == width && self.height == height
     }
 
@@ -236,12 +226,7 @@ impl Processor {
     }
 }
 
-impl<
-        'p,
-        'a,
-        I: Iterator<Item = &'a crate::config::Device>,
-    > ProcessorWithDevices<'p, 'a, I>
-{
+impl<'p, 'a, I: Iterator<Item = &'a crate::config::Device>> ProcessorWithDevices<'p, 'a, I> {
     /// Process incoming image data into led colors
     ///
     /// # Parameters

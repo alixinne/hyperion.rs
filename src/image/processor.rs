@@ -12,9 +12,9 @@ use super::RawImage;
 #[derive(Default, Clone)]
 struct Pixel {
     /// Accumulated color
-    color: [f32; 3],
+    color: [u64; 3],
     /// Number of samples
-    count: f32,
+    count: u64,
 }
 
 impl Pixel {
@@ -28,30 +28,23 @@ impl Pixel {
     /// # Parameters
     ///
     /// * `(r, g, b)`: sampled RGB values
-    /// * `area_factor`: weight of the current sample. 1.0 is the weight of a sample which covers
+    /// * `area_factor`: weight of the current sample. 255 is the weight of a sample which covers
     /// the entire matching LED area.
-    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), mut area_factor: f32) {
-        let min = 0.0;
-        let max = 1.0;
+    pub fn sample(&mut self, (r, g, b): (u8, u8, u8), area_factor: u8) {
+        let area_factor = area_factor as u64;
 
-        if area_factor < min {
-            area_factor = min;
-        } else if area_factor > max {
-            area_factor = max;
-        }
-
-        self.color[0] += area_factor * f32::from(r) / 255.0f32;
-        self.color[1] += area_factor * f32::from(g) / 255.0f32;
-        self.color[2] += area_factor * f32::from(b) / 255.0f32;
+        self.color[0] += area_factor * r as u64;
+        self.color[1] += area_factor * g as u64;
+        self.color[2] += area_factor * b as u64;
         self.count += area_factor;
     }
 
     /// Compute the mean of this pixel
     pub fn mean(&self) -> color::ColorPoint {
         let rgb: (f32, f32, f32) = (
-            self.color[0] / self.count,
-            self.color[1] / self.count,
-            self.color[2] / self.count,
+            (self.color[0] as f64 / self.count as f64) as f32,
+            (self.color[1] as f64 / self.count as f64) as f32,
+            (self.color[2] as f64 / self.count as f64) as f32,
         );
 
         color::ColorPoint::from(rgb)
@@ -67,7 +60,7 @@ pub struct Processor {
     height: usize,
     // TODO: use a proper 2D interval tree
     /// 2D row-major list of (color_idx, device_idx, led_idx, area_factor)
-    led_map: Vec<Vec<(usize, usize, usize, f32)>>,
+    led_map: Vec<Vec<(usize, usize, usize, u8)>>,
     /// Color storage for every known LED
     color_map: Vec<Pixel>,
 }
@@ -129,7 +122,7 @@ impl Processor {
                             let x_range = x_max.min(led.hscan.max) - x_min.max(led.hscan.min);
                             let y_range = y_max.min(led.vscan.max) - y_min.max(led.vscan.min);
                             let area = x_range * y_range;
-                            let factor = area * (width * height) as f32;
+                            let factor = (area * (width * height) as f32 * 255.0f32) as u8;
 
                             led_map[map_index].push((index, device_idx, led_idx, factor));
                         }

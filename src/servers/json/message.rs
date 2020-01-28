@@ -229,7 +229,7 @@ impl HyperionResponse {
     }
 
     /// Return an error response
-    pub fn error(error: impl ToString) -> Self {
+    pub fn error(error: &impl ToString) -> Self {
         HyperionResponse::ErrorResponse {
             success: false,
             error: error.to_string(),

@@ -41,6 +41,15 @@ mod errors {
 
 pub use errors::*;
 
+/// Check if a message errors is a disconnect
+fn is_disconnect(error: &HyperionMessageError) -> bool {
+    if let HyperionMessageErrorKind::Io(io_error) = error.kind() {
+        super::common::is_disconnect(io_error)
+    } else {
+        false
+    }
+}
+
 async fn process(
     mut tx: mpsc::Sender<Input>,
     socket: TcpStream,
@@ -48,6 +57,7 @@ async fn process(
     effect_definitions: EffectDefinitionsHandle,
 ) -> Result<(), mpsc::error::SendError<Input>> {
     let mut framed = Framed::new(socket, JsonCodec::default());
+    let mut last_error = None;
 
     while let Some(request) = framed.next().await {
         trace!("processing request: {:?}", request);
@@ -108,13 +118,13 @@ async fn process(
 
                             HyperionResponse::success()
                         } else {
-                            HyperionResponse::error("invalid image data")
+                            HyperionResponse::error(&"invalid image data")
                         }
                     } else {
-                        HyperionResponse::error("invalid image height")
+                        HyperionResponse::error(&"invalid image height")
                     }
                 } else {
-                    HyperionResponse::error("invalid image width")
+                    HyperionResponse::error(&"invalid image width")
                 }
             }
             Ok(HyperionMessage::Effect {
@@ -149,22 +159,34 @@ async fn process(
                 )
             }
             Err(error) => {
-                warn!("json({}): {:?}", peer_addr, error);
-                HyperionResponse::error(error)
+                last_error = Some(error);
+                HyperionResponse::error(last_error.as_ref().unwrap())
             }
-            _ => HyperionResponse::error("not implemented"),
+            _ => HyperionResponse::error(&"not implemented"),
         };
+
+        if last_error.is_some() {
+            break;
+        }
 
         trace!("sending response: {:?}", reply);
 
         if let Err(error) = framed.send(reply).await {
+            last_error = Some(error);
+            break;
+        }
+    }
+
+    if let Some(error) = last_error {
+        if !is_disconnect(&error) {
             warn!(
                 "json({}): disconnecting client because of error: {:?}",
                 peer_addr, error
             );
-            break;
         }
     }
+
+    info!("json({}): client disconnected", peer_addr);
 
     Ok(())
 }

@@ -47,7 +47,7 @@ fn success_response() -> message::HyperionReply {
 }
 
 /// Create an error response
-fn error_response(error: impl ToString) -> message::HyperionReply {
+fn error_response(error: &impl ToString) -> message::HyperionReply {
     let mut reply = message::HyperionReply::default();
     reply.set_type(message::hyperion_reply::Type::Reply);
     reply.success = Some(false);
@@ -56,12 +56,22 @@ fn error_response(error: impl ToString) -> message::HyperionReply {
     reply
 }
 
+/// Check if a message errors is a disconnect
+fn is_disconnect(error: &HyperionMessageError) -> bool {
+    if let HyperionMessageErrorKind::Io(io_error) = error.kind() {
+        super::common::is_disconnect(io_error)
+    } else {
+        false
+    }
+}
+
 async fn process(
     mut tx: mpsc::Sender<Input>,
     socket: TcpStream,
     peer_addr: SocketAddr,
 ) -> Result<(), mpsc::error::SendError<Input>> {
     let mut framed = Framed::new(socket, ProtoCodec::default());
+    let mut last_error = None;
 
     while let Some(request) = framed.next().await {
         trace!("processing request: {:?}", request);
@@ -125,39 +135,43 @@ async fn process(
 
                             success_response()
                         } else {
-                            error_response("invalid image data")
+                            error_response(&"invalid image data")
                         }
                     } else {
-                        error_response("invalid image height")
+                        error_response(&"invalid image height")
                     }
                 } else {
-                    error_response("invalid image width")
+                    error_response(&"invalid image width")
                 }
             }
             Err(error) => {
-                if let HyperionMessageErrorKind::Io(io_error) = error.kind() {
-                    if let std::io::ErrorKind::ConnectionReset = io_error.kind() {
-                        // Client disconnect
-                        info!("proto({}): client disconnected", peer_addr);
-                        break;
-                    }
-                }
-
-                warn!("proto({}): {:?}", peer_addr, error);
-                error_response(error)
+                last_error = Some(error);
+                error_response(last_error.as_ref().unwrap())
             }
         };
+
+        if last_error.is_some() {
+            break;
+        }
 
         trace!("sending response: {:?}", reply);
 
         if let Err(error) = framed.send(reply).await {
+            last_error = Some(error);
+            break;
+        }
+    }
+
+    if let Some(error) = last_error {
+        if !is_disconnect(&error) {
             warn!(
                 "proto({}): disconnecting client because of error: {:?}",
                 peer_addr, error
             );
-            break;
         }
     }
+
+    info!("proto({}): client disconnected", peer_addr);
 
     Ok(())
 }

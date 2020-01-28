@@ -11,7 +11,7 @@ enum Opt {
 }
 
 #[paw::main]
-#[tokio::main(max_threads = 2)]
+#[tokio::main(core_threads = 2, max_threads = 2)]
 async fn main(opt: Opt) -> Result<(), cli::CliError> {
     // Initialize logging, default to info
     env_logger::from_env(Env::default().filter_or("HYPERION_LOG", "hyperion=info")).init();

@@ -52,8 +52,8 @@ impl RawImage {
         let val = self.data[idx];
         (
             (val & 0xFFu32) as u8,
-            (val & 0xFF00u32 >> 8) as u8,
-            (val & 0xFF0000u32 >> 16) as u8,
+            ((val & 0xFF00u32) >> 8) as u8,
+            ((val & 0xFF0000u32) >> 16) as u8,
         )
     }
 }
@@ -83,8 +83,8 @@ impl TryFrom<(Vec<u8>, u32, u32)> for RawImage {
                 let idx = (y * width + x) * 3usize;
                 data.push(
                     (rgb_data[idx] as u32)
-                        | (rgb_data[idx] as u32) << 8
-                        | (rgb_data[idx] as u32) << 16,
+                        | (rgb_data[idx + 1] as u32) << 8
+                        | (rgb_data[idx + 2] as u32) << 16,
                 );
             }
         }

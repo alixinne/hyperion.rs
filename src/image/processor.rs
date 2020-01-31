@@ -36,7 +36,7 @@ impl Pixel {
         self.color[0] += area_factor * r as u64;
         self.color[1] += area_factor * g as u64;
         self.color[2] += area_factor * b as u64;
-        self.count += area_factor;
+        self.count += 255 * area_factor;
     }
 
     /// Compute the mean of this pixel
@@ -256,5 +256,59 @@ impl<'p, 'a, I: Iterator<Item = &'a crate::config::Device>> ProcessorWithDevices
 
         self.processor.process_image(raw_image);
         self.processor
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Device;
+    use std::convert::TryFrom;
+
+    fn single_led_device() -> Device {
+        use crate::config::{ColorFormat, Endpoint, Filter, IdleSettings, Led};
+        use std::time::Duration;
+
+        Device {
+            enabled: true,
+            name: "test".into(),
+            format: ColorFormat::default(),
+            endpoint: Endpoint::Stdout { bits: 8 },
+            leds: vec![Led {
+                hscan: Default::default(),
+                vscan: Default::default(),
+            }],
+            frequency: -2.0,
+            idle: IdleSettings::default(),
+            filter: Filter::default(),
+            latency: Duration::from_millis(0),
+        }
+    }
+
+    #[test]
+    fn single_led_red() {
+        // List of devices
+        let devices = vec![single_led_device()];
+        // Image processor
+        let mut processor = Processor::default();
+        // Raw image
+        let data = vec![255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0];
+        let raw_image = RawImage::try_from((data, 2, 2)).unwrap();
+
+        // Process image
+        processor
+            .with_devices(devices.iter())
+            .process_image(raw_image);
+
+        // Check LED value
+        processor.update_leds(|(device_idx, led_idx), color| {
+            assert_eq!(device_idx, 0);
+            assert_eq!(led_idx, 0);
+
+            let (r, g, b) = color.as_rgb();
+            assert_eq!(r, 1.0);
+            assert_eq!(g, 0.0);
+            assert_eq!(b, 0.0);
+        });
     }
 }

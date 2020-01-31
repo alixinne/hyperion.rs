@@ -51,6 +51,19 @@ impl Pixel {
     }
 }
 
+/// Member of the LED accumulator map
+#[derive(Debug)]
+struct LedMapMember {
+    /// Accumulated pixel value index
+    color_idx: usize,
+    /// Index of the target device
+    device_idx: usize,
+    /// Index of the target LED in the device
+    led_idx: usize,
+    /// Percentage of area covered for the corresponding pixel
+    area_factor: u8,
+}
+
 /// Raw image data processor
 #[derive(Default)]
 pub struct Processor {
@@ -59,8 +72,8 @@ pub struct Processor {
     /// Height of the LED map
     height: usize,
     // TODO: use a proper 2D interval tree
-    /// 2D row-major list of (color_idx, device_idx, led_idx, area_factor)
-    led_map: Vec<Vec<(usize, usize, usize, u8)>>,
+    /// 2D row-major list of accumulator
+    led_map: Vec<Vec<LedMapMember>>,
     /// Color storage for every known LED
     color_map: Vec<Pixel>,
 }
@@ -124,7 +137,12 @@ impl Processor {
                             let area = x_range * y_range;
                             let factor = (area * (width * height) as f32 * 255.0f32) as u8;
 
-                            led_map[map_index].push((index, device_idx, led_idx, factor));
+                            led_map[map_index].push(LedMapMember {
+                                color_idx: index,
+                                device_idx,
+                                led_idx,
+                                area_factor: factor,
+                            });
                         }
                     }
                 }
@@ -197,8 +215,8 @@ impl Processor {
                 let map_idx = (j * width + i) as usize;
                 let rgb = raw_image.get_pixel(i, j);
 
-                for (pixel_idx, _device_idx, _led_idx, area_factor) in &self.led_map[map_idx] {
-                    self.color_map[*pixel_idx].sample(rgb, *area_factor);
+                for led in &self.led_map[map_idx] {
+                    self.color_map[led.color_idx].sample(rgb, led.area_factor);
                 }
             }
         }
@@ -212,8 +230,11 @@ impl Processor {
     pub fn update_leds(&self, mut led_setter: impl FnMut((usize, usize), color::ColorPoint)) {
         // Compute mean and assign to led instances
         for pixel in self.led_map.iter() {
-            for (pixel_idx, device_idx, led_idx, _area_factor) in pixel.iter() {
-                led_setter((*device_idx, *led_idx), self.color_map[*pixel_idx].mean());
+            for led in pixel.iter() {
+                led_setter(
+                    (led.device_idx, led.led_idx),
+                    self.color_map[led.color_idx].mean(),
+                );
             }
         }
     }

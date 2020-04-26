@@ -121,11 +121,10 @@ impl Decoder for ProtoCodec {
     }
 }
 
-impl Encoder for ProtoCodec {
-    type Item = message::HyperionReply;
+impl Encoder<message::HyperionReply> for ProtoCodec {
     type Error = HyperionMessageError;
 
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: message::HyperionReply, dst: &mut BytesMut) -> Result<(), Self::Error> {
         // Get the size of the message
         let message_size = item.encoded_len();
 

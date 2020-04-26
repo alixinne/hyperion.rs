@@ -65,11 +65,10 @@ impl Decoder for JsonCodec {
     }
 }
 
-impl Encoder for JsonCodec {
-    type Item = message::HyperionResponse;
+impl Encoder<message::HyperionResponse> for JsonCodec {
     type Error = HyperionMessageError;
 
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: message::HyperionResponse, dst: &mut BytesMut) -> Result<(), Self::Error> {
         match encode_reply(&item) {
             Ok(encoded) => self.lines.encode(encoded, dst).map_err(Into::into),
             Err(encode_error) => Err(encode_error.into()),

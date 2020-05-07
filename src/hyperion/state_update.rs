@@ -14,7 +14,9 @@ pub enum StateUpdate {
         color: color::ColorPoint,
     },
     /// Use given image to set colors
-    Image(image::RawImage),
+    RawImage(image::RawImage),
+    /// Processed image
+    ProcessedImage(image::ProcessedImage),
     /// Per-LED color data
     LedData(Vec<color::ColorPoint>),
 }
@@ -24,9 +26,12 @@ impl std::fmt::Debug for StateUpdate {
         match self {
             StateUpdate::Clear => write!(f, "Clear"),
             StateUpdate::SolidColor { color } => write!(f, "SolidColor {{ color: {:?} }}", color),
-            StateUpdate::Image(image) => {
+            StateUpdate::RawImage(image) => {
                 let (width, height) = image.get_dimensions();
-                write!(f, "Image({}x{} image)", width, height)
+                write!(f, "RawImage({}x{} image)", width, height)
+            },
+            StateUpdate::ProcessedImage(image) => {
+                write!(f, "ProcessedImage({} pixels)", image.led_count())
             }
             StateUpdate::LedData(led_data) => write!(f, "LedData({} LEDs)", led_data.len()),
         }
@@ -54,7 +59,16 @@ impl StateUpdate {
     ///
     /// * `image`: raw image to extract colors from
     pub fn image(image: image::RawImage) -> Self {
-        Self::Image(image)
+        Self::RawImage(image)
+    }
+
+    /// Create a ProcessedImage StateUpdate
+    ///
+    /// # Parameters
+    ///
+    /// * `image`: processed image data
+    pub fn processed_image(image: image::ProcessedImage) -> Self {
+        Self::ProcessedImage(image)
     }
 
     /// Create a LedData StateUpdate

@@ -6,6 +6,8 @@
 use crate::color;
 use std::cmp::min;
 
+use std::sync::{Arc, Mutex};
+
 use super::RawImage;
 
 /// Image pixel accumulator
@@ -73,9 +75,9 @@ pub struct Processor {
     height: usize,
     // TODO: use a proper 2D interval tree
     /// 2D row-major list of accumulator
-    led_map: Vec<Vec<LedMapMember>>,
-    /// Color storage for every known LED
-    color_map: Vec<Pixel>,
+    led_map: Arc<Mutex<Vec<Vec<LedMapMember>>>>,
+    /// Number of LEDs in the color map
+    led_count: usize,
 }
 
 /// Image processor reference with LED details
@@ -151,14 +153,11 @@ impl Processor {
             }
         }
 
-        // Color map for computation
-        let color_map = vec![Pixel::default(); index];
-
         *self = Self {
             width,
             height,
-            led_map,
-            color_map,
+            led_map: Arc::new(Mutex::new(led_map)),
+            led_count: index,
         };
     }
 
@@ -202,24 +201,54 @@ impl Processor {
     /// # Parameters
     ///
     /// * `raw_image`: raw RGB image
-    fn process_image(&mut self, raw_image: RawImage) {
+    fn process_image(&mut self, raw_image: &RawImage) -> ProcessedImage {
         let (width, height) = raw_image.get_dimensions();
+        let mut processed_image = ProcessedImage::new(self);
 
-        // Reset all colors
-        for color in &mut self.color_map {
-            color.reset();
-        }
+        {
+            let led_map = processed_image.led_map.lock().unwrap();
 
-        for j in 0..height {
-            for i in 0..width {
-                let map_idx = (j * width + i) as usize;
-                let rgb = raw_image.get_pixel(i, j);
+            for j in 0..height {
+                for i in 0..width {
+                    let map_idx = (j * width + i) as usize;
+                    let rgb = raw_image.get_pixel(i, j);
 
-                for led in &self.led_map[map_idx] {
-                    self.color_map[led.color_idx].sample(rgb, led.area_factor);
+                    for led in &led_map[map_idx] {
+                        processed_image.color_map[led.color_idx].sample(rgb, led.area_factor);
+                    }
                 }
             }
         }
+
+        processed_image
+    }
+}
+
+/// Processed image represented as LED values
+#[derive(Clone)]
+pub struct ProcessedImage {
+    /// Handle to the LED map for setting led values
+    led_map: Arc<Mutex<Vec<Vec<LedMapMember>>>>,
+    /// List of LED values
+    color_map: Vec<Pixel>,
+}
+
+impl ProcessedImage {
+    /// Create a new processed image
+    ///
+    /// # Parameters
+    ///
+    /// * `processor`: image processor this image is allocated for
+    pub fn new(processor: &Processor) -> Self {
+        Self {
+            led_map: processor.led_map.clone(),
+            color_map: vec![Pixel::default(); processor.led_count],
+        }
+    }
+
+    /// Return the LED count
+    pub fn led_count(&self) -> usize {
+        self.color_map.len()
     }
 
     /// Update LEDs with computed colors
@@ -229,7 +258,7 @@ impl Processor {
     /// * `led_setter`: callback to update LED colors
     pub fn update_leds(&self, mut led_setter: impl FnMut((usize, usize), color::ColorPoint)) {
         // Compute mean and assign to led instances
-        for pixel in self.led_map.iter() {
+        for pixel in self.led_map.lock().unwrap().iter() {
             for led in pixel.iter() {
                 led_setter(
                     (led.device_idx, led.led_idx),
@@ -246,7 +275,7 @@ impl<'p, 'a, I: Iterator<Item = &'a crate::config::Device>> ProcessorWithDevices
     /// # Parameters
     ///
     /// * `raw_image`: raw RGB image
-    pub fn process_image(self, raw_image: RawImage) -> &'p mut Processor {
+    pub fn process_image(self, raw_image: &RawImage) -> ProcessedImage {
         let (width, height) = raw_image.get_dimensions();
 
         // Check that this processor has the right size
@@ -254,8 +283,7 @@ impl<'p, 'a, I: Iterator<Item = &'a crate::config::Device>> ProcessorWithDevices
             self.processor.alloc(width, height, self.devices);
         }
 
-        self.processor.process_image(raw_image);
-        self.processor
+        self.processor.process_image(raw_image)
     }
 }
 
@@ -298,17 +326,15 @@ mod tests {
         // Process image
         processor
             .with_devices(devices.iter())
-            .process_image(raw_image);
+            .process_image(&raw_image)
+            .update_leds(|(device_idx, led_idx), color| {
+                assert_eq!(device_idx, 0);
+                assert_eq!(led_idx, 0);
 
-        // Check LED value
-        processor.update_leds(|(device_idx, led_idx), color| {
-            assert_eq!(device_idx, 0);
-            assert_eq!(led_idx, 0);
-
-            let (r, g, b) = color.as_rgb();
-            assert_eq!(r, 1.0);
-            assert_eq!(g, 0.0);
-            assert_eq!(b, 0.0);
-        });
+                let (r, g, b) = color.as_rgb();
+                assert_eq!(r, 1.0);
+                assert_eq!(g, 0.0);
+                assert_eq!(b, 0.0);
+            });
     }
 }

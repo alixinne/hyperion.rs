@@ -29,7 +29,7 @@ pub async fn run(
     let proto_rx = servers::bind_proto(proto_addr).await?;
 
     // Channel for effect engine updates
-    let (effect_tx, effect_rx) = tokio::sync::mpsc::channel::<Input>(60);
+    let (effect_tx, effect_rx) = tokio::sync::mpsc::channel::<Input>(1);
 
     // Initialize image processor
     let mut image_processor = image::Processor::default();
@@ -37,10 +37,39 @@ pub async fn run(
     // Initialize devices
     let mut devices = Devices::new(&config);
 
+    // Updates from all sources
+    let mut raw_update_stream = futures::stream::select_all(vec![json_rx, proto_rx, effect_rx]);
+
+    // Channels for processing
+    let (mut processed_tx, processed_rx) = tokio::sync::mpsc::channel(50);
+
+    {
+        // TODO: Handle config reload here so we don't have to clone
+        let devices = config.devices.clone();
+
+        tokio::spawn(async move {
+            while let Some(mut input) = raw_update_stream.next().await {
+                match &mut input {
+                    Input::UserInput { ref mut update, .. }
+                    | Input::EffectInput { ref mut update, .. } => {
+                        if let StateUpdate::RawImage(raw_image) = &update {
+                            *update = StateUpdate::ProcessedImage(
+                                image_processor
+                                    .with_devices(devices.iter())
+                                    .process_image(&raw_image),
+                            );
+                        }
+                    }
+                    _ => {}
+                }
+
+                processed_tx.send(input).await.expect("failed to forward state update");
+            }
+        });
+    }
+
     // Initialize priority muxer from server and effect inputs
-    let mut priority_muxer = PriorityMuxer::new(Box::pin(futures::stream::select_all(vec![
-        json_rx, proto_rx, effect_rx,
-    ])));
+    let mut priority_muxer = PriorityMuxer::new(Box::pin(Box::new(processed_rx)));
 
     loop {
         // Process completed future
@@ -65,8 +94,11 @@ pub async fn run(
                             StateUpdate::SolidColor { color } => {
                                 devices.set_all_leds(update_time, color, false);
                             },
-                            StateUpdate::Image(raw_image) => {
-                                devices.set_from_image(update_time, &mut image_processor, raw_image, false);
+                            StateUpdate::RawImage(raw_image) => {
+                                panic!("received raw image in main loop, it should already have been processed!");
+                            },
+                            StateUpdate::ProcessedImage(processed_image) => {
+                                devices.set_from_image(update_time, processed_image, false);
                             },
                             StateUpdate::LedData(led_data) => {
                                 devices.set_leds(update_time, led_data, false);

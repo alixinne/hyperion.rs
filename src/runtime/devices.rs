@@ -60,6 +60,9 @@ impl<'conf> Devices<'conf> {
     fn update_all_delays(&mut self) {
         for (idx, _device) in self.devices.iter().enumerate() {
             if let Some(instant) = self.devices[idx].next_write() {
+                // Sometimes next_write can be in the past, which would panic in the delay queue
+                let instant = instant.max(Instant::now() + std::time::Duration::from_millis(1));
+
                 if let Some(key) = &self.dq_keys[idx] {
                     self.dq.reset_at(key, instant.into());
                 } else {
@@ -120,29 +123,21 @@ impl<'conf> Devices<'conf> {
     /// # Parameters
     ///
     /// * `time`: time of the color update
-    /// * `image_processor`: image processor instance
-    /// * `raw_image`: raw RGB image
+    /// * `processed`: processed RGB image
     /// * `immediate`: apply change immediately (skipping filtering)
     pub fn set_from_image(
         &mut self,
         time: Instant,
-        image_processor: &mut Processor,
-        raw_image: RawImage,
+        processed_image: ProcessedImage,
         immediate: bool,
     ) {
-        // TODO: Run on thread pool?
-        // Update stored image
-        image_processor
-            .with_devices(self.config.devices.iter())
-            .process_image(raw_image);
-
         // Mutable reference to devices to prevent the closure exclusive access
         let devices = &mut self.devices;
         // Get reference to color config data
         let correction = &self.config.color;
 
         // Update LEDs with computed colors
-        image_processor.update_leds(|(device_idx, led_idx), color| {
+        processed_image.update_leds(|(device_idx, led_idx), color| {
             // Should never fail, we only consider valid LEDs
             devices[device_idx]
                 .set_led(time, led_idx, correction.process(color), immediate)

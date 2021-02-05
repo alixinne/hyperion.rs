@@ -28,7 +28,7 @@ structopt = { version = "0.3", features = ["paw"] }
 strum = "0.20"
 strum_macros = "0.20"
 thiserror = "1.0"
-tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-util = { version = "0.6", features = ["codec"] }
 uuid = { version = "0.8", features = ["serde"] }
 

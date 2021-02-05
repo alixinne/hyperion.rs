@@ -52,4 +52,13 @@ impl InputMessageData {
             InputMessageData::Image { priority, .. } => Some(*priority),
         }
     }
+
+    pub fn duration(&self) -> Option<chrono::Duration> {
+        match self {
+            InputMessageData::ClearAll => None,
+            InputMessageData::Clear { .. } => None,
+            InputMessageData::SolidColor { duration, .. } => *duration,
+            InputMessageData::Image { duration, .. } => *duration,
+        }
+    }
 }

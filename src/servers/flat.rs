@@ -9,7 +9,7 @@ use thiserror::Error;
 use tokio::net::TcpStream;
 
 use crate::{
-    global::{Global, InputMessage, InputSourceHandle},
+    global::{Global, InputMessage, InputMessageData, InputSourceHandle},
     image::{RawImage, RawImageError},
     models::Color,
 };
@@ -83,9 +83,9 @@ async fn handle_request(
         if let Some(clear) = request.command_as_clear() {
             // Update state
             if clear.priority() < 0 {
-                source.send(InputMessage::ClearAll)?;
+                source.send(InputMessageData::ClearAll)?;
             } else {
-                source.send(InputMessage::Clear {
+                source.send(InputMessageData::Clear {
                     priority: clear.priority(),
                 })?;
             }
@@ -98,7 +98,7 @@ async fn handle_request(
             );
 
             // Update state
-            source.send(InputMessage::SolidColor {
+            source.send(InputMessageData::SolidColor {
                 // TODO
                 priority: 0,
                 duration: i32_to_duration(Some(color.duration())),
@@ -122,7 +122,7 @@ async fn handle_request(
             let raw_image = RawImage::try_from((data.to_vec(), width, height))?;
 
             // Update state
-            source.send(InputMessage::Image {
+            source.send(InputMessageData::Image {
                 priority,
                 duration: i32_to_duration(Some(duration)),
                 image: Arc::new(raw_image),

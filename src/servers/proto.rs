@@ -10,7 +10,7 @@ use thiserror::Error;
 use tokio::net::TcpStream;
 
 use crate::{
-    global::{Global, InputMessage, InputSourceHandle},
+    global::{Global, InputMessage, InputMessageData, InputSourceHandle},
     image::{RawImage, RawImageError},
     models::Color,
 };
@@ -85,14 +85,14 @@ fn handle_request(
     match request.command() {
         message::hyperion_request::Command::Clearall => {
             // Update state
-            source.send(InputMessage::ClearAll)?;
+            source.send(InputMessageData::ClearAll)?;
         }
 
         message::hyperion_request::Command::Clear => {
             let clear_request = message::ClearRequest::decode(request_bytes)?;
 
             // Update state
-            source.send(InputMessage::Clear {
+            source.send(InputMessageData::Clear {
                 priority: clear_request.priority,
             })?;
         }
@@ -108,7 +108,7 @@ fn handle_request(
             );
 
             // Update state
-            source.send(InputMessage::SolidColor {
+            source.send(InputMessageData::SolidColor {
                 priority: color_request.priority,
                 duration: i32_to_duration(color_request.duration),
                 color: Color::from_components(color),
@@ -125,7 +125,7 @@ fn handle_request(
             let raw_image = RawImage::try_from((image_request.imagedata.to_vec(), width, height))?;
 
             // Update state
-            source.send(InputMessage::Image {
+            source.send(InputMessageData::Image {
                 priority: image_request.priority,
                 duration: i32_to_duration(image_request.duration),
                 image: Arc::new(raw_image),

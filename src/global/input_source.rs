@@ -4,7 +4,7 @@ use parse_display::Display;
 use thiserror::Error;
 use tokio::sync::broadcast;
 
-use crate::global::{Global, InputMessage};
+use crate::global::{Global, InputMessage, InputMessageData};
 
 #[derive(Display)]
 #[display("`{name}` (id = {id}, priority = {priority:?})")]
@@ -22,9 +22,12 @@ impl InputSource {
 
     pub fn send(
         &self,
-        message: InputMessage,
+        message: InputMessageData,
     ) -> Result<usize, broadcast::error::SendError<InputMessage>> {
-        self.input_tx.send(message)
+        self.input_tx.send(InputMessage {
+            source_id: self.id,
+            data: message,
+        })
     }
 }
 

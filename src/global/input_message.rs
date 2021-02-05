@@ -3,7 +3,13 @@ use std::sync::Arc;
 use crate::{image::RawImage, models::Color};
 
 #[derive(Debug, Clone)]
-pub enum InputMessage {
+pub struct InputMessage {
+    pub source_id: usize,
+    pub data: InputMessageData,
+}
+
+#[derive(Debug, Clone)]
+pub enum InputMessageData {
     ClearAll,
     Clear {
         priority: i32,

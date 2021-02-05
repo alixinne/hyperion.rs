@@ -10,7 +10,7 @@ use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
 use crate::{
-    global::{Global, InputMessage, InputSourceHandle},
+    global::{Global, InputMessage, InputMessageData, InputSourceHandle},
     image::{RawImage, RawImageError},
     models::Color,
 };
@@ -44,12 +44,12 @@ fn handle_request(
     match request? {
         HyperionMessage::ClearAll => {
             // Update state
-            source.send(InputMessage::ClearAll)?;
+            source.send(InputMessageData::ClearAll)?;
         }
 
         HyperionMessage::Clear { priority } => {
             // Update state
-            source.send(InputMessage::Clear { priority })?;
+            source.send(InputMessageData::Clear { priority })?;
         }
 
         HyperionMessage::Color {
@@ -58,7 +58,7 @@ fn handle_request(
             color,
         } => {
             // Update state
-            source.send(InputMessage::SolidColor {
+            source.send(InputMessageData::SolidColor {
                 priority,
                 duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
                 color: Color::from_components((color[0], color[1], color[2])),
@@ -74,7 +74,7 @@ fn handle_request(
         } => {
             let raw_image = RawImage::try_from((imagedata, imagewidth, imageheight))?;
 
-            source.send(InputMessage::Image {
+            source.send(InputMessageData::Image {
                 priority,
                 duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
                 image: Arc::new(raw_image),

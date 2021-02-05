@@ -37,12 +37,16 @@ pub async fn handle_client(
     (socket, peer_addr): (TcpStream, SocketAddr),
     global: Global,
 ) -> Result<(), JsonServerError> {
-    let sender = global.read().await.input_tx.clone();
-
     debug!("accepted new connection from {}", peer_addr,);
 
     let framed = Framed::new(socket, JsonCodec::new());
     let (mut writer, mut reader) = framed.split();
+
+    // unwrap: cannot fail because the priority is None
+    let source = global
+        .register_source(format!("JSON({})", peer_addr), None)
+        .await
+        .unwrap();
 
     while let Some(request) = reader.next().await {
         trace!("processing request: {:?}", request);
@@ -50,14 +54,14 @@ pub async fn handle_client(
         let reply = match request {
             Ok(HyperionMessage::ClearAll) => {
                 // Update state
-                sender.send(InputMessage::ClearAll)?;
+                source.send(InputMessage::ClearAll)?;
 
                 HyperionResponse::SuccessResponse { success: true }
             }
 
             Ok(HyperionMessage::Clear { priority }) => {
                 // Update state
-                sender.send(InputMessage::Clear { priority })?;
+                source.send(InputMessage::Clear { priority })?;
 
                 HyperionResponse::SuccessResponse { success: true }
             }
@@ -68,7 +72,7 @@ pub async fn handle_client(
                 color,
             }) => {
                 // Update state
-                sender.send(InputMessage::SolidColor {
+                source.send(InputMessage::SolidColor {
                     priority,
                     duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
                     color: Color::from_components((color[0], color[1], color[2])),
@@ -85,7 +89,7 @@ pub async fn handle_client(
                 imagedata,
             }) => match RawImage::try_from((imagedata, imagewidth, imageheight)) {
                 Ok(raw_image) => {
-                    sender.send(InputMessage::Image {
+                    source.send(InputMessage::Image {
                         priority,
                         duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
                         image: Arc::new(raw_image),

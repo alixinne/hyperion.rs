@@ -22,6 +22,8 @@ mod message;
 mod codec;
 use codec::*;
 
+use super::util::*;
+
 #[derive(Debug, Error)]
 pub enum ProtoServerError {
     #[error("i/o error: {0}")]
@@ -54,28 +56,20 @@ fn error_response(error: impl std::fmt::Display) -> message::HyperionReply {
     reply
 }
 
-fn i32_to_duration(d: Option<i32>) -> Option<chrono::Duration> {
-    if let Some(d) = d {
-        if d <= 0 {
-            None
-        } else {
-            Some(chrono::Duration::milliseconds(d as _))
-        }
-    } else {
-        None
-    }
-}
-
 pub async fn handle_client(
     (socket, peer_addr): (TcpStream, SocketAddr),
     global: Global,
 ) -> Result<(), ProtoServerError> {
     debug!("accepted new connection from {}", peer_addr);
 
-    let sender = global.read().await.input_tx.clone();
-
     let framed = Framed::new(socket, ProtoCodec::new());
     let (mut writer, mut reader) = framed.split();
+
+    // unwrap: cannot fail because the priority is None
+    let source = global
+        .register_source(format!("Protobuf({})", peer_addr), None)
+        .await
+        .unwrap();
 
     while let Some(request) = reader.next().await {
         trace!("got request: {:?}", request);
@@ -83,14 +77,14 @@ pub async fn handle_client(
         let reply = match request {
             Ok(HyperionRequest::ClearAllRequest(_)) => {
                 // Update state
-                sender.send(InputMessage::ClearAll)?;
+                source.send(InputMessage::ClearAll)?;
 
                 success_response()
             }
 
             Ok(HyperionRequest::ClearRequest(clear_request)) => {
                 // Update state
-                sender.send(InputMessage::Clear {
+                source.send(InputMessage::Clear {
                     priority: clear_request.priority,
                 })?;
 
@@ -106,7 +100,7 @@ pub async fn handle_client(
                 );
 
                 // Update state
-                sender.send(InputMessage::SolidColor {
+                source.send(InputMessage::SolidColor {
                     priority: color_request.priority,
                     duration: i32_to_duration(color_request.duration),
                     color: Color::from_components(color),
@@ -122,25 +116,13 @@ pub async fn handle_client(
                 let priority = image_request.priority;
                 let duration = image_request.duration;
 
-                #[derive(Debug, Error)]
-                enum ImageError {
-                    #[error("invalid width")]
-                    InvalidWidth,
-                    #[error("invalid height")]
-                    InvalidHeight,
-                    #[error("image error: {0}")]
-                    Image(#[from] crate::image::RawImageError),
-                    #[error("error broadcasting update: {0}")]
-                    Broadcast(#[from] tokio::sync::broadcast::error::SendError<InputMessage>),
-                }
-
                 match (|| -> Result<_, ImageError> {
                     let width = u32::try_from(width).map_err(|_| ImageError::InvalidWidth)?;
                     let height = u32::try_from(height).map_err(|_| ImageError::InvalidHeight)?;
                     let raw_image = RawImage::try_from((data.to_vec(), width, height))?;
 
                     // Update state
-                    sender.send(InputMessage::Image {
+                    source.send(InputMessage::Image {
                         priority,
                         duration: i32_to_duration(duration),
                         image: Arc::new(raw_image),

@@ -14,12 +14,29 @@ pub enum RawImageError {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RawImage {
     data: Vec<u8>,
     width: usize,
     height: usize,
     channels: usize,
+}
+
+impl std::fmt::Debug for RawImage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut f = f.debug_struct("RawImage");
+        f.field("width", &self.width);
+        f.field("height", &self.height);
+        f.field("channels", &self.channels);
+
+        if self.data.len() > 32 {
+            f.field("data", &format!("[{} bytes]", self.data.len()));
+        } else {
+            f.field("data", &self.data);
+        }
+
+        f.finish()
+    }
 }
 
 impl TryFrom<(Vec<u8>, u32, u32)> for RawImage {

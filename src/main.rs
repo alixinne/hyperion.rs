@@ -46,6 +46,31 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
         // Create the global state object
         let global = hyperion::global::GlobalData::new().wrap();
 
+        // Start the flatbuffers servers
+        if let Some(h::Setting {
+            config: h::SettingData::FlatbuffersServer(flat_server_config),
+            ..
+        }) = config.get(None, h::SettingKind::FlatbuffersServer)
+        {
+            tokio::spawn({
+                let global = global.clone();
+                let config = flat_server_config.clone();
+
+                async move {
+                    let result = hyperion::servers::bind(
+                        config,
+                        global,
+                        hyperion::servers::flat::handle_client,
+                    )
+                    .await;
+
+                    if let Err(error) = result {
+                        error!("Flatbuffers server terminated: {:?}", error);
+                    }
+                }
+            });
+        }
+
         // Start the JSON server
         if let Some(h::Setting {
             config: h::SettingData::JsonServer(json_server_config),
@@ -97,7 +122,7 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
         }
 
         // Receive global updates
-        let mut reader = global.read().await.input_tx.subscribe();
+        let mut reader = global.subscribe_input().await;
 
         // Should we continue running?
         let mut abort = false;

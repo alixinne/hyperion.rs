@@ -9,6 +9,10 @@ use crate::db::models as db_models;
 
 pub type Color = Rgb<palette::encoding::srgb::Srgb, u8>;
 
+pub trait ServerConfig {
+    fn port(&self) -> u16;
+}
+
 #[derive(Debug, Error)]
 pub enum InstanceError {
     #[error("error parsing date: {0}")]
@@ -287,6 +291,12 @@ impl Default for FlatbuffersServer {
     }
 }
 
+impl ServerConfig for FlatbuffersServer {
+    fn port(&self) -> u16 {
+        self.port
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ForegroundEffect {
     pub color: Color,
@@ -508,6 +518,12 @@ impl Default for JsonServer {
     }
 }
 
+impl ServerConfig for JsonServer {
+    fn port(&self) -> u16 {
+        self.port
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ClassicLedConfig {
     pub top: i32,
@@ -662,6 +678,12 @@ impl Default for ProtoServer {
             port: 19445,
             timeout: 5,
         }
+    }
+}
+
+impl ServerConfig for ProtoServer {
+    fn port(&self) -> u16 {
+        self.port
     }
 }
 

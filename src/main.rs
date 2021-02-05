@@ -57,7 +57,12 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
                 let config = json_server_config.clone();
 
                 async move {
-                    let result = hyperion::servers::json::bind(config, global).await;
+                    let result = hyperion::servers::bind(
+                        config,
+                        global,
+                        hyperion::servers::json::handle_client,
+                    )
+                    .await;
 
                     if let Err(error) = result {
                         error!("JSON server terminated: {:?}", error);
@@ -77,7 +82,12 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
                 let config = proto_server_config.clone();
 
                 async move {
-                    let result = hyperion::servers::proto::bind(config, global).await;
+                    let result = hyperion::servers::bind(
+                        config,
+                        global,
+                        hyperion::servers::proto::handle_client,
+                    )
+                    .await;
 
                     if let Err(error) = result {
                         error!("Protobuf server terminated: {:?}", error);

@@ -1,18 +1,18 @@
 //! protobuf protocol server implementation
 
 use std::convert::TryFrom;
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use futures::prelude::*;
 use thiserror::Error;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
 use crate::{
     global::{Global, InputMessage},
     image::RawImage,
-    models::{self, Color},
+    models::Color,
 };
 
 /// Schema definitions as Serde serializable structures and enums
@@ -66,7 +66,7 @@ fn i32_to_duration(d: Option<i32>) -> Option<chrono::Duration> {
     }
 }
 
-async fn handle_client(
+pub async fn handle_client(
     (socket, peer_addr): (TcpStream, SocketAddr),
     global: Global,
 ) -> Result<(), ProtoServerError> {
@@ -165,20 +165,4 @@ async fn handle_client(
     }
 
     Ok(())
-}
-
-pub async fn bind(options: models::ProtoServer, global: Global) -> Result<(), ProtoServerError> {
-    // Compute binding address
-    let address = SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), options.port);
-
-    // Setup listener
-    let listener = TcpListener::bind(&address).await?;
-
-    // Notify we are listening
-    info!("server listening on {}", address);
-
-    loop {
-        let incoming = listener.accept().await?;
-        tokio::spawn(handle_client(incoming, global.clone()));
-    }
 }

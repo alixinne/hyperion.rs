@@ -57,11 +57,30 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
                 let config = json_server_config.clone();
 
                 async move {
-                    let result =
-                        hyperion::servers::json::bind(config, global).await;
+                    let result = hyperion::servers::json::bind(config, global).await;
 
                     if let Err(error) = result {
                         error!("JSON server terminated: {:?}", error);
+                    }
+                }
+            });
+        }
+
+        // Start the Protobuf server
+        if let Some(h::Setting {
+            config: h::SettingData::ProtoServer(proto_server_config),
+            ..
+        }) = config.get(None, h::SettingKind::ProtoServer)
+        {
+            tokio::spawn({
+                let global = global.clone();
+                let config = proto_server_config.clone();
+
+                async move {
+                    let result = hyperion::servers::proto::bind(config, global).await;
+
+                    if let Err(error) = result {
+                        error!("Protobuf server terminated: {:?}", error);
                     }
                 }
             });

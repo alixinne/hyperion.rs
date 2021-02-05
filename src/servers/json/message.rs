@@ -1,6 +1,6 @@
 use std::fmt;
 
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 /// Change color adjustement values
 #[derive(Debug, Deserialize)]

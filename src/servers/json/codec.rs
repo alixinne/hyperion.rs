@@ -1,6 +1,6 @@
 use bytes::BytesMut;
-use tokio_util::codec::{Decoder, Encoder, LinesCodec};
 use thiserror::Error;
+use tokio_util::codec::{Decoder, Encoder, LinesCodec};
 
 use super::message;
 
@@ -73,7 +73,11 @@ impl Decoder for JsonCodec {
 impl Encoder<message::HyperionResponse> for JsonCodec {
     type Error = JsonCodecError;
 
-    fn encode(&mut self, item: message::HyperionResponse, dst: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(
+        &mut self,
+        item: message::HyperionResponse,
+        dst: &mut BytesMut,
+    ) -> Result<(), Self::Error> {
         match encode_reply(&item) {
             Ok(encoded) => Ok(self.lines.encode(encoded, dst)?),
             Err(encode_error) => Err(encode_error.into()),

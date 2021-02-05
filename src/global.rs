@@ -28,7 +28,7 @@ pub enum InputMessage {
 }
 
 #[derive(Display)]
-#[display("`{name}` (id = {id}, priority = {priority:?}")]
+#[display("`{name}` (id = {id}, priority = {priority:?})")]
 pub struct InputSource {
     id: usize,
     name: String,

@@ -110,7 +110,7 @@ impl Default for BlackBorderDetector {
 #[serde(rename_all = "camelCase")]
 pub struct BoblightServer {
     pub enable: bool,
-    pub port: i32,
+    pub port: u16,
     pub priority: i32,
 }
 
@@ -273,7 +273,7 @@ impl Default for Effects {
 #[serde(rename_all = "camelCase")]
 pub struct FlatbuffersServer {
     pub enable: bool,
-    pub port: i32,
+    pub port: u16,
     pub timeout: i32,
 }
 
@@ -499,7 +499,7 @@ impl Default for InstanceCapture {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct JsonServer {
-    pub port: i32,
+    pub port: u16,
 }
 
 impl Default for JsonServer {
@@ -651,7 +651,7 @@ impl Default for Network {
 #[serde(rename_all = "camelCase")]
 pub struct ProtoServer {
     pub enable: bool,
-    pub port: i32,
+    pub port: u16,
     pub timeout: i32,
 }
 
@@ -711,8 +711,8 @@ impl Default for Smoothing {
 pub struct WebConfig {
     #[serde(rename = "document_root")]
     pub document_root: String,
-    pub port: i32,
-    pub ssl_port: i32,
+    pub port: u16,
+    pub ssl_port: u16,
     pub crt_path: String,
     pub key_path: String,
     pub key_pass_phrase: String,
@@ -901,33 +901,41 @@ impl Config {
         use crate::db::schema::settings::dsl::settings as db_settings;
         use diesel::prelude::*;
 
-        let instances: Result<_, _> = db_instances
+        let instances: Result<Vec<_>, _> = db_instances
             .load::<db_models::DbInstance>(&**db)?
             .into_iter()
             .map(Instance::try_from)
             .collect();
         let instances = instances?;
 
-        let settings: Result<_, _> = db_settings
+        let settings: Result<Vec<_>, _> = db_settings
             .load::<db_models::DbSetting>(&**db)?
             .into_iter()
             .map(Setting::try_from)
             .collect();
         let settings = settings?;
 
-        let meta: Result<_, _> = db_meta
+        let meta: Result<Vec<_>, _> = db_meta
             .load::<db_models::DbMeta>(&**db)?
             .into_iter()
             .map(Meta::try_from)
             .collect();
         let meta = meta?;
 
-        let users: Result<_, _> = db_auths
+        let users: Result<Vec<_>, _> = db_auths
             .load::<db_models::DbUser>(&**db)?
             .into_iter()
             .map(User::try_from)
             .collect();
         let users = users?;
+
+        debug!(
+            "loaded {} instance(s), {} setting(s), {} meta, {} user(s)",
+            instances.len(),
+            settings.len(),
+            meta.len(),
+            users.len()
+        );
 
         Ok(Self {
             instances,
@@ -935,5 +943,20 @@ impl Config {
             meta,
             users,
         })
+    }
+
+    pub fn get(&self, instance_id: Option<i32>, ty: SettingKind) -> Option<&Setting> {
+        // TODO: Not O(n)
+        for setting in &self.settings {
+            if setting.hyperion_inst == instance_id {
+                let kind: SettingKind = (&setting.config).into();
+
+                if kind == ty {
+                    return Some(setting);
+                }
+            }
+        }
+
+        None
     }
 }

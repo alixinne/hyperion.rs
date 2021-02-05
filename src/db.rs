@@ -36,6 +36,8 @@ impl Db {
     }
 
     pub fn connect(path: &str) -> Result<Self, DbError> {
+        debug!("loading database from `{}`", path);
+
         Ok(Self {
             connection: SqliteConnection::establish(path)?,
         })

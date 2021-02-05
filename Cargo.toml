@@ -5,10 +5,16 @@ authors = ["Vincent Tavernier <vince.tavernier@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+base64 = "0.13"
+bytes = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 color-eyre = "0.5"
 diesel = { version = "1.4", features = ["sqlite"] }
 dirs = "3.0"
+env_logger = "0.8"
+futures = "0.3"
+futures-io = "0.3"
+log = "0.4"
 palette = { version = "0.5", features = ["serializing"] }
 paw = "1.0"
 protobuf = "2.20"
@@ -19,6 +25,8 @@ structopt = { version = "0.3", features = ["paw"] }
 strum = "0.20"
 strum_macros = "0.20"
 thiserror = "1.0"
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+tokio-util = { version = "0.6", features = ["codec"] }
 uuid = { version = "0.8", features = ["serde"] }
 
 [build-dependencies]

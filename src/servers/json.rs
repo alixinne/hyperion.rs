@@ -10,8 +10,8 @@ use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
 use crate::{
-    global::{Global, InputMessage},
-    image::RawImage,
+    global::{Global, InputMessage, InputSourceHandle},
+    image::{RawImage, RawImageError},
     models::Color,
 };
 
@@ -31,6 +31,60 @@ pub enum JsonServerError {
     Codec(#[from] JsonCodecError),
     #[error("error broadcasting update: {0}")]
     Broadcast(#[from] tokio::sync::broadcast::error::SendError<InputMessage>),
+    #[error("request not implemented")]
+    NotImplemented,
+    #[error("error decoding image")]
+    Image(#[from] RawImageError),
+}
+
+fn handle_request(
+    request: Result<HyperionMessage, JsonCodecError>,
+    source: &InputSourceHandle,
+) -> Result<(), JsonServerError> {
+    match request? {
+        HyperionMessage::ClearAll => {
+            // Update state
+            source.send(InputMessage::ClearAll)?;
+        }
+
+        HyperionMessage::Clear { priority } => {
+            // Update state
+            source.send(InputMessage::Clear { priority })?;
+        }
+
+        HyperionMessage::Color {
+            priority,
+            duration,
+            color,
+        } => {
+            // Update state
+            source.send(InputMessage::SolidColor {
+                priority,
+                duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
+                color: Color::from_components((color[0], color[1], color[2])),
+            })?;
+        }
+
+        HyperionMessage::Image {
+            priority,
+            duration,
+            imagewidth,
+            imageheight,
+            imagedata,
+        } => {
+            let raw_image = RawImage::try_from((imagedata, imagewidth, imageheight))?;
+
+            source.send(InputMessage::Image {
+                priority,
+                duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
+                image: Arc::new(raw_image),
+            })?;
+        }
+
+        _ => return Err(JsonServerError::NotImplemented),
+    };
+
+    Ok(())
 }
 
 pub async fn handle_client(
@@ -49,72 +103,21 @@ pub async fn handle_client(
         .unwrap();
 
     while let Some(request) = reader.next().await {
-        trace!("processing request: {:?}", request);
+        trace!("({}) processing request: {:?}", peer_addr, request);
 
-        let reply = match request {
-            Ok(HyperionMessage::ClearAll) => {
-                // Update state
-                source.send(InputMessage::ClearAll)?;
+        let reply = match handle_request(request, &source) {
+            Ok(()) => HyperionResponse::SuccessResponse { success: true },
+            Err(error) => {
+                error!("({}) error processing request: {}", peer_addr, error);
 
-                HyperionResponse::SuccessResponse { success: true }
-            }
-
-            Ok(HyperionMessage::Clear { priority }) => {
-                // Update state
-                source.send(InputMessage::Clear { priority })?;
-
-                HyperionResponse::SuccessResponse { success: true }
-            }
-
-            Ok(HyperionMessage::Color {
-                priority,
-                duration,
-                color,
-            }) => {
-                // Update state
-                source.send(InputMessage::SolidColor {
-                    priority,
-                    duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
-                    color: Color::from_components((color[0], color[1], color[2])),
-                })?;
-
-                HyperionResponse::SuccessResponse { success: true }
-            }
-
-            Ok(HyperionMessage::Image {
-                priority,
-                duration,
-                imagewidth,
-                imageheight,
-                imagedata,
-            }) => match RawImage::try_from((imagedata, imagewidth, imageheight)) {
-                Ok(raw_image) => {
-                    source.send(InputMessage::Image {
-                        priority,
-                        duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
-                        image: Arc::new(raw_image),
-                    })?;
-
-                    HyperionResponse::SuccessResponse { success: true }
-                }
-                Err(error) => HyperionResponse::ErrorResponse {
+                HyperionResponse::ErrorResponse {
                     success: false,
                     error: error.to_string(),
-                },
-            },
-
-            Err(error) => HyperionResponse::ErrorResponse {
-                success: false,
-                error: error.to_string(),
-            },
-
-            _ => HyperionResponse::ErrorResponse {
-                success: false,
-                error: "not implemented".into(),
-            },
+                }
+            }
         };
 
-        trace!("sending response: {:?}", reply);
+        trace!("({}) sending response: {:?}", peer_addr, reply);
 
         writer.send(reply).await?;
     }

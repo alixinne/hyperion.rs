@@ -1,17 +1,11 @@
 use thiserror::Error;
 
-use crate::{global::InputMessage, image::RawImageError};
-
 #[derive(Debug, Error)]
 pub enum ImageError {
     #[error("invalid width")]
     InvalidWidth,
     #[error("invalid height")]
     InvalidHeight,
-    #[error("image error: {0}")]
-    Image(#[from] RawImageError),
-    #[error("error broadcasting update: {0}")]
-    Broadcast(#[from] tokio::sync::broadcast::error::SendError<InputMessage>),
     #[error("raw image data missing")]
     RawImageMissing,
 }

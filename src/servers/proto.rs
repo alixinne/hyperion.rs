@@ -10,7 +10,7 @@ use thiserror::Error;
 use tokio::net::TcpStream;
 
 use crate::{
-    global::{Global, InputMessage},
+    global::{Global, InputMessage, InputSourceHandle},
     image::{RawImage, RawImageError},
     models::Color,
 };
@@ -34,30 +34,106 @@ pub enum ProtoServerError {
     DecodeError(#[from] prost::DecodeError),
 }
 
-/// Create a success response
-///
-/// # Parameters
-///
-/// `success`: true for a success, false for an error
-fn success_response() -> bytes::Bytes {
+fn encode_response(buf: &mut bytes::BytesMut, msg: impl prost::Message) -> bytes::Bytes {
+    // Clear the buffer to start fresh
+    buf.clear();
+
+    // Reserve enough space for the response
+    let len = msg.encoded_len();
+    if buf.capacity() < len {
+        buf.reserve(len * 2);
+    }
+
+    // Encode the message
+    msg.encode(buf).unwrap();
+    buf.split().freeze()
+}
+
+fn success_response(peer_addr: SocketAddr, buf: &mut bytes::BytesMut) -> bytes::Bytes {
     let mut reply = message::HyperionReply::default();
     reply.r#type = message::hyperion_reply::Type::Reply.into();
     reply.success = Some(true);
 
-    let mut b = Vec::new();
-    reply.encode(&mut b).unwrap();
-    b.into()
+    trace!("({}) sending success: {:?}", peer_addr, reply);
+    encode_response(buf, reply)
 }
 
-fn error_response(error: impl std::fmt::Display) -> bytes::Bytes {
+fn error_response(
+    peer_addr: SocketAddr,
+    buf: &mut bytes::BytesMut,
+    error: impl std::fmt::Display,
+) -> bytes::Bytes {
     let mut reply = message::HyperionReply::default();
     reply.r#type = message::hyperion_reply::Type::Reply.into();
     reply.success = Some(false);
     reply.error = Some(error.to_string());
 
-    let mut b = Vec::new();
-    reply.encode(&mut b).unwrap();
-    b.into()
+    trace!("({}) sending error: {:?}", peer_addr, reply);
+    encode_response(buf, reply)
+}
+
+fn handle_request(
+    peer_addr: SocketAddr,
+    request_bytes: bytes::BytesMut,
+    source: &InputSourceHandle,
+) -> Result<(), ProtoServerError> {
+    let request_bytes = request_bytes.freeze();
+    let request = message::HyperionRequest::decode(request_bytes.clone())?;
+
+    trace!("({}) got request: {:?}", peer_addr, request);
+
+    match request.command() {
+        message::hyperion_request::Command::Clearall => {
+            // Update state
+            source.send(InputMessage::ClearAll)?;
+        }
+
+        message::hyperion_request::Command::Clear => {
+            let clear_request = message::ClearRequest::decode(request_bytes)?;
+
+            // Update state
+            source.send(InputMessage::Clear {
+                priority: clear_request.priority,
+            })?;
+        }
+
+        message::hyperion_request::Command::Color => {
+            let color_request = message::ColorRequest::decode(request_bytes)?;
+
+            let color = color_request.rgb_color;
+            let color = (
+                (color & 0x000_000FF) as u8,
+                ((color & 0x0000_FF00) >> 8) as u8,
+                ((color & 0x00FF_0000) >> 16) as u8,
+            );
+
+            // Update state
+            source.send(InputMessage::SolidColor {
+                priority: color_request.priority,
+                duration: i32_to_duration(color_request.duration),
+                color: Color::from_components(color),
+            })?;
+        }
+
+        message::hyperion_request::Command::Image => {
+            let image_request = message::ImageRequest::decode(request_bytes)?;
+
+            let width =
+                u32::try_from(image_request.imagewidth).map_err(|_| ImageError::InvalidWidth)?;
+            let height =
+                u32::try_from(image_request.imageheight).map_err(|_| ImageError::InvalidHeight)?;
+            let raw_image = RawImage::try_from((image_request.imagedata.to_vec(), width, height))?;
+
+            // Update state
+            source.send(InputMessage::Image {
+                priority: image_request.priority,
+                duration: i32_to_duration(image_request.duration),
+                image: Arc::new(raw_image),
+            })?;
+        }
+    }
+
+    Ok(())
 }
 
 pub async fn handle_client(
@@ -77,6 +153,9 @@ pub async fn handle_client(
         .await
         .unwrap();
 
+    // buffer for building responses
+    let mut reply_buf = bytes::BytesMut::with_capacity(128);
+
     while let Some(request_bytes) = reader.next().await {
         let request_bytes = match request_bytes {
             Ok(rb) => rb,
@@ -86,91 +165,15 @@ pub async fn handle_client(
             }
         };
 
-        let request = match message::HyperionRequest::decode(request_bytes.clone()) {
-            Ok(rq) => rq,
+        let reply = match handle_request(peer_addr, request_bytes, &source) {
+            Ok(()) => success_response(peer_addr, &mut reply_buf),
             Err(error) => {
-                error!("({}) error decoding frame: {}", peer_addr, error);
-                writer.send(error_response(error)).await?;
-                continue;
+                error!("({}) error processing request: {}", peer_addr, error);
+
+                error_response(peer_addr, &mut reply_buf, error)
             }
         };
 
-        trace!("got request: {:?}", request);
-
-        let reply = (|| -> Result<_, _> {
-            match request.command() {
-                message::hyperion_request::Command::Clearall => {
-                    // Update state
-                    source.send(InputMessage::ClearAll)?;
-
-                    Ok(success_response())
-                }
-
-                message::hyperion_request::Command::Clear => {
-                    let clear_request = message::ClearRequest::decode(request_bytes)?;
-
-                    // Update state
-                    source.send(InputMessage::Clear {
-                        priority: clear_request.priority,
-                    })?;
-
-                    Ok(success_response())
-                }
-
-                message::hyperion_request::Command::Color => {
-                    let color_request = message::ColorRequest::decode(request_bytes)?;
-
-                    let color = color_request.rgb_color;
-                    let color = (
-                        (color & 0x000_000FF) as u8,
-                        ((color & 0x0000_FF00) >> 8) as u8,
-                        ((color & 0x00FF_0000) >> 16) as u8,
-                    );
-
-                    // Update state
-                    source.send(InputMessage::SolidColor {
-                        priority: color_request.priority,
-                        duration: i32_to_duration(color_request.duration),
-                        color: Color::from_components(color),
-                    })?;
-
-                    Ok(success_response())
-                }
-
-                message::hyperion_request::Command::Image => {
-                    let image_request = message::ImageRequest::decode(request_bytes)?;
-
-                    let data = image_request.imagedata;
-                    let width = image_request.imagewidth;
-                    let height = image_request.imageheight;
-                    let priority = image_request.priority;
-                    let duration = image_request.duration;
-
-                    let width = u32::try_from(width).map_err(|_| ImageError::InvalidWidth)?;
-                    let height = u32::try_from(height).map_err(|_| ImageError::InvalidHeight)?;
-                    let raw_image = RawImage::try_from((data.to_vec(), width, height))?;
-
-                    // Update state
-                    source.send(InputMessage::Image {
-                        priority,
-                        duration: i32_to_duration(duration),
-                        image: Arc::new(raw_image),
-                    })?;
-
-                    Ok(success_response())
-                }
-            }
-        })();
-
-        let reply = match reply {
-            Ok(res) => res,
-            Err(ProtoServerError::Broadcast(b)) => {
-                return Err(ProtoServerError::Broadcast(b));
-            }
-            Err(error) => error_response(error),
-        };
-
-        trace!("sending response: {:?}", reply);
         writer.send(reply).await?;
     }
 

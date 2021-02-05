@@ -69,7 +69,7 @@ fn error_response(
 async fn handle_request(
     peer_addr: SocketAddr,
     request_bytes: bytes::BytesMut,
-    source: &mut Option<InputSourceHandle>,
+    source: &mut Option<InputSourceHandle<InputMessage>>,
     global: &Global,
 ) -> Result<(), FlatServerError> {
     let request = message::root_as_request(request_bytes.as_ref())?;
@@ -142,7 +142,7 @@ async fn handle_request(
                 // unwrap: we checked the priority value before
                 *source = Some(
                     global
-                        .register_source(
+                        .register_input_source(
                             format!("FlatBuffers({}): {}", peer_addr, register.origin()),
                             Some(priority),
                         )

@@ -122,7 +122,12 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
         }
 
         // Receive global updates
-        let mut reader = global.subscribe_input().await;
+        // Create this reader first so the muxer does not complain it can't send its output
+        let mut reader = global.subscribe_muxed().await;
+
+        // Spawn priority muxer
+        let muxer = hyperion::muxer::PriorityMuxer::new(global.clone()).await;
+        tokio::spawn(muxer.run());
 
         // Should we continue running?
         let mut abort = false;

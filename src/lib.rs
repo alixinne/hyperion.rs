@@ -7,4 +7,5 @@ pub mod db;
 pub mod global;
 pub mod image;
 pub mod models;
+pub mod muxer;
 pub mod servers;

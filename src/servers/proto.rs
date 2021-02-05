@@ -75,7 +75,7 @@ fn error_response(
 fn handle_request(
     peer_addr: SocketAddr,
     request_bytes: bytes::BytesMut,
-    source: &InputSourceHandle,
+    source: &InputSourceHandle<InputMessage>,
 ) -> Result<(), ProtoServerError> {
     let request_bytes = request_bytes.freeze();
     let request = message::HyperionRequest::decode(request_bytes.clone())?;
@@ -149,7 +149,7 @@ pub async fn handle_client(
 
     // unwrap: cannot fail because the priority is None
     let source = global
-        .register_source(format!("Protobuf({})", peer_addr), None)
+        .register_input_source(format!("Protobuf({})", peer_addr), None)
         .await
         .unwrap();
 

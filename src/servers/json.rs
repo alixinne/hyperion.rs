@@ -39,7 +39,7 @@ pub enum JsonServerError {
 
 fn handle_request(
     request: Result<HyperionMessage, JsonCodecError>,
-    source: &InputSourceHandle,
+    source: &InputSourceHandle<InputMessage>,
 ) -> Result<(), JsonServerError> {
     match request? {
         HyperionMessage::ClearAll => {
@@ -98,7 +98,7 @@ pub async fn handle_client(
 
     // unwrap: cannot fail because the priority is None
     let source = global
-        .register_source(format!("JSON({})", peer_addr), None)
+        .register_input_source(format!("JSON({})", peer_addr), None)
         .await
         .unwrap();
 

@@ -10,15 +10,28 @@ pub use input_message::*;
 mod input_source;
 pub use input_source::*;
 
+mod muxed_message;
+pub use muxed_message::*;
+
+pub trait Message: Sized {
+    type Data;
+
+    fn new(source_id: usize, data: Self::Data) -> Self;
+
+    fn data(&self) -> &Self::Data;
+
+    fn unregister_source(global: &mut GlobalData, input_source: &InputSource<Self>);
+}
+
 #[derive(Clone)]
 pub struct Global(Arc<RwLock<GlobalData>>);
 
 impl Global {
-    pub async fn register_source(
+    pub async fn register_input_source(
         &self,
         name: String,
         priority: Option<i32>,
-    ) -> Result<InputSourceHandle, InputSourceError> {
+    ) -> Result<InputSourceHandle<InputMessage>, InputSourceError> {
         let priority = if let Some(priority) = priority {
             if priority < 0 || priority > 255 {
                 return Err(InputSourceError::InvalidPriority(priority));
@@ -31,7 +44,17 @@ impl Global {
         };
 
         Ok(InputSourceHandle {
-            input_source: self.0.write().await.register_source(name, priority),
+            input_source: self.0.write().await.register_input_source(name, priority),
+            global: self.clone(),
+        })
+    }
+
+    pub async fn register_muxed_source(
+        &self,
+        name: String,
+    ) -> Result<InputSourceHandle<MuxedMessage>, InputSourceError> {
+        Ok(InputSourceHandle {
+            input_source: self.0.write().await.register_muxed_source(name),
             global: self.clone(),
         })
     }
@@ -39,21 +62,33 @@ impl Global {
     pub async fn subscribe_input(&self) -> broadcast::Receiver<InputMessage> {
         self.0.read().await.input_tx.subscribe()
     }
+
+    pub async fn subscribe_muxed(&self) -> broadcast::Receiver<MuxedMessage> {
+        self.0.read().await.muxed_tx.subscribe()
+    }
 }
 
 pub struct GlobalData {
     input_tx: broadcast::Sender<InputMessage>,
-    sources: HashMap<usize, Arc<InputSource>>,
-    next_source_id: usize,
+    muxed_tx: broadcast::Sender<MuxedMessage>,
+    input_sources: HashMap<usize, Arc<InputSource<InputMessage>>>,
+    next_input_source_id: usize,
+    muxed_sources: HashMap<usize, Arc<InputSource<MuxedMessage>>>,
+    next_muxed_source_id: usize,
 }
 
 impl GlobalData {
     pub fn new() -> Self {
         let (input_tx, _) = broadcast::channel(4);
+        let (muxed_tx, _) = broadcast::channel(4);
+
         Self {
             input_tx,
-            sources: Default::default(),
-            next_source_id: 1,
+            muxed_tx,
+            input_sources: Default::default(),
+            next_input_source_id: 1,
+            muxed_sources: Default::default(),
+            next_muxed_source_id: 1,
         }
     }
 
@@ -61,27 +96,55 @@ impl GlobalData {
         Global(Arc::new(RwLock::new(self)))
     }
 
-    fn register_source(&mut self, name: String, priority: Option<i32>) -> Arc<InputSource> {
-        let id = self.next_source_id;
-        self.next_source_id += 1;
+    fn register_input_source(
+        &mut self,
+        name: String,
+        priority: Option<i32>,
+    ) -> Arc<InputSource<InputMessage>> {
+        let id = self.next_input_source_id;
+        self.next_input_source_id += 1;
 
         let input_source = Arc::new(InputSource {
             id,
             name,
             priority,
-            input_tx: self.input_tx.clone(),
+            tx: self.input_tx.clone(),
         });
 
-        info!("registered new source {}", *input_source);
+        info!("registered new input source {}", *input_source);
 
-        self.sources.insert(id, input_source.clone());
+        self.input_sources.insert(id, input_source.clone());
 
         input_source
     }
 
-    fn unregister_source(&mut self, source: &InputSource) {
-        if let Some(is) = self.sources.remove(&source.id) {
-            info!("unregistered source {}", *is);
+    fn unregister_input_source(&mut self, source: &InputSource<InputMessage>) {
+        if let Some(is) = self.input_sources.remove(&source.id) {
+            info!("unregistered input source {}", *is);
+        }
+    }
+
+    fn register_muxed_source(&mut self, name: String) -> Arc<InputSource<MuxedMessage>> {
+        let id = self.next_muxed_source_id;
+        self.next_muxed_source_id += 1;
+
+        let input_source = Arc::new(InputSource {
+            id,
+            name,
+            priority: None,
+            tx: self.muxed_tx.clone(),
+        });
+
+        info!("registered new muxed source {}", *input_source);
+
+        self.muxed_sources.insert(id, input_source.clone());
+
+        input_source
+    }
+
+    fn unregister_muxed_source(&mut self, source: &InputSource<MuxedMessage>) {
+        if let Some(is) = self.muxed_sources.remove(&source.id) {
+            info!("unregistered input source {}", *is);
         }
     }
 }

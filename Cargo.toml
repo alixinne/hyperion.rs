@@ -1,0 +1,25 @@
+[package]
+name = "hyperion"
+version = "0.1.0"
+authors = ["Vincent Tavernier <vince.tavernier@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+color-eyre = "0.5"
+diesel = { version = "1.4", features = ["sqlite"] }
+dirs = "3.0"
+palette = { version = "0.5", features = ["serializing"] }
+paw = "1.0"
+protobuf = "2.20"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+structopt = { version = "0.3", features = ["paw"] }
+strum = "0.20"
+strum_macros = "0.20"
+thiserror = "1.0"
+uuid = { version = "0.8", features = ["serde"] }
+
+[build-dependencies]
+protobuf-codegen-pure = "2.20"

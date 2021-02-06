@@ -543,6 +543,7 @@ dependencies = [
  "git-version",
  "hostname",
  "log",
+ "num_cpus",
  "palette",
  "parse-display",
  "paw",

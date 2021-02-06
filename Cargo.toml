@@ -26,6 +26,7 @@ futures-io = "0.3"
 git-version = "0.3"
 hostname = "0.3"
 log = "0.4"
+num_cpus = "1.13"
 palette = { version = "0.5", features = ["serializing"] }
 parse-display = "0.4"
 paw = "1.0"

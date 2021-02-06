@@ -5,8 +5,6 @@ use structopt::StructOpt;
 use tokio::runtime::Runtime;
 use tokio::signal;
 
-use hyperion::models as h;
-
 #[derive(Debug, StructOpt)]
 struct Opts {
     #[structopt(short, long, parse(from_occurrences))]
@@ -47,14 +45,10 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
         let global = hyperion::global::GlobalData::new().wrap();
 
         // Start the flatbuffers servers
-        if let Some(h::Setting {
-            config: h::SettingData::FlatbuffersServer(flat_server_config),
-            ..
-        }) = config.get(None, h::SettingKind::FlatbuffersServer)
-        {
+        if config.global.flatbuffers_server.enable {
             tokio::spawn({
                 let global = global.clone();
-                let config = flat_server_config.clone();
+                let config = config.global.flatbuffers_server.clone();
 
                 async move {
                     let result = hyperion::servers::bind(
@@ -72,39 +66,26 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
         }
 
         // Start the JSON server
-        if let Some(h::Setting {
-            config: h::SettingData::JsonServer(json_server_config),
-            ..
-        }) = config.get(None, h::SettingKind::JsonServer)
-        {
-            tokio::spawn({
-                let global = global.clone();
-                let config = json_server_config.clone();
+        tokio::spawn({
+            let global = global.clone();
+            let config = config.global.json_server.clone();
 
-                async move {
-                    let result = hyperion::servers::bind(
-                        config,
-                        global,
-                        hyperion::servers::json::handle_client,
-                    )
-                    .await;
+            async move {
+                let result =
+                    hyperion::servers::bind(config, global, hyperion::servers::json::handle_client)
+                        .await;
 
-                    if let Err(error) = result {
-                        error!("JSON server terminated: {:?}", error);
-                    }
+                if let Err(error) = result {
+                    error!("JSON server terminated: {:?}", error);
                 }
-            });
-        }
+            }
+        });
 
         // Start the Protobuf server
-        if let Some(h::Setting {
-            config: h::SettingData::ProtoServer(proto_server_config),
-            ..
-        }) = config.get(None, h::SettingKind::ProtoServer)
-        {
+        if config.global.proto_server.enable {
             tokio::spawn({
                 let global = global.clone();
-                let config = proto_server_config.clone();
+                let config = config.global.proto_server.clone();
 
                 async move {
                     let result = hyperion::servers::bind(

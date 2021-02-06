@@ -1,9 +1,11 @@
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 
 use palette::rgb::Rgb;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{EnumDiscriminants, EnumString};
 use thiserror::Error;
+use validator::Validate;
 
 use crate::db::models as db_models;
 
@@ -19,7 +21,7 @@ pub enum InstanceError {
     Chrono(#[from] chrono::ParseError),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct Instance {
     pub id: i32,
     pub friendly_name: String,
@@ -55,7 +57,7 @@ pub enum EffectType {
     Effect,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct BackgroundEffect {
     pub color: Color,
     pub effect: String,
@@ -84,15 +86,16 @@ pub enum BlackBorderDetectorMode {
     Letterbox,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct BlackBorderDetector {
     pub enable: bool,
-    pub threshold: i32,
-    pub unknown_frame_cnt: i32,
-    pub border_frame_cnt: i32,
-    pub max_inconsistent_cnt: i32,
-    pub blur_remove_cnt: i32,
+    #[validate(range(min = 0, max = 100))]
+    pub threshold: u32,
+    pub unknown_frame_cnt: u32,
+    pub border_frame_cnt: u32,
+    pub max_inconsistent_cnt: u32,
+    pub blur_remove_cnt: u32,
     pub mode: BlackBorderDetectorMode,
 }
 
@@ -110,11 +113,13 @@ impl Default for BlackBorderDetector {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct BoblightServer {
     pub enable: bool,
+    #[validate(range(min = 1024))]
     pub port: u16,
+    #[validate(range(min = 100, max = 254))]
     pub priority: i32,
 }
 
@@ -135,10 +140,11 @@ pub enum ImageToLedMappingType {
     UnicolorMean,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ColorAdjustment {
     pub image_to_led_mapping_type: ImageToLedMappingType,
+    #[validate]
     pub channel_adjustment: Vec<ChannelAdjustment>,
 }
 
@@ -151,7 +157,7 @@ impl Default for ColorAdjustment {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ChannelAdjustment {
     pub id: String,
@@ -163,12 +169,18 @@ pub struct ChannelAdjustment {
     pub cyan: Color,
     pub magenta: Color,
     pub yellow: Color,
-    pub backlight_threshold: i32,
+    #[validate(range(min = 0, max = 100))]
+    pub backlight_threshold: u32,
     pub backlight_colored: bool,
-    pub brightness: i32,
-    pub brightness_compensation: i32,
+    #[validate(range(min = 0, max = 100))]
+    pub brightness: u32,
+    #[validate(range(min = 0, max = 100))]
+    pub brightness_compensation: u32,
+    #[validate(range(min = 0.1, max = 5.0))]
     pub gamma_red: f32,
+    #[validate(range(min = 0.1, max = 5.0))]
     pub gamma_green: f32,
+    #[validate(range(min = 0.1, max = 5.0))]
     pub gamma_blue: f32,
 }
 
@@ -206,11 +218,12 @@ pub enum ColorOrder {
     Grb,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Ws2812Spi {
     color_order: ColorOrder,
-    hardware_led_count: i32,
+    #[validate(range(min = 1))]
+    hardware_led_count: u32,
     invert: bool,
     latch_time: i32,
     output: String,
@@ -218,7 +231,7 @@ pub struct Ws2812Spi {
     rewrite_time: i32,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct PhilipsHue {
     pub black_lights_timeout: i32,
@@ -232,7 +245,8 @@ pub struct PhilipsHue {
     pub debug_level: String,
     pub debug_streamer: bool,
     pub group_id: i32,
-    pub hardware_led_count: i32,
+    #[validate(range(min = 1))]
+    pub hardware_led_count: u32,
     pub light_ids: Vec<String>,
     pub output: String,
     pub restore_original_state: bool,
@@ -253,13 +267,31 @@ pub struct PhilipsHue {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase", tag = "type")]
 pub enum Device {
+    Dummy,
     Ws2812Spi(Ws2812Spi),
     PhilipsHue(PhilipsHue),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+impl Default for Device {
+    fn default() -> Self {
+        Self::Dummy
+    }
+}
+
+impl Validate for Device {
+    fn validate(&self) -> Result<(), validator::ValidationErrors> {
+        match self {
+            Device::Dummy => Ok(()),
+            Device::Ws2812Spi(device) => device.validate(),
+            Device::PhilipsHue(device) => device.validate(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Effects {
+    #[validate(length(min = 1))]
     pub paths: Vec<String>,
     pub disable: Vec<String>,
 }
@@ -273,12 +305,14 @@ impl Default for Effects {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct FlatbuffersServer {
     pub enable: bool,
+    #[validate(range(min = 1024))]
     pub port: u16,
-    pub timeout: i32,
+    #[validate(range(min = 1))]
+    pub timeout: u32,
 }
 
 impl Default for FlatbuffersServer {
@@ -297,14 +331,15 @@ impl ServerConfig for FlatbuffersServer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct ForegroundEffect {
     pub color: Color,
     pub effect: String,
     pub enable: bool,
     #[serde(rename = "type")]
     pub ty: EffectType,
-    pub duration_ms: i32,
+    #[validate(range(min = 100))]
+    pub duration_ms: Option<i32>,
 }
 
 impl Default for ForegroundEffect {
@@ -314,12 +349,12 @@ impl Default for ForegroundEffect {
             ty: EffectType::Effect,
             color: Color::from_components((255, 0, 0)),
             effect: String::new(),
-            duration_ms: 3000,
+            duration_ms: Some(3000),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct Forwarder {
     pub enable: bool,
     pub json: Vec<String>,
@@ -356,22 +391,26 @@ impl Default for FramegrabberType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Framegrabber {
     #[serde(rename = "type")]
     pub ty: FramegrabberType,
-    pub width: i32,
-    pub height: i32,
+    #[validate(range(min = 10))]
+    pub width: u32,
+    #[validate(range(min = 10))]
+    pub height: u32,
     #[serde(rename = "frequency_Hz")]
-    pub frequency_hz: i32,
-    pub crop_left: i32,
-    pub crop_right: i32,
-    pub crop_top: i32,
-    pub crop_bottom: i32,
-    pub pixel_decimation: i32,
+    #[validate(range(min = 1))]
+    pub frequency_hz: u32,
+    pub crop_left: u32,
+    pub crop_right: u32,
+    pub crop_top: u32,
+    pub crop_bottom: u32,
+    #[validate(range(min = 1, max = 30))]
+    pub pixel_decimation: u32,
     #[serde(default)]
-    pub display: i32,
+    pub display: u32,
 }
 
 impl Default for Framegrabber {
@@ -398,9 +437,10 @@ pub enum WatchedVersionBranch {
     Alpha,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct General {
+    #[validate(length(min = 4, max = 20))]
     pub name: String,
     pub watched_version_branch: WatchedVersionBranch,
     pub show_opt_help: bool,
@@ -431,32 +471,41 @@ impl Default for V4L2Standard {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GrabberV4L2 {
     pub device: String,
     pub input: i32,
     pub standard: V4L2Standard,
-    pub width: i32,
-    pub height: i32,
-    pub fps: i32,
-    pub size_decimation: i32,
-    pub crop_left: i32,
-    pub crop_right: i32,
-    pub crop_top: i32,
-    pub crop_bottom: i32,
+    pub width: u32,
+    pub height: u32,
+    #[validate(range(min = 1))]
+    pub fps: u32,
+    #[validate(range(min = 1, max = 30))]
+    pub size_decimation: u32,
+    pub crop_left: u32,
+    pub crop_right: u32,
+    pub crop_top: u32,
+    pub crop_bottom: u32,
     pub cec_detection: bool,
     pub signal_detection: bool,
-    pub red_signal_threshold: i32,
-    pub green_signal_threshold: i32,
-    pub blue_signal_threshold: i32,
+    #[validate(range(min = 0, max = 100))]
+    pub red_signal_threshold: u32,
+    #[validate(range(min = 0, max = 100))]
+    pub green_signal_threshold: u32,
+    #[validate(range(min = 0, max = 100))]
+    pub blue_signal_threshold: u32,
     #[serde(rename = "sDVOffsetMin")]
+    #[validate(range(min = 0., max = 1.))]
     pub sdv_offset_min: f32,
     #[serde(rename = "sDVOffsetMax")]
+    #[validate(range(min = 0., max = 1.))]
     pub sdv_offset_max: f32,
     #[serde(rename = "sDHOffsetMin")]
+    #[validate(range(min = 0., max = 1.))]
     pub sdh_offset_min: f32,
     #[serde(rename = "sDHOffsetMax")]
+    #[validate(range(min = 0., max = 1.))]
     pub sdh_offset_max: f32,
 }
 
@@ -487,12 +536,14 @@ impl Default for GrabberV4L2 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct InstanceCapture {
     pub system_enable: bool,
+    #[validate(range(min = 100, max = 253))]
     pub system_priority: i32,
     pub v4l_enable: bool,
+    #[validate(range(min = 100, max = 253))]
     pub v4l_priority: i32,
 }
 
@@ -507,8 +558,9 @@ impl Default for InstanceCapture {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Validate)]
 pub struct JsonServer {
+    #[validate(range(min = 1024))]
     pub port: u16,
 }
 
@@ -524,28 +576,39 @@ impl ServerConfig for JsonServer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct ClassicLedConfig {
-    pub top: i32,
-    pub bottom: i32,
-    pub left: i32,
-    pub right: i32,
-    pub glength: i32,
-    pub gpos: i32,
+    pub top: u32,
+    pub bottom: u32,
+    pub left: u32,
+    pub right: u32,
+    pub glength: u32,
+    pub gpos: u32,
     pub position: i32,
     pub reverse: bool,
-    pub hdepth: i32,
-    pub vdepth: i32,
-    pub overlap: i32,
-    pub edgegap: i32,
-    pub ptlh: i32,
-    pub ptlv: i32,
-    pub ptrh: i32,
-    pub ptrv: i32,
-    pub pblh: i32,
-    pub pblv: i32,
-    pub pbrh: i32,
-    pub pbrv: i32,
+    #[validate(range(min = 1, max = 100))]
+    pub hdepth: u32,
+    #[validate(range(min = 1, max = 100))]
+    pub vdepth: u32,
+    pub overlap: u32,
+    #[validate(range(max = 50))]
+    pub edgegap: u32,
+    #[validate(range(max = 100))]
+    pub ptlh: u32,
+    #[validate(range(max = 100))]
+    pub ptlv: u32,
+    #[validate(range(max = 100))]
+    pub ptrh: u32,
+    #[validate(range(max = 100))]
+    pub ptrv: u32,
+    #[validate(range(max = 100))]
+    pub pblh: u32,
+    #[validate(range(max = 100))]
+    pub pblv: u32,
+    #[validate(range(max = 100))]
+    pub pbrh: u32,
+    #[validate(range(max = 100))]
+    pub pbrv: u32,
 }
 
 impl Default for ClassicLedConfig {
@@ -591,28 +654,94 @@ pub enum MatrixStart {
     BottomRight,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct MatrixLedConfig {
-    pub ledshoriz: i32,
-    pub ledsvert: i32,
+    #[validate(range(max = 50))]
+    pub ledshoriz: u32,
+    #[validate(range(max = 50))]
+    pub ledsvert: u32,
     pub cabling: MatrixCabling,
     pub start: MatrixStart,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+impl Default for MatrixLedConfig {
+    fn default() -> Self {
+        // TODO: Check those default values?
+        Self {
+            ledshoriz: 0,
+            ledsvert: 0,
+            cabling: MatrixCabling::Snake,
+            start: MatrixStart::TopLeft,
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct LedConfig {
+    #[validate]
     pub classic: ClassicLedConfig,
+    #[validate]
     pub matrix: MatrixLedConfig,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct Led {
+    #[validate(range(min = 0., max = 1.))]
     pub hmin: f32,
+    #[validate(range(min = 0., max = 1.))]
     pub hmax: f32,
+    #[validate(range(min = 0., max = 1.))]
     pub vmin: f32,
+    #[validate(range(min = 0., max = 1.))]
     pub vmax: f32,
     pub color_order: Option<ColorOrder>,
     pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Validate)]
+pub struct Leds {
+    #[validate]
+    pub leds: Vec<Led>,
+}
+
+impl Default for Leds {
+    fn default() -> Self {
+        Self {
+            leds: vec![Led {
+                hmin: 0.,
+                hmax: 1.,
+                vmin: 0.,
+                vmax: 1.,
+                color_order: None,
+                name: None,
+            }],
+        }
+    }
+}
+
+impl serde::Serialize for Leds {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeSeq;
+        let mut seq = serializer.serialize_seq(Some(self.leds.len()))?;
+        for led in &self.leds {
+            seq.serialize_element(led)?;
+        }
+        seq.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Leds {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Leds {
+            leds: <Vec<Led> as serde::Deserialize>::deserialize(deserializer)?,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -624,7 +753,7 @@ pub enum LoggerLevel {
     Debug,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 pub struct Logger {
     pub level: LoggerLevel,
 }
@@ -637,7 +766,7 @@ impl Default for Logger {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Network {
     pub api_auth: bool,
@@ -663,12 +792,14 @@ impl Default for Network {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProtoServer {
     pub enable: bool,
+    #[validate(range(min = 1024))]
     pub port: u16,
-    pub timeout: i32,
+    #[validate(range(min = 1))]
+    pub timeout: u32,
 }
 
 impl Default for ProtoServer {
@@ -694,20 +825,26 @@ pub enum SmoothingType {
     Decay,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Smoothing {
     pub enable: bool,
     #[serde(rename = "type")]
     pub ty: SmoothingType,
     #[serde(rename = "time_ms")]
-    pub time_ms: i32,
+    #[validate(range(min = 25, max = 5000))]
+    pub time_ms: u32,
+    #[validate(range(min = 1., max = 2000.))]
     pub update_frequency: f32,
+    #[validate(range(min = 1., max = 1000.))]
     pub interpolation_rate: f32,
+    #[validate(range(min = 1., max = 1000.))]
     pub output_rate: f32,
+    #[validate(range(min = 1., max = 20.))]
     pub decay: f32,
     pub dithering: bool,
-    pub update_delay: i32,
+    #[validate(range(max = 2048))]
+    pub update_delay: u32,
     pub continuous_output: bool,
 }
 
@@ -728,12 +865,14 @@ impl Default for Smoothing {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct WebConfig {
     #[serde(rename = "document_root")]
     pub document_root: String,
+    #[validate(range(min = 80))]
     pub port: u16,
+    #[validate(range(min = 80))]
     pub ssl_port: u16,
     pub crt_path: String,
     pub key_path: String,
@@ -772,12 +911,40 @@ pub enum SettingData {
     InstanceCapture(InstanceCapture),
     JsonServer(JsonServer),
     LedConfig(LedConfig),
-    Leds(Vec<Led>),
+    Leds(Leds),
     Logger(Logger),
     Network(Network),
     ProtoServer(ProtoServer),
     Smoothing(Smoothing),
     WebConfig(WebConfig),
+}
+
+impl Validate for SettingData {
+    fn validate(&self) -> Result<(), validator::ValidationErrors> {
+        match self {
+            SettingData::BackgroundEffect(setting) => setting.validate(),
+            SettingData::BlackBorderDetector(setting) => setting.validate(),
+            SettingData::BoblightServer(setting) => setting.validate(),
+            SettingData::ColorAdjustment(setting) => setting.validate(),
+            SettingData::Device(setting) => setting.validate(),
+            SettingData::Effects(setting) => setting.validate(),
+            SettingData::FlatbuffersServer(setting) => setting.validate(),
+            SettingData::ForegroundEffect(setting) => setting.validate(),
+            SettingData::Forwarder(setting) => setting.validate(),
+            SettingData::Framegrabber(setting) => setting.validate(),
+            SettingData::General(setting) => setting.validate(),
+            SettingData::GrabberV4L2(setting) => setting.validate(),
+            SettingData::InstanceCapture(setting) => setting.validate(),
+            SettingData::JsonServer(setting) => setting.validate(),
+            SettingData::LedConfig(setting) => setting.validate(),
+            SettingData::Leds(setting) => setting.validate(),
+            SettingData::Logger(setting) => setting.validate(),
+            SettingData::Network(setting) => setting.validate(),
+            SettingData::ProtoServer(setting) => setting.validate(),
+            SettingData::Smoothing(setting) => setting.validate(),
+            SettingData::WebConfig(setting) => setting.validate(),
+        }
+    }
 }
 
 #[derive(Debug, Error)]
@@ -786,6 +953,8 @@ pub enum SettingError {
     Serde(#[from] serde_json::Error),
     #[error("error parsing date: {0}")]
     Chrono(#[from] chrono::ParseError),
+    #[error("validation error: {0}")]
+    Validation(#[from] validator::ValidationErrors),
 }
 
 impl TryFrom<db_models::DbSetting> for Setting {
@@ -818,6 +987,8 @@ impl TryFrom<db_models::DbSetting> for Setting {
             "webConfig" => SettingData::WebConfig(serde_json::from_str(&db.config)?),
             other => panic!("unsupported setting type: {}", other),
         };
+
+        config.validate()?;
 
         Ok(Self {
             hyperion_inst: db.hyperion_inst,
@@ -893,6 +1064,132 @@ impl TryFrom<db_models::DbUser> for User {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
+pub struct GlobalConfig {
+    pub flatbuffers_server: FlatbuffersServer,
+    pub forwarder: Forwarder,
+    pub framegrabber: Framegrabber,
+    pub general: General,
+    pub grabber_v4l2: GrabberV4L2,
+    pub json_server: JsonServer,
+    pub logger: Logger,
+    pub network: Network,
+    pub proto_server: ProtoServer,
+    pub web_config: WebConfig,
+}
+
+impl From<GlobalConfigCreator> for GlobalConfig {
+    fn from(creator: GlobalConfigCreator) -> Self {
+        Self {
+            flatbuffers_server: creator.flatbuffers_server.unwrap_or_default(),
+            forwarder: creator.forwarder.unwrap_or_default(),
+            framegrabber: creator.framegrabber.unwrap_or_default(),
+            general: creator.general.unwrap_or_default(),
+            grabber_v4l2: creator.grabber_v4l2.unwrap_or_default(),
+            json_server: creator.json_server.unwrap_or_default(),
+            logger: creator.logger.unwrap_or_default(),
+            network: creator.network.unwrap_or_default(),
+            proto_server: creator.proto_server.unwrap_or_default(),
+            web_config: creator.web_config.unwrap_or_default(),
+        }
+    }
+}
+
+#[derive(Default)]
+struct GlobalConfigCreator {
+    flatbuffers_server: Option<FlatbuffersServer>,
+    forwarder: Option<Forwarder>,
+    framegrabber: Option<Framegrabber>,
+    general: Option<General>,
+    grabber_v4l2: Option<GrabberV4L2>,
+    json_server: Option<JsonServer>,
+    logger: Option<Logger>,
+    network: Option<Network>,
+    proto_server: Option<ProtoServer>,
+    web_config: Option<WebConfig>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
+pub struct InstanceConfig {
+    #[validate]
+    pub instance: Instance,
+    #[validate]
+    pub background_effect: BackgroundEffect,
+    #[validate]
+    pub black_border_detector: BlackBorderDetector,
+    #[validate]
+    pub boblight_server: BoblightServer,
+    #[validate]
+    pub color: ColorAdjustment,
+    #[validate]
+    pub device: Device,
+    #[validate]
+    pub effects: Effects,
+    #[validate]
+    pub foreground_effect: ForegroundEffect,
+    #[validate]
+    pub instance_capture: InstanceCapture,
+    #[validate]
+    pub led_config: LedConfig,
+    #[validate]
+    pub leds: Leds,
+    #[validate]
+    pub smoothing: Smoothing,
+}
+
+impl From<InstanceConfigCreator> for InstanceConfig {
+    fn from(creator: InstanceConfigCreator) -> Self {
+        Self {
+            instance: creator.instance,
+            background_effect: creator.background_effect.unwrap_or_default(),
+            black_border_detector: creator.black_border_detector.unwrap_or_default(),
+            boblight_server: creator.boblight_server.unwrap_or_default(),
+            color: creator.color.unwrap_or_default(),
+            device: creator.device.unwrap_or_default(),
+            effects: creator.effects.unwrap_or_default(),
+            foreground_effect: creator.foreground_effect.unwrap_or_default(),
+            instance_capture: creator.instance_capture.unwrap_or_default(),
+            led_config: creator.led_config.unwrap_or_default(),
+            leds: creator.leds.unwrap_or_default(),
+            smoothing: creator.smoothing.unwrap_or_default(),
+        }
+    }
+}
+
+struct InstanceConfigCreator {
+    instance: Instance,
+    background_effect: Option<BackgroundEffect>,
+    black_border_detector: Option<BlackBorderDetector>,
+    boblight_server: Option<BoblightServer>,
+    color: Option<ColorAdjustment>,
+    device: Option<Device>,
+    effects: Option<Effects>,
+    foreground_effect: Option<ForegroundEffect>,
+    instance_capture: Option<InstanceCapture>,
+    led_config: Option<LedConfig>,
+    leds: Option<Leds>,
+    smoothing: Option<Smoothing>,
+}
+
+impl InstanceConfigCreator {
+    fn new(instance: Instance) -> Self {
+        Self {
+            instance,
+            background_effect: None,
+            black_border_detector: None,
+            boblight_server: None,
+            color: None,
+            device: None,
+            effects: None,
+            foreground_effect: None,
+            instance_capture: None,
+            led_config: None,
+            leds: None,
+            smoothing: None,
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum ConfigError {
     #[error("error querying the database: {0}")]
@@ -905,12 +1202,15 @@ pub enum ConfigError {
     Meta(#[from] MetaError),
     #[error("error loading user: {0}")]
     User(#[from] UserError),
+    // TODO: Say which setting?
+    #[error("missing hyperion_inst field on instance setting")]
+    MissingHyperionInst,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Config {
-    instances: Vec<Instance>,
-    settings: Vec<Setting>,
+    pub instances: BTreeMap<i32, InstanceConfig>,
+    pub global: GlobalConfig,
     meta: Vec<Meta>,
     users: Vec<User>,
 }
@@ -923,19 +1223,168 @@ impl Config {
         use crate::db::schema::settings::dsl::settings as db_settings;
         use diesel::prelude::*;
 
-        let instances: Result<Vec<_>, _> = db_instances
+        let mut instances = BTreeMap::new();
+        let mut global = GlobalConfigCreator::default();
+
+        for instance in db_instances
             .load::<db_models::DbInstance>(&**db)?
             .into_iter()
             .map(Instance::try_from)
-            .collect();
-        let instances = instances?;
+        {
+            let instance = instance?;
+            instances.insert(instance.id, InstanceConfigCreator::new(instance));
+        }
 
-        let settings: Result<Vec<_>, _> = db_settings
+        for setting in db_settings
             .load::<db_models::DbSetting>(&**db)?
             .into_iter()
             .map(Setting::try_from)
-            .collect();
-        let settings = settings?;
+        {
+            let setting = setting?;
+            match setting.config {
+                SettingData::BackgroundEffect(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .background_effect = Some(config)
+                }
+                SettingData::BlackBorderDetector(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .black_border_detector = Some(config)
+                }
+                SettingData::BoblightServer(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .boblight_server = Some(config)
+                }
+                SettingData::ColorAdjustment(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .color = Some(config)
+                }
+                SettingData::Device(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .device = Some(config)
+                }
+                SettingData::Effects(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .effects = Some(config)
+                }
+                SettingData::ForegroundEffect(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .foreground_effect = Some(config)
+                }
+                SettingData::InstanceCapture(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .instance_capture = Some(config)
+                }
+                SettingData::LedConfig(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .led_config = Some(config)
+                }
+                SettingData::Leds(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .leds = Some(config)
+                }
+                SettingData::Smoothing(config) => {
+                    instances
+                        .get_mut(
+                            &setting
+                                .hyperion_inst
+                                .ok_or(ConfigError::MissingHyperionInst)?,
+                        )
+                        .unwrap()
+                        .smoothing = Some(config)
+                }
+
+                SettingData::FlatbuffersServer(config) => {
+                    global.flatbuffers_server = Some(config);
+                }
+                SettingData::Forwarder(config) => {
+                    global.forwarder = Some(config);
+                }
+                SettingData::Framegrabber(config) => {
+                    global.framegrabber = Some(config);
+                }
+                SettingData::General(config) => {
+                    global.general = Some(config);
+                }
+                SettingData::GrabberV4L2(config) => {
+                    global.grabber_v4l2 = Some(config);
+                }
+                SettingData::JsonServer(config) => {
+                    global.json_server = Some(config);
+                }
+                SettingData::Logger(config) => {
+                    global.logger = Some(config);
+                }
+                SettingData::Network(config) => {
+                    global.network = Some(config);
+                }
+                SettingData::ProtoServer(config) => {
+                    global.proto_server = Some(config);
+                }
+                SettingData::WebConfig(config) => {
+                    global.web_config = Some(config);
+                }
+            }
+        }
 
         let meta: Result<Vec<_>, _> = db_meta
             .load::<db_models::DbMeta>(&**db)?
@@ -951,34 +1400,24 @@ impl Config {
             .collect();
         let users = users?;
 
+        let instances: BTreeMap<i32, InstanceConfig> =
+            instances.into_iter().map(|(k, v)| (k, v.into())).collect();
+
+        let global: GlobalConfig = global.into();
+
         debug!(
-            "loaded {} instance(s), {} setting(s), {} meta, {} user(s)",
+            "`{}`: loaded {} instance(s), {} meta, {} user(s)",
+            global.general.name,
             instances.len(),
-            settings.len(),
             meta.len(),
             users.len()
         );
 
         Ok(Self {
             instances,
-            settings,
+            global,
             meta,
             users,
         })
-    }
-
-    pub fn get(&self, instance_id: Option<i32>, ty: SettingKind) -> Option<&Setting> {
-        // TODO: Not O(n)
-        for setting in &self.settings {
-            if setting.hyperion_inst == instance_id {
-                let kind: SettingKind = (&setting.config).into();
-
-                if kind == ty {
-                    return Some(setting);
-                }
-            }
-        }
-
-        None
     }
 }

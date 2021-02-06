@@ -47,8 +47,6 @@ impl PriorityMuxer {
     }
 
     fn notify_output_change(&mut self) {
-        debug!("current output changed, notifying consumers");
-
         // unwrap: there is always at least one input
         let target = self.inputs.values().next().unwrap();
 

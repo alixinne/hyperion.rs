@@ -685,6 +685,7 @@ pub struct LedConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
+#[validate(schema(function = "validate_scan_range", message = "invalid range"))]
 pub struct Led {
     #[validate(range(min = 0., max = 1.))]
     pub hmin: f32,
@@ -696,6 +697,19 @@ pub struct Led {
     pub vmax: f32,
     pub color_order: Option<ColorOrder>,
     pub name: Option<String>,
+}
+
+/// Validate the bounds of a scan range
+fn validate_scan_range(led: &Led) -> Result<(), validator::ValidationError> {
+    if led.hmin > led.hmax {
+        return Err(validator::ValidationError::new("invalid_range"));
+    }
+
+    if led.vmin > led.vmax {
+        return Err(validator::ValidationError::new("invalid_range"));
+    }
+
+    Ok(())
 }
 
 #[derive(Debug, Clone, PartialEq, Validate)]

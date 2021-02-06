@@ -9,6 +9,8 @@ use tokio::signal;
 struct Opts {
     #[structopt(short, long, parse(from_occurrences))]
     verbose: u32,
+    #[structopt(long)]
+    dump_config: bool,
 }
 
 #[paw::main]
@@ -36,6 +38,12 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
 
     // Load configuration
     let config = hyperion::models::Config::load(&db)?;
+
+    // Dump configuration if this was asked
+    if opts.dump_config {
+        serde_json::to_writer(&mut std::io::stdout(), &config)?;
+        return Ok(());
+    }
 
     // Create tokio runtime
     let rt = Runtime::new()?;

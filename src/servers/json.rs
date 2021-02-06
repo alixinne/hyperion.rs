@@ -40,7 +40,7 @@ pub enum JsonServerError {
 fn handle_request(
     request: Result<HyperionMessage, JsonCodecError>,
     source: &InputSourceHandle<InputMessage>,
-) -> Result<(), JsonServerError> {
+) -> Result<Option<HyperionResponse>, JsonServerError> {
     match request? {
         HyperionMessage::ClearAll => {
             // Update state
@@ -81,10 +81,15 @@ fn handle_request(
             })?;
         }
 
+        HyperionMessage::ServerInfo => {
+            // Just answer the serverinfo request, no need to update state
+            return Ok(Some(HyperionResponse::server_info(vec![])));
+        }
+
         _ => return Err(JsonServerError::NotImplemented),
     };
 
-    Ok(())
+    Ok(None)
 }
 
 pub async fn handle_client(
@@ -106,14 +111,12 @@ pub async fn handle_client(
         trace!("({}) processing request: {:?}", peer_addr, request);
 
         let reply = match handle_request(request, &source) {
-            Ok(()) => HyperionResponse::SuccessResponse { success: true },
+            Ok(None) => HyperionResponse::success(),
+            Ok(Some(response)) => response,
             Err(error) => {
                 error!("({}) error processing request: {}", peer_addr, error);
 
-                HyperionResponse::ErrorResponse {
-                    success: false,
-                    error: error.to_string(),
-                }
+                HyperionResponse::error(&error)
             }
         };
 

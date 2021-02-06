@@ -1,6 +1,5 @@
-use std::fmt;
-
 use serde_derive::{Deserialize, Serialize};
+use serde_json::json;
 
 /// Change color adjustement values
 #[derive(Debug, Deserialize)]
@@ -29,12 +28,12 @@ pub struct Correction {
 }
 
 /// Trigger an effect by name
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Effect {
     /// Effect name
-    name: String,
+    pub name: String,
     /// Effect parameters
-    args: Option<serde_json::Value>,
+    pub args: Option<serde_json::Value>,
 }
 
 /// Change color temperature values
@@ -62,11 +61,11 @@ pub struct Transform {
     #[serde(rename = "saturationLGain")]
     saturation_lgain: Option<f32>,
     /// HSV Luminance gain
-    #[serde(rename = "luminanceGain")]
-    luminance_gain: Option<f32>,
-    /// Minimum luminance
-    #[serde(rename = "luminanceMinimum")]
-    luminance_minimum: Option<f32>,
+    #[serde(rename = "lightnessGain")]
+    lightness_gain: Option<f32>,
+    /// Minimum lightness
+    #[serde(rename = "lightnessMinimum")]
+    lightness_minimum: Option<f32>,
     /// Transform threshold
     threshold: Option<[f32; 3]>,
     /// Transform gamma
@@ -75,36 +74,6 @@ pub struct Transform {
     blacklevel: Option<[f32; 3]>,
     /// Transform white level
     whitelevel: Option<[f32; 3]>,
-}
-
-/// Serde visitor for deserializing Base64-encoded values
-struct Base64Visitor;
-
-impl<'a> serde::de::Visitor<'a> for Base64Visitor {
-    type Value = Vec<u8>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("base64 image")
-    }
-
-    fn visit_str<A>(self, string: &str) -> Result<Self::Value, A>
-    where
-        A: serde::de::Error,
-    {
-        base64::decode(string).map_err(|err| serde::de::Error::custom(err.to_string()))
-    }
-}
-
-/// Decode a base64-encoded value
-///
-/// # Parameters
-///
-/// `deserializer`: Serde deserializer
-fn from_base64<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    deserializer.deserialize_str(Base64Visitor {})
 }
 
 /// Incoming Hyperion JSON message
@@ -148,7 +117,7 @@ pub enum HyperionMessage {
         /// Command priority
         priority: i32,
         /// Command duration
-        duration: i32,
+        duration: Option<i32>,
         /// Effect parameters
         effect: Effect,
     },
@@ -164,7 +133,7 @@ pub enum HyperionMessage {
         /// Raw image height
         imageheight: u32,
         /// Raw image data
-        #[serde(deserialize_with = "from_base64")]
+        #[serde(deserialize_with = "crate::serde::from_base64")]
         imagedata: Vec<u8>,
     },
     /// Request for server information
@@ -184,6 +153,52 @@ pub enum HyperionMessage {
     },
 }
 
+/// Effect definition details
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EffectDefinition {
+    /// User-friendly name of the effect
+    pub name: String,
+    /// Path to the script to run
+    pub script: String,
+    /// Extra script arguments
+    pub args: serde_json::Value,
+}
+
+/// Hyperion build info
+#[derive(Debug, Serialize)]
+pub struct BuildInfo {
+    /// Version number
+    version: String,
+    /// Build time
+    time: String,
+}
+
+/// Hyperion server info
+#[derive(Debug, Serialize)]
+pub struct ServerInfo {
+    /// Server hostname
+    hostname: String,
+    /// Effects
+    effects: Vec<EffectDefinition>,
+    /// Build info
+    hyperion_build: BuildInfo,
+
+    /// Priority information (array)
+    priorities: serde_json::Value,
+    /// Color correction information (array)
+    correction: serde_json::Value,
+    /// Temperature correction information (array)
+    temperature: serde_json::Value,
+    /// Transform correction information (array)
+    adjustment: serde_json::Value,
+    /// Active effect info (array)
+    #[serde(rename = "activeEffects")]
+    active_effects: serde_json::Value,
+    /// Active static LED color (array)
+    #[serde(rename = "activeLedColor")]
+    active_led_color: serde_json::Value,
+}
+
 /// Hyperion JSON response
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
@@ -200,4 +215,55 @@ pub enum HyperionResponse {
         /// Error message
         error: String,
     },
+    /// Server information response
+    ServerInfoResponse {
+        /// Success value (should be true)
+        success: bool,
+        /// Server information
+        // Box because of large size difference
+        info: Box<ServerInfo>,
+    },
+}
+
+impl HyperionResponse {
+    /// Return a success response
+    pub fn success() -> Self {
+        HyperionResponse::SuccessResponse { success: true }
+    }
+
+    /// Return an error response
+    pub fn error(error: &impl std::fmt::Display) -> Self {
+        HyperionResponse::ErrorResponse {
+            success: false,
+            error: error.to_string(),
+        }
+    }
+
+    /// Return a server information response
+    pub fn server_info(effects: Vec<EffectDefinition>) -> Self {
+        HyperionResponse::ServerInfoResponse {
+            success: true,
+            info: Box::new(ServerInfo {
+                hostname: hostname::get()
+                    .map(|s| s.to_string_lossy().to_string())
+                    .unwrap_or_else(|_| "<unknown hostname>".to_owned()),
+                effects,
+                hyperion_build: BuildInfo {
+                    version: git_version::git_version!(
+                        prefix = "hyperion.rs-",
+                        args = ["--always", "--tags"]
+                    )
+                    .to_owned(),
+                    time: "".to_owned(),
+                },
+
+                priorities: json!([]),
+                correction: json!([]),
+                temperature: json!([]),
+                adjustment: json!([]),
+                active_effects: json!([]),
+                active_led_color: json!([]),
+            }),
+        }
+    }
 }

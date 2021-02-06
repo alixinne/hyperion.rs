@@ -8,16 +8,16 @@ use futures::prelude::*;
 use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
+use validator::Validate;
 
 use crate::{
     global::{Global, InputMessage, InputMessageData, InputSourceHandle},
     image::{RawImage, RawImageError},
-    models::Color,
 };
 
 /// Schema definitions as Serde serializable structures and enums
 mod message;
-use message::{HyperionMessage, HyperionResponse};
+use message::{HyperionCommand, HyperionMessage, HyperionResponse};
 
 /// JSON protocol codec definition
 mod codec;
@@ -35,43 +35,56 @@ pub enum JsonServerError {
     NotImplemented,
     #[error("error decoding image")]
     Image(#[from] RawImageError),
+    #[error("error validating request: {0}")]
+    Validation(#[from] validator::ValidationErrors),
 }
 
 fn handle_request(
-    request: Result<HyperionMessage, JsonCodecError>,
+    request: HyperionMessage,
     source: &InputSourceHandle<InputMessage>,
 ) -> Result<Option<HyperionResponse>, JsonServerError> {
-    match request? {
-        HyperionMessage::ClearAll => {
+    request.validate()?;
+
+    match request.command {
+        HyperionCommand::ClearAll => {
             // Update state
             source.send(InputMessageData::ClearAll)?;
         }
 
-        HyperionMessage::Clear { priority } => {
+        HyperionCommand::Clear(message::Clear { priority }) => {
             // Update state
             source.send(InputMessageData::Clear { priority })?;
         }
 
-        HyperionMessage::Color {
+        HyperionCommand::Color(message::Color {
             priority,
             duration,
             color,
-        } => {
+            origin: _,
+        }) => {
+            // TODO: Handle origin field
+
             // Update state
             source.send(InputMessageData::SolidColor {
                 priority,
                 duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
-                color: Color::from_components((color[0], color[1], color[2])),
+                color,
             })?;
         }
 
-        HyperionMessage::Image {
+        HyperionCommand::Image(message::Image {
             priority,
             duration,
             imagewidth,
             imageheight,
             imagedata,
-        } => {
+            origin: _,
+            format: _,
+            scale: _,
+            name: _,
+        }) => {
+            // TODO: Handle origin, format, scale, name fields
+
             let raw_image = RawImage::try_from((imagedata, imagewidth, imageheight))?;
 
             source.send(InputMessageData::Image {
@@ -81,9 +94,11 @@ fn handle_request(
             })?;
         }
 
-        HyperionMessage::ServerInfo => {
+        HyperionCommand::ServerInfo(message::ServerInfoRequest { subscribe: _ }) => {
+            // TODO: Handle subscribe field
+
             // Just answer the serverinfo request, no need to update state
-            return Ok(Some(HyperionResponse::server_info(vec![])));
+            return Ok(Some(HyperionResponse::server_info(request.tan, vec![])));
         }
 
         _ => return Err(JsonServerError::NotImplemented),
@@ -110,13 +125,17 @@ pub async fn handle_client(
     while let Some(request) = reader.next().await {
         trace!("({}) processing request: {:?}", peer_addr, request);
 
-        let reply = match handle_request(request, &source) {
-            Ok(None) => HyperionResponse::success(),
+        let mut tan = None;
+        let reply = match request.map_err(JsonServerError::from).and_then(|request| {
+            tan = request.tan;
+            handle_request(request, &source)
+        }) {
+            Ok(None) => HyperionResponse::success(tan),
             Ok(Some(response)) => response,
             Err(error) => {
                 error!("({}) error processing request: {}", peer_addr, error);
 
-                HyperionResponse::error(&error)
+                HyperionResponse::error(tan, &error)
             }
         };
 

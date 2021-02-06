@@ -33,6 +33,7 @@ thiserror = "1.0"
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-util = { version = "0.6", features = ["codec"] }
 uuid = { version = "0.8", features = ["serde"] }
+validator = { version = "0.12", features = ["derive"] }
 
 [build-dependencies]
 prost-build = "0.7.0"

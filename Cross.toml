@@ -1,0 +1,2 @@
+[target.arm-unknown-linux-gnueabihf]
+image = "vtavernier/hyperion.rs:arm-unknown-linux-gnueabihf"

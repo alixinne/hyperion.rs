@@ -2,7 +2,6 @@ use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use spidev::{SpiModeFlags, Spidev, SpidevOptions, SpidevTransfer};
-use tokio::time;
 
 use super::{DeviceError, DeviceImpl};
 use crate::models;
@@ -11,7 +10,6 @@ use crate::models;
 // TODO: Support latch_time
 
 pub struct Ws2812SpiDevice {
-    name: String,
     config: models::Ws2812Spi,
     dev: Spidev,
     buf: Vec<u8>,
@@ -41,8 +39,9 @@ impl Ws2812SpiDevice {
                 + SPI_FRAME_END_LATCH_BYTES
         ];
 
+        info!("`{}`: initialized SPI device", name);
+
         Ok(Self {
-            name,
             config,
             dev,
             buf,

@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 
+use ambassador::{delegatable_trait, Delegate};
 use palette::rgb::Rgb;
 use serde_derive::{Deserialize, Serialize};
-use strum_macros::{EnumDiscriminants, EnumString};
+use strum_macros::{EnumDiscriminants, EnumString, IntoStaticStr};
 use thiserror::Error;
 use validator::Validate;
 
@@ -218,17 +219,48 @@ pub enum ColorOrder {
     Grb,
 }
 
+#[delegatable_trait]
+pub trait DeviceConfig {
+    fn hardware_led_count(&self) -> usize;
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
+pub struct Dummy {
+    #[validate(range(min = 1))]
+    pub hardware_led_count: u32,
+}
+
+impl DeviceConfig for Dummy {
+    fn hardware_led_count(&self) -> usize {
+        self.hardware_led_count as _
+    }
+}
+
+impl Default for Dummy {
+    fn default() -> Self {
+        Self {
+            hardware_led_count: 1,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Ws2812Spi {
-    color_order: ColorOrder,
+    pub color_order: ColorOrder,
     #[validate(range(min = 1))]
-    hardware_led_count: u32,
-    invert: bool,
-    latch_time: i32,
-    output: String,
-    rate: i32,
-    rewrite_time: i32,
+    pub hardware_led_count: u32,
+    pub invert: bool,
+    pub latch_time: i32,
+    pub output: String,
+    pub rate: i32,
+    pub rewrite_time: i32,
+}
+
+impl DeviceConfig for Ws2812Spi {
+    fn hardware_led_count(&self) -> usize {
+        self.hardware_led_count as _
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
@@ -264,24 +296,31 @@ pub struct PhilipsHue {
     pub verbose: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+impl DeviceConfig for PhilipsHue {
+    fn hardware_led_count(&self) -> usize {
+        self.hardware_led_count as _
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, IntoStaticStr, Delegate)]
 #[serde(rename_all = "lowercase", tag = "type")]
+#[delegate(DeviceConfig)]
 pub enum Device {
-    Dummy,
+    Dummy(Dummy),
     Ws2812Spi(Ws2812Spi),
     PhilipsHue(PhilipsHue),
 }
 
 impl Default for Device {
     fn default() -> Self {
-        Self::Dummy
+        Self::Dummy(Dummy::default())
     }
 }
 
 impl Validate for Device {
     fn validate(&self) -> Result<(), validator::ValidationErrors> {
         match self {
-            Device::Dummy => Ok(()),
+            Device::Dummy(device) => device.validate(),
             Device::Ws2812Spi(device) => device.validate(),
             Device::PhilipsHue(device) => device.validate(),
         }
@@ -1149,6 +1188,30 @@ pub struct InstanceConfig {
     pub leds: Leds,
     #[validate]
     pub smoothing: Smoothing,
+}
+
+impl InstanceConfig {
+    pub fn new_dummy(id: i32) -> Self {
+        Self {
+            instance: Instance {
+                id,
+                friendly_name: "Dummy device".to_owned(),
+                enabled: true,
+                last_use: chrono::Utc::now(),
+            },
+            background_effect: Default::default(),
+            black_border_detector: Default::default(),
+            boblight_server: Default::default(),
+            color: Default::default(),
+            device: Default::default(),
+            effects: Default::default(),
+            foreground_effect: Default::default(),
+            instance_capture: Default::default(),
+            led_config: Default::default(),
+            leds: Default::default(),
+            smoothing: Default::default(),
+        }
+    }
 }
 
 impl From<InstanceConfigCreator> for InstanceConfig {

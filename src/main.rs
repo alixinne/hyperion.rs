@@ -52,6 +52,54 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
         // Create the global state object
         let global = hyperion::global::GlobalData::new().wrap();
 
+        // Initialize and spawn the devices
+        let mut initialized_devices = 0;
+        let mut max_id = 0;
+
+        for (id, inst) in &config.instances {
+            max_id = max_id.max(*id);
+
+            match hyperion::instance::Instance::new(global.clone(), inst.clone()).await {
+                Ok(inst) => {
+                    initialized_devices += 1;
+
+                    // TODO: Move this code to a function
+                    tokio::spawn(async move {
+                        let result = inst.run().await;
+
+                        if let Err(error) = result {
+                            error!("Instance error: {:?}", error);
+                        }
+                    });
+                }
+                Err(error) => {
+                    error!(
+                        "Initializing instance {} `{}` failed: {}",
+                        id, inst.instance.friendly_name, error
+                    );
+                }
+            }
+        }
+
+        // Add a dummy device for debugging if needed
+        if initialized_devices == 0 {
+            warn!("no devices were initialized, adding a dummy device");
+            let inst = hyperion::instance::Instance::new(
+                global.clone(),
+                hyperion::models::InstanceConfig::new_dummy(max_id + 1),
+            )
+            .await?;
+
+            // TODO: Move this code to a function
+            tokio::spawn(async move {
+                let result = inst.run().await;
+
+                if let Err(error) = result {
+                    error!("Instance error: {:?}", error);
+                }
+            });
+        }
+
         // Start the flatbuffers servers
         if config.global.flatbuffers_server.enable {
             tokio::spawn({
@@ -110,10 +158,6 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
             });
         }
 
-        // Receive global updates
-        // Create this reader first so the muxer does not complain it can't send its output
-        let mut reader = global.subscribe_muxed().await;
-
         // Spawn priority muxer
         let muxer = hyperion::muxer::PriorityMuxer::new(global.clone()).await;
         tokio::spawn(muxer.run());
@@ -123,9 +167,6 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
 
         while !abort {
             tokio::select! {
-                update = reader.recv() => {
-                    info!("update: {:?}", update);
-                }
                 _ = signal::ctrl_c() => {
                     abort = true;
                 }

@@ -4,6 +4,7 @@ use thiserror::Error;
 use crate::models::{self, DeviceConfig};
 
 mod dummy;
+mod ws2812spi;
 
 #[derive(Debug, Error)]
 pub enum DeviceError {
@@ -11,6 +12,8 @@ pub enum DeviceError {
     NotSupported(&'static str),
     #[error("invalid led data")]
     InvalidLedData,
+    #[error("i/o error: {0}")]
+    FuturesIo(#[from] futures_io::Error),
 }
 
 #[async_trait]
@@ -28,11 +31,17 @@ impl Device {
     pub async fn new(name: &str, config: models::Device) -> Result<Self, DeviceError> {
         let led_count = config.hardware_led_count();
 
-        let inner = match config {
+        let inner: Box<dyn DeviceImpl>;
+        match config {
             models::Device::Dummy(dummy) => {
-                Box::new(dummy::DummyDevice::new(name.to_owned(), dummy))
+                inner = Box::new(dummy::DummyDevice::new(name.to_owned(), dummy));
             }
-            other => return Err(DeviceError::NotSupported(other.into())),
+            models::Device::Ws2812Spi(ws2812spi) => {
+                inner = Box::new(ws2812spi::Ws2812SpiDevice::new(name.to_owned(), ws2812spi)?);
+            }
+            other => {
+                return Err(DeviceError::NotSupported(other.into()));
+            }
         };
 
         Ok(Self {

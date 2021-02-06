@@ -219,6 +219,21 @@ pub enum ColorOrder {
     Grb,
 }
 
+impl ColorOrder {
+    pub fn reorder_from_rgb(&self, color: Color) -> Color {
+        let (r, g, b) = color.into_components();
+
+        Color::from_components(match self {
+            ColorOrder::Rgb => (r, g, b),
+            ColorOrder::Bgr => (b, g, r),
+            ColorOrder::Rbg => (r, b, g),
+            ColorOrder::Brg => (b, r, g),
+            ColorOrder::Gbr => (g, b, r),
+            ColorOrder::Grb => (g, r, b),
+        })
+    }
+}
+
 #[delegatable_trait]
 pub trait DeviceConfig {
     fn hardware_led_count(&self) -> usize;

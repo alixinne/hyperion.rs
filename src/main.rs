@@ -147,10 +147,10 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
             .filter_or(
                 "HYPERION_LOG",
                 match opts.verbose {
-                    0 => "hyperion=warn",
-                    1 => "hyperion=info",
-                    2 => "hyperion=debug",
-                    _ => "hyperion=trace",
+                    0 => "hyperion=warn,hyperiond=warn",
+                    1 => "hyperion=info,hyperiond=info",
+                    2 => "hyperion=debug,hyperiond=debug",
+                    _ => "hyperion=trace,hyperiond=trace",
                 },
             )
             .write_style("HYPERION_LOG_STYLE"),

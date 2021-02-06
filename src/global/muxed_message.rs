@@ -62,6 +62,9 @@ impl From<InputMessageData> for MuxedMessageData {
                 duration,
                 image,
             },
+            InputMessageData::PrioritiesRequest { .. } => {
+                panic!("PrioritiesRequest cannot be muxed")
+            }
         }
     }
 }

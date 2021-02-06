@@ -410,7 +410,7 @@ pub struct ServerInfo {
     hyperion_build: BuildInfo,
 
     /// Priority information (array)
-    priorities: serde_json::Value,
+    priorities: Vec<PriorityInfo>,
     /// Color correction information (array)
     correction: serde_json::Value,
     /// Temperature correction information (array)
@@ -423,6 +423,41 @@ pub struct ServerInfo {
     /// Active static LED color (array)
     #[serde(rename = "activeLedColor")]
     active_led_color: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PriorityInfo {
+    priority: i32,
+    duration: i32,
+    r#type: &'static str,
+}
+
+// TODO: Better From impl for PriorityInfo
+impl From<crate::global::InputMessage> for PriorityInfo {
+    fn from(msg: crate::global::InputMessage) -> Self {
+        use crate::global::{InputMessageData, Message};
+        match msg.data() {
+            InputMessageData::SolidColor {
+                priority, duration, ..
+            } => Self {
+                priority: *priority,
+                duration: duration.map(|d| d.num_milliseconds() as i32).unwrap_or(0),
+                r#type: "color",
+            },
+            InputMessageData::Image {
+                priority, duration, ..
+            } => Self {
+                priority: *priority,
+                duration: duration.map(|d| d.num_milliseconds() as i32).unwrap_or(0),
+                r#type: "color",
+            },
+            InputMessageData::Clear { .. }
+            | InputMessageData::ClearAll { .. }
+            | InputMessageData::PrioritiesRequest { .. } => {
+                panic!("cannot create PriorityInfo for InputMessage")
+            }
+        }
+    }
 }
 
 /// Hyperion JSON response
@@ -473,7 +508,11 @@ impl HyperionResponse {
     }
 
     /// Return a server information response
-    pub fn server_info(tan: Option<i32>, effects: Vec<EffectDefinition>) -> Self {
+    pub fn server_info(
+        tan: Option<i32>,
+        effects: Vec<EffectDefinition>,
+        priorities: Vec<PriorityInfo>,
+    ) -> Self {
         HyperionResponse::ServerInfoResponse {
             success: true,
             info: Box::new(ServerInfo {
@@ -490,7 +529,7 @@ impl HyperionResponse {
                     time: "".to_owned(),
                 },
 
-                priorities: json!([]),
+                priorities,
                 correction: json!([]),
                 temperature: json!([]),
                 adjustment: json!([]),

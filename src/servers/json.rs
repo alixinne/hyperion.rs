@@ -37,9 +37,11 @@ pub enum JsonServerError {
     Image(#[from] RawImageError),
     #[error("error validating request: {0}")]
     Validation(#[from] validator::ValidationErrors),
+    #[error("error receiving system response: {0}")]
+    Recv(#[from] tokio::sync::oneshot::error::RecvError),
 }
 
-fn handle_request(
+async fn handle_request(
     request: HyperionMessage,
     source: &InputSourceHandle<InputMessage>,
 ) -> Result<Option<HyperionResponse>, JsonServerError> {
@@ -97,8 +99,25 @@ fn handle_request(
         HyperionCommand::ServerInfo(message::ServerInfoRequest { subscribe: _ }) => {
             // TODO: Handle subscribe field
 
+            // Request priority information
+            let (sender, receiver) = tokio::sync::oneshot::channel();
+            source.send(InputMessageData::PrioritiesRequest {
+                response: Arc::new(std::sync::Mutex::new(Some(sender))),
+            })?;
+
+            // Receive priority information
+            let priorities = receiver
+                .await?
+                .into_iter()
+                .map(message::PriorityInfo::from)
+                .collect();
+
             // Just answer the serverinfo request, no need to update state
-            return Ok(Some(HyperionResponse::server_info(request.tan, vec![])));
+            return Ok(Some(HyperionResponse::server_info(
+                request.tan,
+                vec![],
+                priorities,
+            )));
         }
 
         _ => return Err(JsonServerError::NotImplemented),
@@ -126,10 +145,15 @@ pub async fn handle_client(
         trace!("({}) processing request: {:?}", peer_addr, request);
 
         let mut tan = None;
-        let reply = match request.map_err(JsonServerError::from).and_then(|request| {
-            tan = request.tan;
-            handle_request(request, &source)
-        }) {
+        let reply = match {
+            match request {
+                Ok(rq) => {
+                    tan = rq.tan;
+                    handle_request(rq, &source).await
+                }
+                Err(error) => Err(JsonServerError::from(error)),
+            }
+        } {
             Ok(None) => HyperionResponse::success(tan),
             Ok(Some(response)) => response,
             Err(error) => {

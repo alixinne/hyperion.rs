@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use super::Message;
 use crate::{image::RawImage, models::Color};
@@ -41,6 +41,9 @@ pub enum InputMessageData {
         duration: Option<chrono::Duration>,
         image: Arc<RawImage>,
     },
+    PrioritiesRequest {
+        response: Arc<Mutex<Option<tokio::sync::oneshot::Sender<Vec<InputMessage>>>>>,
+    },
 }
 
 impl InputMessageData {
@@ -50,6 +53,7 @@ impl InputMessageData {
             InputMessageData::Clear { priority } => Some(*priority),
             InputMessageData::SolidColor { priority, .. } => Some(*priority),
             InputMessageData::Image { priority, .. } => Some(*priority),
+            InputMessageData::PrioritiesRequest { .. } => None,
         }
     }
 
@@ -59,6 +63,7 @@ impl InputMessageData {
             InputMessageData::Clear { .. } => None,
             InputMessageData::SolidColor { duration, .. } => *duration,
             InputMessageData::Image { duration, .. } => *duration,
+            InputMessageData::PrioritiesRequest { .. } => None,
         }
     }
 }

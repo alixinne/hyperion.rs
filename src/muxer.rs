@@ -197,6 +197,11 @@ impl PriorityMuxer {
                     InputMessageData::Clear { priority } => self.clear(*priority).await,
                     InputMessageData::SolidColor { .. } => self.handle_input(input).await,
                     InputMessageData::Image { .. } => self.handle_input(input).await,
+                    InputMessageData::PrioritiesRequest { response } => {
+                        response.lock().unwrap().take().map(move |channel| {
+                            channel.send(self.inputs.values().map(|(_, x)| x).cloned().collect())
+                        });
+                    }
                 }
             }
             Err(error) => {

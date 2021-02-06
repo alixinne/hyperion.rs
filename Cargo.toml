@@ -3,6 +3,11 @@ name = "hyperion"
 version = "0.1.0"
 authors = ["Vincent Tavernier <vince.tavernier@gmail.com>"]
 edition = "2018"
+default-run = "hyperiond"
+
+[[bin]]
+name = "hyperiond"
+path = "src/main.rs"
 
 [dependencies]
 base64 = "0.13"

@@ -98,12 +98,12 @@ impl Instance {
                             255
                         };
 
-                        let area = x_area * y_area;
+                        let area = x_area * y_area / 255;
 
                         let (r, g, b) = rgb.into_components();
-                        r_acc += (r as u64) * area;
-                        g_acc += (g as u64) * area;
-                        b_acc += (b as u64) * area;
+                        r_acc += (r as u64 * 255) * area;
+                        g_acc += (g as u64 * 255) * area;
+                        b_acc += (b as u64 * 255) * area;
                         cnt += area;
                     }
                 }

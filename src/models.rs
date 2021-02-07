@@ -11,6 +11,7 @@ use validator::Validate;
 use crate::db::models as db_models;
 
 pub type Color = Rgb<palette::encoding::srgb::Srgb, u8>;
+pub type Color16 = Rgb<palette::encoding::srgb::Srgb, u16>;
 
 pub trait ServerConfig {
     fn port(&self) -> u16;

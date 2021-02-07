@@ -8,11 +8,14 @@ use crate::{
     models::{self, DeviceConfig, InstanceConfig},
 };
 
+mod black_border_detector;
+use black_border_detector::*;
+
 mod device;
 use device::*;
 
-mod black_border_detector;
-use black_border_detector::*;
+mod smoothing;
+use smoothing::*;
 
 #[derive(Debug, Error)]
 pub enum InstanceError {
@@ -28,8 +31,9 @@ pub struct Instance {
     config: InstanceConfig,
     device: Device,
     receiver: broadcast::Receiver<MuxedMessage>,
-    led_data: Vec<models::Color>,
+    color_data: Vec<models::Color16>,
     black_border_detector: BlackBorderDetector,
+    smoothing: Smoothing,
 }
 
 impl Instance {
@@ -37,42 +41,53 @@ impl Instance {
         let device = Device::new(&config.instance.friendly_name, config.device.clone()).await?;
         let led_count = config.device.hardware_led_count();
         let black_border_detector = BlackBorderDetector::new(config.black_border_detector.clone());
+        let smoothing = Smoothing::new(config.smoothing.clone(), led_count);
 
         Ok(Self {
             config,
             device,
             receiver: global.subscribe_muxed().await,
-            led_data: vec![models::Color::default(); led_count],
+            color_data: vec![models::Color16::default(); led_count],
             black_border_detector,
+            smoothing,
         })
     }
 
-    fn handle_image(&mut self, image: &RawImage) -> Result<(), InstanceError> {
-        // TODO: Do all the image processing needed
+    fn handle_color(&mut self, color: models::Color) {
+        let color = crate::utils::color_to16(color);
+        self.color_data.iter_mut().map(|x| *x = color).count();
+    }
 
+    fn handle_image(&mut self, image: &RawImage) {
         // Update the black border
         self.black_border_detector.process(image);
         let black_border = self.black_border_detector.current_border();
 
-        // Update all the leds according to their range
-        // TODO: Fixed point arithmetic
+        // Update the 16-bit color data from the LED ranges and the image
         let ((xmin, xmax), (ymin, ymax)) = black_border.get_ranges(image.width(), image.height());
         let width = (xmax - xmin) as f32;
         let height = (ymax - ymin) as f32;
-        for (spec, value) in self.config.leds.leds.iter().zip(self.led_data.iter_mut()) {
+        for (spec, value) in self.config.leds.leds.iter().zip(self.color_data.iter_mut()) {
             let mut r_acc = 0u64;
-            let mut r_cnt = 0u64;
             let mut g_acc = 0u64;
-            let mut g_cnt = 0u64;
             let mut b_acc = 0u64;
-            let mut b_cnt = 0u64;
+            let mut cnt = 0u64;
 
+            // TODO: Fixed point arithmetic
             let lxmin = spec.hmin * width + xmin as f32;
             let lxmax = spec.hmax * width + xmin as f32;
             let lymin = spec.vmin * height + ymin as f32;
             let lymax = spec.vmax * height + ymin as f32;
 
             for y in lymin.floor() as u32..=(lymax.ceil() as u32).min(image.height() - 1) {
+                let y_area = if (y as f32) < lymin {
+                    (255. * (1. - lymin.fract())) as u64
+                } else if (y + 1) as f32 > lymax {
+                    (255. * lymax.fract()) as u64
+                } else {
+                    255
+                };
+
                 for x in lxmin.floor() as u32..=(lxmax.ceil() as u32).min(image.width() - 1) {
                     if let Some(rgb) = image.color_at(x, y) {
                         let x_area = if (x as f32) < lxmin {
@@ -83,52 +98,39 @@ impl Instance {
                             255
                         };
 
-                        let y_area = if (y as f32) < lymin {
-                            (255. * (1. - lymin.fract())) as u64
-                        } else if (y + 1) as f32 > lymax {
-                            (255. * lymax.fract()) as u64
-                        } else {
-                            255
-                        };
-
-                        let area = x_area * y_area / 255;
+                        let area = x_area * y_area;
 
                         let (r, g, b) = rgb.into_components();
                         r_acc += (r as u64) * area;
-                        r_cnt += area;
                         g_acc += (g as u64) * area;
-                        g_cnt += area;
                         b_acc += (b as u64) * area;
-                        b_cnt += area;
+                        cnt += area;
                     }
                 }
             }
 
-            *value = models::Color::from_components((
-                (r_acc / r_cnt.max(1)).max(0).min(255) as u8,
-                (g_acc / g_cnt.max(1)).max(0).min(255) as u8,
-                (b_acc / b_cnt.max(1)).max(0).min(255) as u8,
+            *value = models::Color16::from_components((
+                (r_acc / cnt.max(1)).max(0).min(u16::MAX as _) as u16,
+                (g_acc / cnt.max(1)).max(0).min(u16::MAX as _) as u16,
+                (b_acc / cnt.max(1)).max(0).min(u16::MAX as _) as u16,
             ));
         }
-
-        Ok(())
     }
 
-    async fn handle_message(&mut self, message: MuxedMessage) -> Result<(), InstanceError> {
+    fn handle_message(&mut self, message: MuxedMessage) {
+        // Update color data
         match message.data() {
             MuxedMessageData::SolidColor { color, .. } => {
                 // TODO: Replace with fill once it's stabilized
-                self.led_data.iter_mut().map(|x| *x = *color).count();
+                self.handle_color(*color);
             }
             MuxedMessageData::Image { image, .. } => {
-                self.handle_image(&*image)?;
+                self.handle_image(&*image);
             }
         }
 
-        // The message was handled, notify the device
-        self.device.set_led_data(&self.led_data).await?;
-
-        Ok(())
+        // Update the smoothing state with the new color data
+        self.smoothing.set_target(&self.color_data);
     }
 
     pub async fn run(mut self) -> Result<(), InstanceError> {
@@ -137,8 +139,12 @@ impl Instance {
                 _ = self.device.update() => {
                     // Device update completed
                 },
+                led_data = self.smoothing.update() => {
+                    // The smoothing state has updated
+                    self.device.set_led_data(led_data).await?;
+                },
                 message = self.receiver.recv() => {
-                    self.handle_message(message?).await?;
+                    self.handle_message(message?);
                 }
             }
         }

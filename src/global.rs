@@ -144,7 +144,7 @@ impl GlobalData {
 
     fn unregister_muxed_source(&mut self, source: &InputSource<MuxedMessage>) {
         if let Some(is) = self.muxed_sources.remove(&source.id) {
-            info!("unregistered input source {}", *is);
+            info!("unregistered muxed source {}", *is);
         }
     }
 }

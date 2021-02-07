@@ -7,7 +7,7 @@ pub mod schema;
 
 #[derive(Debug, Error)]
 pub enum DbError {
-    #[error("error conneting to the settings database: {0}")]
+    #[error("error connecting to the settings database: {0}")]
     Connection(#[from] diesel::ConnectionError),
     #[error("failed to find default path")]
     InvalidDefaultPath,

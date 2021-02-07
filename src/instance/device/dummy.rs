@@ -37,6 +37,6 @@ impl DeviceImpl for DummyDevice {
 
     async fn update(&mut self) -> Result<(), super::DeviceError> {
         // No regular updates
-        Ok(())
+        futures::future::pending().await
     }
 }

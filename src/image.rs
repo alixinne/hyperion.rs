@@ -14,6 +14,10 @@ pub enum RawImageError {
         channels: u32,
         expected: usize,
     },
+    #[error("image width is zero")]
+    ZeroWidth,
+    #[error("image height is zero")]
+    ZeroHeight,
 }
 
 #[derive(Clone)]
@@ -90,6 +94,10 @@ impl TryFrom<(Vec<u8>, u32, u32)> for RawImage {
                 channels,
                 expected,
             });
+        } else if width == 0 {
+            return Err(RawImageError::ZeroWidth);
+        } else if height == 0 {
+            return Err(RawImageError::ZeroHeight);
         }
 
         Ok(Self {

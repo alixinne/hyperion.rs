@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["hyperion"] = [{"text":"impl PartialOrd&lt;ImageType&gt; for ImageType","synthetic":false,"types":[]},{"text":"impl PartialOrd&lt;Command&gt; for Command","synthetic":false,"types":[]},{"text":"impl PartialOrd&lt;Command&gt; for Command","synthetic":false,"types":[]},{"text":"impl PartialOrd&lt;Type&gt; for Type","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

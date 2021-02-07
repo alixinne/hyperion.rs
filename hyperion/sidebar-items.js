@@ -1,0 +1,1 @@
+initSidebarItems({"macro":[["ambassador_impl_DeviceConfig_body_enum",""],["ambassador_impl_DeviceConfig_body_single_struct",""]],"mod":[["db",""],["global",""],["image",""],["instance",""],["models",""],["muxer",""],["serde","Serde extensions"],["servers",""],["utils",""]]});

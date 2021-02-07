@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["JsonCodecError",""]],"fn":[["encode_reply","Encode an outgoing reply as JSON"],["parse_request","Parse an incoming request as JSON into the corresponding message type"]],"struct":[["JsonCodec","JSON tokio codec"]]});

@@ -1,0 +1,65 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - arm-unknown-linux-gnueabihf
+        include:
+          - target: x86_64-unknown-linux-gnu
+            cross: ""
+          - target: arm-unknown-linux-gnueabihf
+            cross: arm-linux-gnueabihf-
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          profile: minimal
+          override: true
+
+      - name: Build Docker image for cross
+        working-directory: docker
+        run: docker build . -f Dockerfile.${{ matrix.target }} -t vtavernier/cross-hyperion:${{ matrix.target }}
+
+      - name: Build project
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+
+      - name: Strip resulting binary
+        run: docker run -v ${{ github.workspace }}:/src vtavernier/cross-hyperion:${{ matrix.target }} ${{ matrix.cross }}strip /src/target/${{ matrix.target }}/release/hyperiond
+
+      - name: Prepare release
+        run: |
+          mkdir -p release/hyperion.rs/bin
+          cp target/${{ matrix.target }}/release/hyperiond release/hyperion.rs/bin/hyperiond-rs
+          cd release
+          tar cJvf hyperion.rs-${{ matrix.target }}.tar.xz hyperion.rs
+
+      - name: Upload to GitHub release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: 'release/*.tar.*'
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+
+# vim: ts=2:sw=2

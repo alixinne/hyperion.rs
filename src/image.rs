@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::models::Color;
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Error)]
 pub enum RawImageError {
     #[error("invalid data ({data} bytes) for the given dimensions ({width} x {height} x {channels} = {expected})")]
     InvalidData {
@@ -18,6 +18,10 @@ pub enum RawImageError {
     ZeroWidth,
     #[error("image height is zero")]
     ZeroHeight,
+    #[error("i/o error")]
+    Io(#[from] std::io::Error),
+    #[error("encoding error")]
+    Encoding(#[from] image::ImageError),
 }
 
 #[derive(Clone)]
@@ -59,6 +63,55 @@ impl RawImage {
         } else {
             None
         }
+    }
+
+    pub fn write_to_kitty(&self, out: &mut dyn std::io::Write) -> Result<(), RawImageError> {
+        // Buffer for raw PNG data
+        let mut buf = Vec::new();
+        // PNG encoder
+        let encoder = image::codecs::png::PngEncoder::new(&mut buf);
+        // Write PNG to buffer
+        encoder.encode(
+            &self.data[..],
+            self.width,
+            self.height,
+            if self.channels == 3 {
+                image::ColorType::Rgb8
+            } else if self.channels == 4 {
+                image::ColorType::Rgba8
+            } else {
+                panic!();
+            },
+        )?;
+        // Encode to base64
+        let encoded = base64::encode(&buf);
+        // Split into chunks
+        let chunks = encoded.as_bytes().chunks(4096).collect::<Vec<_>>();
+        // Transmit chunks
+        for (i, chunk) in chunks.iter().enumerate() {
+            let last = if i == chunks.len() - 1 { b"0" } else { b"1" };
+
+            match i {
+                0 => {
+                    // First chunk
+                    out.write_all(b"\x1B_Gf=100,a=T,m=")?;
+                }
+                _ => {
+                    // Other chunks
+                    out.write_all(b"\x1B_Gm=")?;
+                }
+            }
+
+            out.write_all(last)?;
+            out.write_all(b";")?;
+            out.write_all(chunk)?;
+            out.write_all(b"\x1B\\")?;
+        }
+
+        // Finish with new-line
+        out.write_all(b"\n")?;
+
+        Ok(())
     }
 }
 

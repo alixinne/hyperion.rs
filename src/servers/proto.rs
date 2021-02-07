@@ -32,6 +32,8 @@ pub enum ProtoServerError {
     Broadcast(#[from] tokio::sync::broadcast::error::SendError<InputMessage>),
     #[error("decode error: {}", 0)]
     DecodeError(#[from] prost::DecodeError),
+    #[error("missing command data in protobuf frame")]
+    MissingCommand,
 }
 
 fn encode_response(buf: &mut bytes::BytesMut, msg: impl prost::Message) -> bytes::Bytes {
@@ -89,7 +91,9 @@ fn handle_request(
         }
 
         message::hyperion_request::Command::Clear => {
-            let clear_request = message::ClearRequest::decode(request_bytes)?;
+            let clear_request = request
+                .clear_request
+                .ok_or_else(|| ProtoServerError::MissingCommand)?;
 
             // Update state
             source.send(InputMessageData::Clear {
@@ -98,7 +102,9 @@ fn handle_request(
         }
 
         message::hyperion_request::Command::Color => {
-            let color_request = message::ColorRequest::decode(request_bytes)?;
+            let color_request = request
+                .color_request
+                .ok_or_else(|| ProtoServerError::MissingCommand)?;
 
             let color = color_request.rgb_color;
             let color = (
@@ -116,7 +122,9 @@ fn handle_request(
         }
 
         message::hyperion_request::Command::Image => {
-            let image_request = message::ImageRequest::decode(request_bytes)?;
+            let image_request = request
+                .image_request
+                .ok_or_else(|| ProtoServerError::MissingCommand)?;
 
             let width =
                 u32::try_from(image_request.imagewidth).map_err(|_| ImageError::InvalidWidth)?;

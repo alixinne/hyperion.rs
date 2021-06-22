@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["LedMatch",""]],"struct":[["BrightnessComponents",""],["ChannelAdjustments",""],["ChannelAdjustmentsBuilder",""],["ColorAdjustment",""],["ColorAdjustmentData",""],["LedRanges",""],["PATTERN_REGEX",""],["RgbChannelAdjustment",""],["RgbTransform",""]]});

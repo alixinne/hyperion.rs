@@ -153,12 +153,23 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 <span class="kw">use</span> <span class="ident">tokio::select</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::broadcast</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">color</span>::{<span class="ident">ChannelAdjustments</span>, <span class="ident">ChannelAdjustmentsBuilder</span>},
     <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">Message</span>, <span class="ident">MuxedMessage</span>, <span class="ident">MuxedMessageData</span>},
     <span class="ident">image::RawImage</span>,
     <span class="ident">models</span>::{<span class="self">self</span>, <span class="ident">DeviceConfig</span>, <span class="ident">InstanceConfig</span>},
@@ -189,6 +200,7 @@
     <span class="ident">receiver</span>: <span class="ident">broadcast::Receiver</span><span class="op">&lt;</span><span class="ident">MuxedMessage</span><span class="op">&gt;</span>,
     <span class="ident">color_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">models::Color16</span><span class="op">&gt;</span>,
     <span class="ident">black_border_detector</span>: <span class="ident">BlackBorderDetector</span>,
+    <span class="ident">channel_adjustments</span>: <span class="ident">ChannelAdjustments</span>,
     <span class="ident">smoothing</span>: <span class="ident">Smoothing</span>,
 }
 
@@ -197,6 +209,10 @@
         <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">Device::new</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">instance</span>.<span class="ident">friendly_name</span>, <span class="ident">config</span>.<span class="ident">device</span>.<span class="ident">clone</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">led_count</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">device</span>.<span class="ident">hardware_led_count</span>();
         <span class="kw">let</span> <span class="ident">black_border_detector</span> <span class="op">=</span> <span class="ident">BlackBorderDetector::new</span>(<span class="ident">config</span>.<span class="ident">black_border_detector</span>.<span class="ident">clone</span>());
+        <span class="kw">let</span> <span class="ident">channel_adjustments</span> <span class="op">=</span> <span class="ident">ChannelAdjustmentsBuilder::new</span>()
+            .<span class="ident">adjustments</span>(<span class="ident">config</span>.<span class="ident">color</span>.<span class="ident">channel_adjustment</span>.<span class="ident">iter</span>())
+            .<span class="ident">led_count</span>(<span class="ident">led_count</span> <span class="kw">as</span> <span class="kw">_</span>)
+            .<span class="ident">build</span>();
         <span class="kw">let</span> <span class="ident">smoothing</span> <span class="op">=</span> <span class="ident">Smoothing::new</span>(<span class="ident">config</span>.<span class="ident">smoothing</span>.<span class="ident">clone</span>(), <span class="ident">led_count</span>);
 
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
@@ -205,6 +221,7 @@
             <span class="ident">receiver</span>: <span class="ident">global</span>.<span class="ident">subscribe_muxed</span>().<span class="kw">await</span>,
             <span class="ident">color_data</span>: <span class="macro">vec!</span>[<span class="ident">models::Color16::default</span>(); <span class="ident">led_count</span>],
             <span class="ident">black_border_detector</span>,
+            <span class="ident">channel_adjustments</span>,
             <span class="ident">smoothing</span>,
         })
     }
@@ -284,6 +301,9 @@
                 <span class="self">self</span>.<span class="ident">handle_image</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">image</span>);
             }
         }
+
+        <span class="comment">// In-place transform colors</span>
+        <span class="self">self</span>.<span class="ident">channel_adjustments</span>.<span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">color_data</span>);
 
         <span class="comment">// Update the smoothing state with the new color data</span>
         <span class="self">self</span>.<span class="ident">smoothing</span>.<span class="ident">set_target</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">color_data</span>);

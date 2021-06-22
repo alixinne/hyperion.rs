@@ -186,6 +186,8 @@
 <span id="183">183</span>
 <span id="184">184</span>
 <span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">log</span>;
@@ -198,11 +200,25 @@
 <span class="kw">struct</span> <span class="ident">Opts</span> {
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span>, <span class="ident">parse</span>(<span class="ident">from_occurrences</span>))]</span>
     <span class="ident">verbose</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;db-path&quot;</span>)]</span>
+    <span class="ident">database_path</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
     <span class="ident">dump_config</span>: <span class="ident">bool</span>,
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">hyperion::models::Config</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">color_eyre::eyre::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">opts</span>: <span class="ident">Opts</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">color_eyre::eyre::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="comment">// Connect to database</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">hyperion::db::Db::try_default</span>(<span class="ident">opts</span>.<span class="ident">database_path</span>.<span class="ident">as_deref</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="comment">// Load configuration</span>
+    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">hyperion::models::Config::load</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">db</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="comment">// Dump configuration if this was asked</span>
+    <span class="kw">if</span> <span class="ident">opts</span>.<span class="ident">dump_config</span> {
+        <span class="ident">serde_json::to_writer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::io::stdout</span>(), <span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
+        <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+    }
+
     <span class="comment">// Create the global state object</span>
     <span class="kw">let</span> <span class="ident">global</span> <span class="op">=</span> <span class="ident">hyperion::global::GlobalData::new</span>().<span class="ident">wrap</span>();
 
@@ -347,18 +363,6 @@
     .<span class="ident">try_init</span>()
     .<span class="ident">ok</span>();
 
-    <span class="comment">// Connect to database</span>
-    <span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">hyperion::db::Db::try_default</span>()<span class="question-mark">?</span>;
-
-    <span class="comment">// Load configuration</span>
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">hyperion::models::Config::load</span>(<span class="kw-2">&amp;</span><span class="ident">db</span>)<span class="question-mark">?</span>;
-
-    <span class="comment">// Dump configuration if this was asked</span>
-    <span class="kw">if</span> <span class="ident">opts</span>.<span class="ident">dump_config</span> {
-        <span class="ident">serde_json::to_writer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::io::stdout</span>(), <span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
-        <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
-    }
-
     <span class="comment">// Create tokio runtime</span>
     <span class="kw">let</span> <span class="ident">thd_count</span> <span class="op">=</span> <span class="ident">num_cpus::get</span>().<span class="ident">min</span>(<span class="number">4</span>);
     <span class="kw">if</span> <span class="ident">thd_count</span> <span class="op">&gt;</span> <span class="number">1</span> {
@@ -366,10 +370,10 @@
             .<span class="ident">worker_threads</span>(<span class="ident">thd_count</span>)
             .<span class="ident">enable_all</span>()
             .<span class="ident">build</span>()<span class="question-mark">?</span>;
-        <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">config</span>))
+        <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">opts</span>))
     } <span class="kw">else</span> {
         <span class="kw">let</span> <span class="ident">rt</span> <span class="op">=</span> <span class="ident">Builder::new_current_thread</span>().<span class="ident">enable_all</span>().<span class="ident">build</span>()<span class="question-mark">?</span>;
-        <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">config</span>))
+        <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">opts</span>))
     }
 }
 </pre></div>

@@ -1515,8 +1515,6 @@
 <span id="1512">1512</span>
 <span id="1513">1513</span>
 <span id="1514">1514</span>
-<span id="1515">1515</span>
-<span id="1516">1516</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
@@ -2806,7 +2804,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ConfigError</span> {
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error querying the database: {0}&quot;</span>)]</span>
-    <span class="ident">Diesel</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">diesel::result::Error</span>),
+    <span class="ident">Sqlx</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">sqlx::Error</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error loading instance: {0}&quot;</span>)]</span>
     <span class="ident">Instance</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">InstanceError</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error loading setting: {0}&quot;</span>)]</span>
@@ -2829,18 +2827,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Config</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load</span>(<span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="kw">crate</span><span class="ident">::db::Db</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ConfigError</span><span class="op">&gt;</span> {
-        <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::db::schema::auth::dsl::auth</span> <span class="kw">as</span> <span class="ident">db_auths</span>;
-        <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::db::schema::instances::dsl::instances</span> <span class="kw">as</span> <span class="ident">db_instances</span>;
-        <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::db::schema::meta::dsl::meta</span> <span class="kw">as</span> <span class="ident">db_meta</span>;
-        <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::db::schema::settings::dsl::settings</span> <span class="kw">as</span> <span class="ident">db_settings</span>;
-        <span class="kw">use</span> <span class="ident">diesel::prelude</span>::<span class="kw-2">*</span>;
-
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load</span>(<span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">crate</span><span class="ident">::db::Db</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ConfigError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">instances</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">global</span> <span class="op">=</span> <span class="ident">GlobalConfigCreator::default</span>();
 
-        <span class="kw">for</span> <span class="ident">instance</span> <span class="kw">in</span> <span class="ident">db_instances</span>
-            .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">db_models::DbInstance</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)<span class="question-mark">?</span>
+        <span class="kw">for</span> <span class="ident">instance</span> <span class="kw">in</span> <span class="ident">sqlx::query_as</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">db_models::DbInstance</span><span class="op">&gt;</span>(<span class="string">&quot;SELECT * FROM instances&quot;</span>)
+            .<span class="ident">fetch_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)
+            .<span class="kw">await</span><span class="question-mark">?</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="ident">Instance::try_from</span>)
         {
@@ -2848,8 +2841,9 @@
             <span class="ident">instances</span>.<span class="ident">insert</span>(<span class="ident">instance</span>.<span class="ident">id</span>, <span class="ident">InstanceConfigCreator::new</span>(<span class="ident">instance</span>));
         }
 
-        <span class="kw">for</span> <span class="ident">setting</span> <span class="kw">in</span> <span class="ident">db_settings</span>
-            .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">db_models::DbSetting</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)<span class="question-mark">?</span>
+        <span class="kw">for</span> <span class="ident">setting</span> <span class="kw">in</span> <span class="ident">sqlx::query_as</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">db_models::DbSetting</span><span class="op">&gt;</span>(<span class="string">&quot;SELECT * FROM settings&quot;</span>)
+            .<span class="ident">fetch_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)
+            .<span class="kw">await</span><span class="question-mark">?</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="ident">Setting::try_from</span>)
         {
@@ -2999,15 +2993,17 @@
             }
         }
 
-        <span class="kw">let</span> <span class="ident">meta</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">db_meta</span>
-            .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">db_models::DbMeta</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)<span class="question-mark">?</span>
+        <span class="kw">let</span> <span class="ident">meta</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">sqlx::query_as</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">db_models::DbMeta</span><span class="op">&gt;</span>(<span class="string">&quot;SELECT * FROM meta&quot;</span>)
+            .<span class="ident">fetch_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)
+            .<span class="kw">await</span><span class="question-mark">?</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="ident">Meta::try_from</span>)
             .<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">meta</span> <span class="op">=</span> <span class="ident">meta</span><span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">users</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">db_auths</span>
-            .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">db_models::DbUser</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)<span class="question-mark">?</span>
+        <span class="kw">let</span> <span class="ident">users</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">sqlx::query_as</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">db_models::DbUser</span><span class="op">&gt;</span>(<span class="string">&quot;SELECT * FROM auth&quot;</span>)
+            .<span class="ident">fetch_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">db</span>)
+            .<span class="kw">await</span><span class="question-mark">?</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="ident">User::try_from</span>)
             .<span class="ident">collect</span>();

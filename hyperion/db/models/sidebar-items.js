@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["_impl_queryable_for_dbinstance",""],["_impl_queryable_for_dbmeta",""],["_impl_queryable_for_dbsetting",""],["_impl_queryable_for_dbuser",""]],"struct":[["DbInstance",""],["DbMeta",""],["DbSetting",""],["DbUser",""]]});
+initSidebarItems({"struct":[["DbInstance",""],["DbMeta",""],["DbSetting",""],["DbUser",""]]});

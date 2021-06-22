@@ -34,8 +34,13 @@
 <span id="31">31</span>
 <span id="32">32</span>
 <span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Queryable</span>)]</span>
+<span class="kw">use</span> <span class="ident">sqlx::FromRow</span>;
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">FromRow</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DbUser</span> {
     <span class="kw">pub</span> <span class="ident">user</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">password</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
@@ -47,7 +52,7 @@
     <span class="kw">pub</span> <span class="ident">last_use</span>: <span class="ident">String</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Queryable</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">FromRow</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DbInstance</span> {
     <span class="kw">pub</span> <span class="ident">instance</span>: <span class="ident">i32</span>,
     <span class="kw">pub</span> <span class="ident">friendly_name</span>: <span class="ident">String</span>,
@@ -55,14 +60,15 @@
     <span class="kw">pub</span> <span class="ident">last_use</span>: <span class="ident">String</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Queryable</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">FromRow</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DbMeta</span> {
     <span class="kw">pub</span> <span class="ident">uuid</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">created_at</span>: <span class="ident">String</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Queryable</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">FromRow</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DbSetting</span> {
+    <span class="attribute">#[<span class="ident">sqlx</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;type&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">ty</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">config</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">hyperion_inst</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>,

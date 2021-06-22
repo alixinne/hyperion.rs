@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/servers/flat.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>flat.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/servers/flat.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>flat.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../hyperion/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
-                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../hyperion/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -211,21 +211,21 @@
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! flatbuffers flatcol server implementation</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryFrom</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">net</span>::<span class="ident">SocketAddr</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+<span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
+<span class="kw">use</span> <span class="ident">std::net::SocketAddr</span>;
+<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
-<span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
-<span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">net</span>::<span class="ident">TcpStream</span>;
+<span class="kw">use</span> <span class="ident">futures::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">thiserror::Error</span>;
+<span class="kw">use</span> <span class="ident">tokio::net::TcpStream</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputMessage</span>, <span class="ident">InputMessageData</span>, <span class="ident">InputSourceHandle</span>},
     <span class="ident">image</span>::{<span class="ident">RawImage</span>, <span class="ident">RawImageError</span>},
-    <span class="ident">models</span>::<span class="ident">Color</span>,
+    <span class="ident">models::Color</span>,
 };
 
-<span class="kw">use</span> <span class="kw">super</span>::<span class="ident">util</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="kw">super</span><span class="ident">::util</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// Schema definitions as Serde serializable structures and enums</span>
 <span class="kw">mod</span> <span class="ident">message</span>;
@@ -233,9 +233,9 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">FlatServerError</span> {
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;i/o error: {0}&quot;</span>)]</span>
-    <span class="ident">Io</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">futures_io</span>::<span class="ident">Error</span>),
+    <span class="ident">Io</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">futures_io::Error</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error broadcasting update: {0}&quot;</span>)]</span>
-    <span class="ident">Broadcast</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">tokio</span>::<span class="ident">sync</span>::<span class="ident">broadcast</span>::<span class="ident">error</span>::<span class="ident">SendError</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>),
+    <span class="ident">Broadcast</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">tokio::sync::broadcast::error::SendError</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;source not registered&quot;</span>)]</span>
     <span class="ident">Unregistered</span>,
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;invalid priority for registration, should be in [100, 200), got {0}&quot;</span>)]</span>
@@ -249,43 +249,43 @@
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error decoding image data&quot;</span>)]</span>
     <span class="ident">Image</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">ImageError</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error decoding frame&quot;</span>)]</span>
-    <span class="ident">FlatBuffer</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">flatbuffers</span>::<span class="ident">InvalidFlatbuffer</span>),
+    <span class="ident">FlatBuffer</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">flatbuffers::InvalidFlatbuffer</span>),
 }
 
-<span class="kw">fn</span> <span class="ident">register_response</span>(<span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">flatbuffers</span>::<span class="ident">FlatBufferBuilder</span>, <span class="ident">priority</span>: <span class="ident">i32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bytes</span>::<span class="ident">Bytes</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reply</span> <span class="op">=</span> <span class="ident">message</span>::<span class="ident">ReplyBuilder</span>::<span class="ident">new</span>(<span class="ident">builder</span>);
+<span class="kw">fn</span> <span class="ident">register_response</span>(<span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">flatbuffers::FlatBufferBuilder</span>, <span class="ident">priority</span>: <span class="ident">i32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bytes::Bytes</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reply</span> <span class="op">=</span> <span class="ident">message::ReplyBuilder::new</span>(<span class="ident">builder</span>);
     <span class="ident">reply</span>.<span class="ident">add_registered</span>(<span class="ident">priority</span>);
 
     <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="ident">reply</span>.<span class="ident">finish</span>();
 
     <span class="ident">builder</span>.<span class="ident">finish</span>(<span class="ident">reply</span>, <span class="prelude-val">None</span>);
-    <span class="ident">bytes</span>::<span class="ident">Bytes</span>::<span class="ident">copy_from_slice</span>(<span class="ident">builder</span>.<span class="ident">finished_data</span>())
+    <span class="ident">bytes::Bytes::copy_from_slice</span>(<span class="ident">builder</span>.<span class="ident">finished_data</span>())
 }
 
 <span class="kw">fn</span> <span class="ident">error_response</span>(
-    <span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">flatbuffers</span>::<span class="ident">FlatBufferBuilder</span>,
-    <span class="ident">error</span>: <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Display</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bytes</span>::<span class="ident">Bytes</span> {
+    <span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">flatbuffers::FlatBufferBuilder</span>,
+    <span class="ident">error</span>: <span class="kw">impl</span> <span class="ident">std::fmt::Display</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bytes::Bytes</span> {
     <span class="kw">let</span> <span class="ident">error</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">create_string</span>(<span class="ident">error</span>.<span class="ident">to_string</span>().<span class="ident">as_str</span>());
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reply</span> <span class="op">=</span> <span class="ident">message</span>::<span class="ident">ReplyBuilder</span>::<span class="ident">new</span>(<span class="ident">builder</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reply</span> <span class="op">=</span> <span class="ident">message::ReplyBuilder::new</span>(<span class="ident">builder</span>);
     <span class="ident">reply</span>.<span class="ident">add_error</span>(<span class="ident">error</span>);
 
     <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="ident">reply</span>.<span class="ident">finish</span>();
 
     <span class="ident">builder</span>.<span class="ident">finish</span>(<span class="ident">reply</span>, <span class="prelude-val">None</span>);
-    <span class="ident">bytes</span>::<span class="ident">Bytes</span>::<span class="ident">copy_from_slice</span>(<span class="ident">builder</span>.<span class="ident">finished_data</span>())
+    <span class="ident">bytes::Bytes::copy_from_slice</span>(<span class="ident">builder</span>.<span class="ident">finished_data</span>())
 }
 
-<span class="ident">async</span> <span class="kw">fn</span> <span class="ident">handle_request</span>(
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_request</span>(
     <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span>,
-    <span class="ident">request_bytes</span>: <span class="ident">bytes</span>::<span class="ident">BytesMut</span>,
+    <span class="ident">request_bytes</span>: <span class="ident">bytes::BytesMut</span>,
     <span class="ident">source</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">InputSourceHandle</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">global</span>: <span class="kw-2">&amp;</span><span class="ident">Global</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">FlatServerError</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">message</span>::<span class="ident">root_as_request</span>(<span class="ident">request_bytes</span>.<span class="ident">as_ref</span>())<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">message::root_as_request</span>(<span class="ident">request_bytes</span>.<span class="ident">as_ref</span>())<span class="question-mark">?</span>;
 
-    <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;({}) got request: {:?}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">request</span>.<span class="ident">command_type</span>());
+    <span class="macro">trace!</span>(<span class="string">&quot;({}) got request: {:?}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">request</span>.<span class="ident">command_type</span>());
 
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">source</span>) <span class="op">=</span> <span class="ident">source</span>.<span class="ident">as_ref</span>() {
         <span class="comment">// unwrap: we set a priority when we got the register call</span>
@@ -294,9 +294,9 @@
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">clear</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">command_as_clear</span>() {
             <span class="comment">// Update state</span>
             <span class="kw">if</span> <span class="ident">clear</span>.<span class="ident">priority</span>() <span class="op">&lt;</span> <span class="number">0</span> {
-                <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData</span>::<span class="ident">ClearAll</span>)<span class="question-mark">?</span>;
+                <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData::ClearAll</span>)<span class="question-mark">?</span>;
             } <span class="kw">else</span> {
-                <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData</span>::<span class="ident">Clear</span> {
+                <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData::Clear</span> {
                     <span class="ident">priority</span>: <span class="ident">clear</span>.<span class="ident">priority</span>(),
                 })<span class="question-mark">?</span>;
             }
@@ -309,93 +309,93 @@
             );
 
             <span class="comment">// Update state</span>
-            <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData</span>::<span class="ident">SolidColor</span> {
+            <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData::SolidColor</span> {
                 <span class="comment">// TODO</span>
                 <span class="ident">priority</span>: <span class="number">0</span>,
                 <span class="ident">duration</span>: <span class="ident">i32_to_duration</span>(<span class="prelude-val">Some</span>(<span class="ident">color</span>.<span class="ident">duration</span>())),
-                <span class="ident">color</span>: <span class="ident">Color</span>::<span class="ident">from_components</span>(<span class="ident">rgb</span>),
+                <span class="ident">color</span>: <span class="ident">Color::from_components</span>(<span class="ident">rgb</span>),
             })<span class="question-mark">?</span>;
         } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">image</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">command_as_image</span>() {
             <span class="comment">// Get raw image</span>
             <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">image</span>
                 .<span class="ident">data_as_raw_image</span>()
-                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ImageError</span>::<span class="ident">RawImageMissing</span>)<span class="question-mark">?</span>;
+                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ImageError::RawImageMissing</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// Extract fields</span>
             <span class="kw">let</span> <span class="ident">duration</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">duration</span>();
             <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">width</span>();
             <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">height</span>();
-            <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">data</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ImageError</span>::<span class="ident">RawImageMissing</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">data</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">ImageError::RawImageMissing</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// Parse message</span>
-            <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">u32</span>::<span class="ident">try_from</span>(<span class="ident">width</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ImageError</span>::<span class="ident">InvalidWidth</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">u32</span>::<span class="ident">try_from</span>(<span class="ident">height</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ImageError</span>::<span class="ident">InvalidHeight</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">raw_image</span> <span class="op">=</span> <span class="ident">RawImage</span>::<span class="ident">try_from</span>((<span class="ident">data</span>.<span class="ident">to_vec</span>(), <span class="ident">width</span>, <span class="ident">height</span>))<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">u32::try_from</span>(<span class="ident">width</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ImageError::InvalidWidth</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">u32::try_from</span>(<span class="ident">height</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ImageError::InvalidHeight</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">raw_image</span> <span class="op">=</span> <span class="ident">RawImage::try_from</span>((<span class="ident">data</span>.<span class="ident">to_vec</span>(), <span class="ident">width</span>, <span class="ident">height</span>))<span class="question-mark">?</span>;
 
             <span class="comment">// Update state</span>
-            <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData</span>::<span class="ident">Image</span> {
+            <span class="ident">source</span>.<span class="ident">send</span>(<span class="ident">InputMessageData::Image</span> {
                 <span class="ident">priority</span>,
                 <span class="ident">duration</span>: <span class="ident">i32_to_duration</span>(<span class="prelude-val">Some</span>(<span class="ident">duration</span>)),
-                <span class="ident">image</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">raw_image</span>),
+                <span class="ident">image</span>: <span class="ident">Arc::new</span>(<span class="ident">raw_image</span>),
             })<span class="question-mark">?</span>;
         } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">command_as_register</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError</span>::<span class="ident">AlreadyRegistered</span>);
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError::AlreadyRegistered</span>);
         } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError</span>::<span class="ident">UnknownCommand</span>);
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError::UnknownCommand</span>);
         }
     } <span class="kw">else</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">register</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">command_as_register</span>() {
             <span class="kw">let</span> <span class="ident">priority</span> <span class="op">=</span> <span class="ident">register</span>.<span class="ident">priority</span>();
 
             <span class="kw">if</span> <span class="ident">priority</span> <span class="op">&lt;</span> <span class="number">100</span> <span class="op">|</span><span class="op">|</span> <span class="ident">priority</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">200</span> {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError</span>::<span class="ident">InvalidPriority</span>(<span class="ident">priority</span>));
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError::InvalidPriority</span>(<span class="ident">priority</span>));
             } <span class="kw">else</span> {
                 <span class="comment">// unwrap: we checked the priority value before</span>
                 <span class="kw-2">*</span><span class="ident">source</span> <span class="op">=</span> <span class="prelude-val">Some</span>(
                     <span class="ident">global</span>
                         .<span class="ident">register_input_source</span>(
-                            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;FlatBuffers({}): {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">register</span>.<span class="ident">origin</span>()),
+                            <span class="macro">format!</span>(<span class="string">&quot;FlatBuffers({}): {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">register</span>.<span class="ident">origin</span>()),
                             <span class="prelude-val">Some</span>(<span class="ident">priority</span>),
                         )
-                        .<span class="ident">await</span>
+                        .<span class="kw">await</span>
                         .<span class="ident">unwrap</span>(),
                 );
             }
         } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError</span>::<span class="ident">Unregistered</span>);
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FlatServerError::Unregistered</span>);
         }
     };
 
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">pub</span> <span class="ident">async</span> <span class="kw">fn</span> <span class="ident">handle_client</span>(
+<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_client</span>(
     (<span class="ident">socket</span>, <span class="ident">peer_addr</span>): (<span class="ident">TcpStream</span>, <span class="ident">SocketAddr</span>),
     <span class="ident">global</span>: <span class="ident">Global</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">FlatServerError</span><span class="op">&gt;</span> {
-    <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;accepted new connection from {}&quot;</span>, <span class="ident">peer_addr</span>);
+    <span class="macro">debug!</span>(<span class="string">&quot;accepted new connection from {}&quot;</span>, <span class="ident">peer_addr</span>);
 
-    <span class="kw">let</span> <span class="ident">framed</span> <span class="op">=</span> <span class="ident">tokio_util</span>::<span class="ident">codec</span>::<span class="ident">LengthDelimitedCodec</span>::<span class="ident">builder</span>()
+    <span class="kw">let</span> <span class="ident">framed</span> <span class="op">=</span> <span class="ident">tokio_util::codec::LengthDelimitedCodec::builder</span>()
         .<span class="ident">length_field_length</span>(<span class="number">4</span>)
         .<span class="ident">new_framed</span>(<span class="ident">socket</span>);
 
     <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">writer</span>, <span class="kw-2">mut</span> <span class="ident">reader</span>) <span class="op">=</span> <span class="ident">framed</span>.<span class="ident">split</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">source</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">flatbuffers</span>::<span class="ident">FlatBufferBuilder</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">flatbuffers::FlatBufferBuilder::new</span>();
 
-    <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">request_bytes</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next</span>().<span class="ident">await</span> {
+    <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">request_bytes</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next</span>().<span class="kw">await</span> {
         <span class="kw">let</span> <span class="ident">request_bytes</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request_bytes</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">rb</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">rb</span>,
             <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;({}) error reading frame: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
+                <span class="macro">error!</span>(<span class="string">&quot;({}) error reading frame: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
                 <span class="kw">continue</span>;
             }
         };
 
         <span class="ident">builder</span>.<span class="ident">reset</span>();
 
-        <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">handle_request</span>(<span class="ident">peer_addr</span>, <span class="ident">request_bytes</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">source</span>, <span class="kw-2">&amp;</span><span class="ident">global</span>).<span class="ident">await</span> {
+        <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">handle_request</span>(<span class="ident">peer_addr</span>, <span class="ident">request_bytes</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">source</span>, <span class="kw-2">&amp;</span><span class="ident">global</span>).<span class="kw">await</span> {
             <span class="prelude-val">Ok</span>(()) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">source</span>) <span class="op">=</span> <span class="ident">source</span>.<span class="ident">as_ref</span>() {
                     <span class="ident">register_response</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">builder</span>, <span class="ident">source</span>.<span class="ident">priority</span>().<span class="ident">unwrap</span>())
@@ -404,17 +404,18 @@
                 }
             }
             <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;({}) error processing request: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
+                <span class="macro">error!</span>(<span class="string">&quot;({}) error processing request: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
 
                 <span class="ident">error_response</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">builder</span>, <span class="ident">error</span>)
             }
         };
 
-        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;sending response: {:?}&quot;</span>, <span class="ident">reply</span>);
-        <span class="ident">writer</span>.<span class="ident">send</span>(<span class="ident">reply</span>).<span class="ident">await</span><span class="question-mark">?</span>;
+        <span class="macro">trace!</span>(<span class="string">&quot;sending response: {:?}&quot;</span>, <span class="ident">reply</span>);
+        <span class="ident">writer</span>.<span class="ident">send</span>(<span class="ident">reply</span>).<span class="kw">await</span><span class="question-mark">?</span>;
     }
 
     <span class="prelude-val">Ok</span>(())
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "hyperion";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="hyperion" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

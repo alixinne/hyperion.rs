@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["hyperion"] = [{"text":"impl&lt;T:&nbsp;Message&gt; Drop for InputSourceHandle&lt;T&gt;","synthetic":false,"types":[]}];
+implementors["hyperion"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"hyperion/global/trait.Message.html\" title=\"trait hyperion::global::Message\">Message</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"hyperion/global/input_source/struct.InputSourceHandle.html\" title=\"struct hyperion::global::input_source::InputSourceHandle\">InputSourceHandle</a>&lt;T&gt;","synthetic":false,"types":["hyperion::global::input_source::InputSourceHandle"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

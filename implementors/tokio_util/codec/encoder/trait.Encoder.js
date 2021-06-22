@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["hyperion"] = [{"text":"impl Encoder&lt;HyperionResponse&gt; for JsonCodec","synthetic":false,"types":[]}];
+implementors["hyperion"] = [{"text":"impl Encoder&lt;<a class=\"enum\" href=\"hyperion/servers/json/message/enum.HyperionResponse.html\" title=\"enum hyperion::servers::json::message::HyperionResponse\">HyperionResponse</a>&gt; for <a class=\"struct\" href=\"hyperion/servers/json/codec/struct.JsonCodec.html\" title=\"struct hyperion::servers::json::codec::JsonCodec\">JsonCodec</a>","synthetic":false,"types":["hyperion::servers::json::codec::JsonCodec"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

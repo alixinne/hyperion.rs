@@ -183,11 +183,6 @@
 <span id="180">180</span>
 <span id="181">181</span>
 <span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">log</span>;
@@ -365,16 +360,11 @@
 
     <span class="comment">// Create tokio runtime</span>
     <span class="kw">let</span> <span class="ident">thd_count</span> <span class="op">=</span> <span class="ident">num_cpus::get</span>().<span class="ident">min</span>(<span class="number">4</span>);
-    <span class="kw">if</span> <span class="ident">thd_count</span> <span class="op">&gt;</span> <span class="number">1</span> {
-        <span class="kw">let</span> <span class="ident">rt</span> <span class="op">=</span> <span class="ident">Builder::new_multi_thread</span>()
-            .<span class="ident">worker_threads</span>(<span class="ident">thd_count</span>)
-            .<span class="ident">enable_all</span>()
-            .<span class="ident">build</span>()<span class="question-mark">?</span>;
-        <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">opts</span>))
-    } <span class="kw">else</span> {
-        <span class="kw">let</span> <span class="ident">rt</span> <span class="op">=</span> <span class="ident">Builder::new_current_thread</span>().<span class="ident">enable_all</span>().<span class="ident">build</span>()<span class="question-mark">?</span>;
-        <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">opts</span>))
-    }
+    <span class="kw">let</span> <span class="ident">rt</span> <span class="op">=</span> <span class="ident">Builder::new_multi_thread</span>()
+        .<span class="ident">worker_threads</span>(<span class="ident">thd_count</span>)
+        .<span class="ident">enable_all</span>()
+        .<span class="ident">build</span>()<span class="question-mark">?</span>;
+    <span class="ident">rt</span>.<span class="ident">block_on</span>(<span class="ident">run</span>(<span class="ident">opts</span>))
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="hyperiond" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>

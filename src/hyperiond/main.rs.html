@@ -215,7 +215,7 @@
     }
 
     <span class="comment">// Create the global state object</span>
-    <span class="kw">let</span> <span class="ident">global</span> <span class="op">=</span> <span class="ident">hyperion::global::GlobalData::new</span>().<span class="ident">wrap</span>();
+    <span class="kw">let</span> <span class="ident">global</span> <span class="op">=</span> <span class="ident">hyperion::global::GlobalData::new</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>).<span class="ident">wrap</span>();
 
     <span class="comment">// Initialize and spawn the devices</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">initialized_devices</span> <span class="op">=</span> <span class="number">0</span>;

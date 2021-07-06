@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["InstanceError",""]],"mod":[["black_border_detector",""],["device",""],["smoothing",""]],"struct":[["Instance",""]]});
+initSidebarItems({"enum":[["InstanceError",""],["InstanceMessage",""]],"mod":[["black_border_detector",""],["core",""],["device",""],["muxer",""],["smoothing",""]],"struct":[["Instance",""],["InstanceDevice","A wrapper for a device that may have failed initializing"],["InstanceHandle",""]]});

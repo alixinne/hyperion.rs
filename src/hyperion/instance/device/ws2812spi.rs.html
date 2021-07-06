@@ -113,12 +113,6 @@
 <span id="110">110</span>
 <span id="111">111</span>
 <span id="112">112</span>
-<span id="113">113</span>
-<span id="114">114</span>
-<span id="115">115</span>
-<span id="116">116</span>
-<span id="117">117</span>
-<span id="118">118</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>};
 
@@ -186,12 +180,6 @@
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">DeviceImpl</span> <span class="kw">for</span> <span class="ident">Ws2812SpiDevice</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_led_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">led_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">models::Color</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">DeviceError</span><span class="op">&gt;</span> {
-        <span class="comment">// Check led data</span>
-        <span class="kw">let</span> <span class="ident">led_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">hardware_led_count</span> <span class="kw">as</span> <span class="ident">usize</span>;
-        <span class="kw">if</span> <span class="ident">led_data</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">led_count</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DeviceError::InvalidLedData</span>);
-        }
-
         <span class="comment">// Update buffer</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">for</span> <span class="ident">led</span> <span class="kw">in</span> <span class="ident">led_data</span> {

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ProtoApiError",""]],"fn":[["handle_request",""]],"mod":[["message","Schema definitions as Serde serializable structures and enums"]]});

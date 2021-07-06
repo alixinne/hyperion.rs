@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Core","Core part of an instance"]]});

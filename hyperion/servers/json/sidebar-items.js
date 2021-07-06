@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["JsonServerError",""]],"fn":[["handle_client",""],["handle_request",""]],"mod":[["codec","JSON protocol codec definition"],["message","Schema definitions as Serde serializable structures and enums"]]});
+initSidebarItems({"enum":[["JsonServerError",""]],"fn":[["handle_client",""]],"mod":[["codec","JSON protocol codec definition"]]});

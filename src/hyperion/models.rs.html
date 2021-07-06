@@ -1520,12 +1520,118 @@
 <span id="1517">1517</span>
 <span id="1518">1518</span>
 <span id="1519">1519</span>
+<span id="1520">1520</span>
+<span id="1521">1521</span>
+<span id="1522">1522</span>
+<span id="1523">1523</span>
+<span id="1524">1524</span>
+<span id="1525">1525</span>
+<span id="1526">1526</span>
+<span id="1527">1527</span>
+<span id="1528">1528</span>
+<span id="1529">1529</span>
+<span id="1530">1530</span>
+<span id="1531">1531</span>
+<span id="1532">1532</span>
+<span id="1533">1533</span>
+<span id="1534">1534</span>
+<span id="1535">1535</span>
+<span id="1536">1536</span>
+<span id="1537">1537</span>
+<span id="1538">1538</span>
+<span id="1539">1539</span>
+<span id="1540">1540</span>
+<span id="1541">1541</span>
+<span id="1542">1542</span>
+<span id="1543">1543</span>
+<span id="1544">1544</span>
+<span id="1545">1545</span>
+<span id="1546">1546</span>
+<span id="1547">1547</span>
+<span id="1548">1548</span>
+<span id="1549">1549</span>
+<span id="1550">1550</span>
+<span id="1551">1551</span>
+<span id="1552">1552</span>
+<span id="1553">1553</span>
+<span id="1554">1554</span>
+<span id="1555">1555</span>
+<span id="1556">1556</span>
+<span id="1557">1557</span>
+<span id="1558">1558</span>
+<span id="1559">1559</span>
+<span id="1560">1560</span>
+<span id="1561">1561</span>
+<span id="1562">1562</span>
+<span id="1563">1563</span>
+<span id="1564">1564</span>
+<span id="1565">1565</span>
+<span id="1566">1566</span>
+<span id="1567">1567</span>
+<span id="1568">1568</span>
+<span id="1569">1569</span>
+<span id="1570">1570</span>
+<span id="1571">1571</span>
+<span id="1572">1572</span>
+<span id="1573">1573</span>
+<span id="1574">1574</span>
+<span id="1575">1575</span>
+<span id="1576">1576</span>
+<span id="1577">1577</span>
+<span id="1578">1578</span>
+<span id="1579">1579</span>
+<span id="1580">1580</span>
+<span id="1581">1581</span>
+<span id="1582">1582</span>
+<span id="1583">1583</span>
+<span id="1584">1584</span>
+<span id="1585">1585</span>
+<span id="1586">1586</span>
+<span id="1587">1587</span>
+<span id="1588">1588</span>
+<span id="1589">1589</span>
+<span id="1590">1590</span>
+<span id="1591">1591</span>
+<span id="1592">1592</span>
+<span id="1593">1593</span>
+<span id="1594">1594</span>
+<span id="1595">1595</span>
+<span id="1596">1596</span>
+<span id="1597">1597</span>
+<span id="1598">1598</span>
+<span id="1599">1599</span>
+<span id="1600">1600</span>
+<span id="1601">1601</span>
+<span id="1602">1602</span>
+<span id="1603">1603</span>
+<span id="1604">1604</span>
+<span id="1605">1605</span>
+<span id="1606">1606</span>
+<span id="1607">1607</span>
+<span id="1608">1608</span>
+<span id="1609">1609</span>
+<span id="1610">1610</span>
+<span id="1611">1611</span>
+<span id="1612">1612</span>
+<span id="1613">1613</span>
+<span id="1614">1614</span>
+<span id="1615">1615</span>
+<span id="1616">1616</span>
+<span id="1617">1617</span>
+<span id="1618">1618</span>
+<span id="1619">1619</span>
+<span id="1620">1620</span>
+<span id="1621">1621</span>
+<span id="1622">1622</span>
+<span id="1623">1623</span>
+<span id="1624">1624</span>
+<span id="1625">1625</span>
+<span id="1626">1626</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
 
 <span class="kw">use</span> <span class="ident">ambassador</span>::{<span class="ident">delegatable_trait</span>, <span class="ident">Delegate</span>};
-<span class="kw">use</span> <span class="ident">palette::rgb::Rgb</span>;
 <span class="kw">use</span> <span class="ident">serde_derive</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">strum_macros</span>::{<span class="ident">EnumDiscriminants</span>, <span class="ident">EnumString</span>, <span class="ident">IntoStaticStr</span>};
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
@@ -1533,8 +1639,11 @@
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::db::models</span> <span class="kw">as</span> <span class="ident">db_models</span>;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Color</span> <span class="op">=</span> <span class="ident">Rgb</span><span class="op">&lt;</span><span class="ident">palette::encoding::srgb::Srgb</span>, <span class="ident">u8</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Color16</span> <span class="op">=</span> <span class="ident">Rgb</span><span class="op">&lt;</span><span class="ident">palette::encoding::srgb::Srgb</span>, <span class="ident">u16</span><span class="op">&gt;</span>;
+<span class="kw">mod</span> <span class="ident">layouts</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">layouts</span>::<span class="kw-2">*</span>;
+
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Color</span> <span class="op">=</span> <span class="ident">palette::rgb::LinSrgb</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Color16</span> <span class="op">=</span> <span class="ident">palette::rgb::LinSrgb</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span>;
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ServerConfig</span> {
     <span class="kw">fn</span> <span class="ident">port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span>;
@@ -1546,11 +1655,21 @@
     <span class="ident">Chrono</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">chrono::ParseError</span>),
 }
 
+<span class="kw">fn</span> <span class="ident">default_true</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="bool-val">true</span>
+}
+<span class="kw">fn</span> <span class="ident">default_false</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="bool-val">false</span>
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Instance</span> {
     <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">i32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;String::new&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">friendly_name</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_true&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">enabled</span>: <span class="ident">bool</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;chrono::Utc::now&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">last_use</span>: <span class="ident">chrono::DateTime</span><span class="op">&lt;</span><span class="ident">chrono::Utc</span><span class="op">&gt;</span>,
 }
 
@@ -1568,7 +1687,7 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Setting</span> {
     <span class="kw">pub</span> <span class="ident">hyperion_inst</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">config</span>: <span class="ident">SettingData</span>,
@@ -1583,7 +1702,9 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BackgroundEffect</span> {
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">color</span>: <span class="ident">Color</span>,
     <span class="kw">pub</span> <span class="ident">effect</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
@@ -1597,7 +1718,7 @@
             <span class="ident">enable</span>: <span class="bool-val">true</span>,
             <span class="ident">ty</span>: <span class="ident">EffectType::Effect</span>,
             <span class="ident">color</span>: <span class="ident">Color::from_components</span>((<span class="number">255</span>, <span class="number">138</span>, <span class="number">0</span>)),
-            <span class="ident">effect</span>: <span class="ident">String::new</span>(),
+            <span class="ident">effect</span>: <span class="string">&quot;Warm mood blobs&quot;</span>.<span class="ident">to_owned</span>(),
         }
     }
 }
@@ -1612,8 +1733,9 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlackBorderDetector</span> {
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_true&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">0</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">100</span>))]</span>
     <span class="kw">pub</span> <span class="ident">threshold</span>: <span class="ident">u32</span>,
@@ -1639,7 +1761,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BoblightServer</span> {
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1024</span>))]</span>
@@ -1658,6 +1780,12 @@
     }
 }
 
+<span class="kw">impl</span> <span class="ident">ServerConfig</span> <span class="kw">for</span> <span class="ident">BoblightServer</span> {
+    <span class="kw">fn</span> <span class="ident">port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+        <span class="self">self</span>.<span class="ident">port</span>
+    }
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ImageToLedMappingType</span> {
@@ -1666,7 +1794,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ColorAdjustment</span> {
     <span class="kw">pub</span> <span class="ident">image_to_led_mapping_type</span>: <span class="ident">ImageToLedMappingType</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
@@ -1683,16 +1811,23 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ChannelAdjustment</span> {
     <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">leds</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">white</span>: <span class="ident">Color</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">red</span>: <span class="ident">Color</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">green</span>: <span class="ident">Color</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">blue</span>: <span class="ident">Color</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">cyan</span>: <span class="ident">Color</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">magenta</span>: <span class="ident">Color</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">yellow</span>: <span class="ident">Color</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">0</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">100</span>))]</span>
     <span class="kw">pub</span> <span class="ident">backlight_threshold</span>: <span class="ident">u32</span>,
@@ -1758,12 +1893,19 @@
     }
 }
 
+<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ColorOrder</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span><span class="ident">::Rgb</span>
+    }
+}
+
 <span class="attribute">#[<span class="ident">delegatable_trait</span>]</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">DeviceConfig</span> {
     <span class="kw">fn</span> <span class="ident">hardware_led_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span>;
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Dummy</span> {
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1</span>))]</span>
     <span class="kw">pub</span> <span class="ident">hardware_led_count</span>: <span class="ident">u32</span>,
@@ -1783,16 +1925,29 @@
     }
 }
 
+<span class="kw">fn</span> <span class="ident">default_ws_spi_rate</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i32</span> {
+    <span class="number">3000000</span>
+}
+
+<span class="kw">fn</span> <span class="ident">default_ws_spi_rewrite_time</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i32</span> {
+    <span class="number">1000</span>
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Ws2812Spi</span> {
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">color_order</span>: <span class="ident">ColorOrder</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1</span>))]</span>
     <span class="kw">pub</span> <span class="ident">hardware_led_count</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_false&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">invert</span>: <span class="ident">bool</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">latch_time</span>: <span class="ident">i32</span>,
     <span class="kw">pub</span> <span class="ident">output</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_ws_spi_rate&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">rate</span>: <span class="ident">i32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_ws_spi_rewrite_time&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">rewrite_time</span>: <span class="ident">i32</span>,
 }
 
@@ -1884,7 +2039,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FlatbuffersServer</span> {
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1024</span>))]</span>
@@ -1910,7 +2065,9 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ForegroundEffect</span> {
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;crate::serde::serialize_color_as_array&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">color</span>: <span class="ident">Color</span>,
     <span class="kw">pub</span> <span class="ident">effect</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
@@ -1926,13 +2083,14 @@
             <span class="ident">enable</span>: <span class="bool-val">true</span>,
             <span class="ident">ty</span>: <span class="ident">EffectType::Effect</span>,
             <span class="ident">color</span>: <span class="ident">Color::from_components</span>((<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>)),
-            <span class="ident">effect</span>: <span class="ident">String::new</span>(),
+            <span class="ident">effect</span>: <span class="string">&quot;Rainbow swirl fast&quot;</span>.<span class="ident">to_owned</span>(),
             <span class="ident">duration_ms</span>: <span class="prelude-val">Some</span>(<span class="number">3000</span>),
         }
     }
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Forwarder</span> {
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
     <span class="kw">pub</span> <span class="ident">json</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
@@ -1970,7 +2128,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Framegrabber</span> {
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;type&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">ty</span>: <span class="ident">FramegrabberType</span>,
@@ -2016,7 +2174,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">General</span> {
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">length</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">4</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">20</span>))]</span>
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
@@ -2050,7 +2208,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GrabberV4L2</span> {
     <span class="kw">pub</span> <span class="ident">device</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">input</span>: <span class="ident">i32</span>,
@@ -2115,7 +2273,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InstanceCapture</span> {
     <span class="kw">pub</span> <span class="ident">system_enable</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">100</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">253</span>))]</span>
@@ -2137,6 +2295,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">JsonServer</span> {
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1024</span>))]</span>
     <span class="kw">pub</span> <span class="ident">port</span>: <span class="ident">u16</span>,
@@ -2155,6 +2314,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClassicLedConfig</span> {
     <span class="kw">pub</span> <span class="ident">top</span>: <span class="ident">u32</span>,
     <span class="kw">pub</span> <span class="ident">bottom</span>: <span class="ident">u32</span>,
@@ -2168,6 +2328,7 @@
     <span class="kw">pub</span> <span class="ident">hdepth</span>: <span class="ident">u32</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">100</span>))]</span>
     <span class="kw">pub</span> <span class="ident">vdepth</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">0</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">100</span>))]</span>
     <span class="kw">pub</span> <span class="ident">overlap</span>: <span class="ident">u32</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">max</span> <span class="op">=</span> <span class="number">50</span>))]</span>
     <span class="kw">pub</span> <span class="ident">edgegap</span>: <span class="ident">u32</span>,
@@ -2233,6 +2394,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MatrixLedConfig</span> {
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">max</span> <span class="op">=</span> <span class="number">50</span>))]</span>
     <span class="kw">pub</span> <span class="ident">ledshoriz</span>: <span class="ident">u32</span>,
@@ -2255,6 +2417,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LedConfig</span> {
     <span class="attribute">#[<span class="ident">validate</span>]</span>
     <span class="kw">pub</span> <span class="ident">classic</span>: <span class="ident">ClassicLedConfig</span>,
@@ -2273,7 +2436,9 @@
     <span class="kw">pub</span> <span class="ident">vmin</span>: <span class="ident">f32</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">0.</span>, <span class="ident">max</span> <span class="op">=</span> <span class="number">1.</span>))]</span>
     <span class="kw">pub</span> <span class="ident">vmax</span>: <span class="ident">f32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">color_order</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ColorOrder</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
@@ -2346,6 +2511,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Logger</span> {
     <span class="kw">pub</span> <span class="ident">level</span>: <span class="ident">LoggerLevel</span>,
 }
@@ -2359,7 +2525,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Network</span> {
     <span class="kw">pub</span> <span class="ident">api_auth</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
@@ -2385,7 +2551,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ProtoServer</span> {
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1024</span>))]</span>
@@ -2418,7 +2584,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Smoothing</span> {
     <span class="kw">pub</span> <span class="ident">enable</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;type&quot;</span>)]</span>
@@ -2458,7 +2624,7 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">WebConfig</span> {
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;document_root&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">document_root</span>: <span class="ident">String</span>,
@@ -2485,7 +2651,7 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">EnumDiscriminants</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">EnumDiscriminants</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="attribute">#[<span class="ident">strum_discriminants</span>(<span class="ident">name</span>(<span class="ident">SettingKind</span>), <span class="ident">derive</span>(<span class="ident">EnumString</span>))]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SettingData</span> {
     <span class="ident">BackgroundEffect</span>(<span class="ident">BackgroundEffect</span>),
@@ -2623,17 +2789,39 @@
     <span class="ident">Chrono</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">chrono::ParseError</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error parsing uuid: {0}&quot;</span>)]</span>
     <span class="ident">Uuid</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">uuid::Error</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error decoding hex data: {0}&quot;</span>)]</span>
+    <span class="ident">Hex</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">hex::FromHexError</span>),
+}
+
+<span class="kw">fn</span> <span class="ident">default_none</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="prelude-val">None</span>
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">User</span> {
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(
+        <span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::serialize&quot;</span>,
+        <span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::deserialize&quot;</span>
+    )]</span>
     <span class="kw">pub</span> <span class="ident">password</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(
+        <span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::serialize&quot;</span>,
+        <span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::deserialize&quot;</span>
+    )]</span>
     <span class="kw">pub</span> <span class="ident">token</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(
+        <span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::serialize&quot;</span>,
+        <span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::deserialize&quot;</span>
+    )]</span>
     <span class="kw">pub</span> <span class="ident">salt</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_none&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">comment</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_none&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;chrono::Utc::now&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">created_at</span>: <span class="ident">chrono::DateTime</span><span class="op">&lt;</span><span class="ident">chrono::Utc</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;chrono::Utc::now&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">last_use</span>: <span class="ident">chrono::DateTime</span><span class="op">&lt;</span><span class="ident">chrono::Utc</span><span class="op">&gt;</span>,
 }
 
@@ -2643,9 +2831,9 @@
     <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">db</span>: <span class="ident">db_models::DbUser</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="self">Self</span><span class="ident">::Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">name</span>: <span class="ident">db</span>.<span class="ident">user</span>,
-            <span class="ident">password</span>: <span class="ident">db</span>.<span class="ident">password</span>,
-            <span class="ident">token</span>: <span class="ident">db</span>.<span class="ident">token</span>,
-            <span class="ident">salt</span>: <span class="ident">db</span>.<span class="ident">salt</span>,
+            <span class="ident">password</span>: <span class="ident">hex::decode</span>(<span class="ident">db</span>.<span class="ident">password</span>)<span class="question-mark">?</span>,
+            <span class="ident">token</span>: <span class="ident">hex::decode</span>(<span class="ident">db</span>.<span class="ident">token</span>)<span class="question-mark">?</span>,
+            <span class="ident">salt</span>: <span class="ident">hex::decode</span>(<span class="ident">db</span>.<span class="ident">salt</span>)<span class="question-mark">?</span>,
             <span class="ident">comment</span>: <span class="ident">db</span>.<span class="ident">comment</span>,
             <span class="ident">id</span>: <span class="ident">db</span>.<span class="ident">id</span>,
             <span class="ident">created_at</span>: <span class="ident">chrono::DateTime::parse_from_rfc3339</span>(<span class="kw-2">&amp;</span><span class="ident">db</span>.<span class="ident">created_at</span>)<span class="question-mark">?</span>
@@ -2656,7 +2844,8 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GlobalConfig</span> {
     <span class="kw">pub</span> <span class="ident">flatbuffers_server</span>: <span class="ident">FlatbuffersServer</span>,
     <span class="kw">pub</span> <span class="ident">forwarder</span>: <span class="ident">Forwarder</span>,
@@ -2706,26 +2895,37 @@
     <span class="attribute">#[<span class="ident">validate</span>]</span>
     <span class="kw">pub</span> <span class="ident">instance</span>: <span class="ident">Instance</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">background_effect</span>: <span class="ident">BackgroundEffect</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">black_border_detector</span>: <span class="ident">BlackBorderDetector</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">boblight_server</span>: <span class="ident">BoblightServer</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">color</span>: <span class="ident">ColorAdjustment</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">device</span>: <span class="ident">Device</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">effects</span>: <span class="ident">Effects</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">foreground_effect</span>: <span class="ident">ForegroundEffect</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">instance_capture</span>: <span class="ident">InstanceCapture</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">led_config</span>: <span class="ident">LedConfig</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">leds</span>: <span class="ident">Leds</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">smoothing</span>: <span class="ident">Smoothing</span>,
 }
 
@@ -2808,6 +3008,8 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ConfigError</span> {
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;i/o error: {0}&quot;</span>)]</span>
+    <span class="ident">Io</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">std::io::Error</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error querying the database: {0}&quot;</span>)]</span>
     <span class="ident">Sqlx</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">sqlx::Error</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error loading instance: {0}&quot;</span>)]</span>
@@ -2821,6 +3023,8 @@
     <span class="comment">// TODO: Say which setting?</span>
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;missing hyperion_inst field on instance setting&quot;</span>)]</span>
     <span class="ident">MissingHyperionInst</span>,
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;invalid JSON: {0}&quot;</span>)]</span>
+    <span class="ident">Json</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">serde_json::Error</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
@@ -3033,6 +3237,16 @@
             <span class="ident">meta</span>,
             <span class="ident">users</span>,
         })
+    }
+
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_file</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">std::path::Path</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ConfigError</span><span class="op">&gt;</span> {
+        <span class="kw">use</span> <span class="ident">tokio::io::AsyncReadExt</span>;
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">tokio::fs::File::open</span>(<span class="ident">path</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">full</span> <span class="op">=</span> <span class="ident">String::new</span>();
+        <span class="ident">file</span>.<span class="ident">read_to_string</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">full</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">full</span>)<span class="question-mark">?</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">uuid</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">uuid::Uuid</span> {

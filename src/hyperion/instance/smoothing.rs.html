@@ -200,7 +200,7 @@
 
         <span class="comment">// Convert current data to led data</span>
         <span class="kw">for</span> (<span class="ident">src</span>, <span class="ident">dst</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">current_data</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="self">self</span>.<span class="ident">led_data</span>.<span class="ident">iter_mut</span>()) {
-            <span class="kw-2">*</span><span class="ident">dst</span> <span class="op">=</span> <span class="kw">crate</span><span class="ident">::utils::color_to8</span>(<span class="kw-2">*</span><span class="ident">src</span>);
+            <span class="kw-2">*</span><span class="ident">dst</span> <span class="op">=</span> <span class="kw">crate</span><span class="ident">::color::color_to8</span>(<span class="kw-2">*</span><span class="ident">src</span>);
         }
     }
 

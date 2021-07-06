@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["BoblightRequest",""],["BoblightResponse",""],["DecodeError",""],["GetArg",""],["LightParamData",""],["SetArg",""]],"struct":[["LightParam",""]]});

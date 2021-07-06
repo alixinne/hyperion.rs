@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["BoblightCodecError",""]],"struct":[["BoblightCodec","JSON tokio codec"]]});

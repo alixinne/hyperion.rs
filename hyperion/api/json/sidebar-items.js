@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["JsonApiError",""]],"mod":[["message","Schema definitions as Serde serializable structures and enums"]],"struct":[["ClientConnection","A client connected to the JSON endpoint"]]});

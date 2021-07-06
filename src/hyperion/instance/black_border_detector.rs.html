@@ -304,8 +304,28 @@
 <span id="301">301</span>
 <span id="302">302</span>
 <span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">image::RawImage</span>, <span class="ident">models</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">image::Image</span>, <span class="ident">models</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlackBorder</span> {
@@ -325,14 +345,8 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">is_black</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">color</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">models::Color</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="ident">color</span>
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">color</span><span class="op">|</span> {
-                <span class="ident">color</span>.<span class="ident">red</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span>
-                    <span class="op">&amp;&amp;</span> <span class="ident">color</span>.<span class="ident">green</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span>
-                    <span class="op">&amp;&amp;</span> <span class="ident">color</span>.<span class="ident">blue</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span>
-            })
-            .<span class="ident">unwrap_or</span>(<span class="bool-val">true</span>)
+    <span class="kw">fn</span> <span class="ident">is_black</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">color</span>: <span class="ident">models::Color</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="ident">color</span>.<span class="ident">red</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span> <span class="op">&amp;&amp;</span> <span class="ident">color</span>.<span class="ident">green</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span> <span class="op">&amp;&amp;</span> <span class="ident">color</span>.<span class="ident">blue</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span>
     }
 
     <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">xy</span>: (<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>)) {
@@ -347,7 +361,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">process_default</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="ident">RawImage</span>) {
+    <span class="kw">fn</span> <span class="ident">process_default</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Image</span>) {
         <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">width</span>();
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">height</span>();
         <span class="kw">let</span> <span class="ident">width33</span> <span class="op">=</span> <span class="ident">width</span> <span class="op">/</span> <span class="number">3</span>;
@@ -360,22 +374,25 @@
         <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">width</span> <span class="op">-</span> <span class="number">1</span>;
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">height</span> <span class="op">-</span> <span class="number">1</span>;
 
-        <span class="kw">let</span> <span class="ident">first_non_black_x</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">width33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">y_center</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height33</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height66</span>))
-        });
+        <span class="comment">// Safety: width33 &lt; width &amp;&amp; height33 &lt; height so x and y are in range</span>
+        <span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">first_non_black_x</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">width33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
+                <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">y_center</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height33</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height66</span>))
+            });
 
-        <span class="kw">let</span> <span class="ident">first_non_black_y</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">height33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">y</span><span class="op">|</span> {
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">x_center</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width33</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width66</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-        });
+            <span class="kw">let</span> <span class="ident">first_non_black_y</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">height33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">y</span><span class="op">|</span> {
+                <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">x_center</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width33</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width66</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+            });
 
-        <span class="self">self</span>.<span class="ident">update</span>((<span class="ident">first_non_black_x</span>, <span class="ident">first_non_black_y</span>));
+            <span class="self">self</span>.<span class="ident">update</span>((<span class="ident">first_non_black_x</span>, <span class="ident">first_non_black_y</span>));
+        }
     }
 
-    <span class="kw">fn</span> <span class="ident">process_classic</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="ident">RawImage</span>) {
+    <span class="kw">fn</span> <span class="ident">process_classic</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Image</span>) {
         <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">width</span>() <span class="op">/</span> <span class="number">3</span>;
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">height</span>() <span class="op">/</span> <span class="number">3</span>;
         <span class="kw">let</span> <span class="ident">max_size</span> <span class="op">=</span> <span class="ident">width</span>.<span class="ident">max</span>(<span class="ident">height</span>);
@@ -387,23 +404,41 @@
             <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">i</span>.<span class="ident">min</span>(<span class="ident">width</span>);
             <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="ident">i</span>.<span class="ident">min</span>(<span class="ident">height</span>);
 
-            <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">x</span>, <span class="ident">y</span>)) {
-                <span class="ident">first_non_black_x</span> <span class="op">=</span> <span class="ident">x</span> <span class="kw">as</span> <span class="kw">_</span>;
-                <span class="ident">first_non_black_y</span> <span class="op">=</span> <span class="ident">y</span> <span class="kw">as</span> <span class="kw">_</span>;
+            <span class="comment">// Safety: x and y are in range, since width &lt; image.width()</span>
+            <span class="kw">unsafe</span> {
+                <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">x</span>, <span class="ident">y</span>)) {
+                    <span class="ident">first_non_black_x</span> <span class="op">=</span> <span class="ident">x</span> <span class="kw">as</span> <span class="kw">_</span>;
+                    <span class="ident">first_non_black_y</span> <span class="op">=</span> <span class="ident">y</span> <span class="kw">as</span> <span class="kw">_</span>;
+                }
             }
         }
 
         <span class="kw">while</span> <span class="ident">first_non_black_x</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>((<span class="ident">first_non_black_x</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">first_non_black_y</span> <span class="kw">as</span> <span class="kw">_</span>)) {
-                <span class="kw">break</span>;
+            <span class="comment">// Safety: first_non_black_x &gt; 0 &amp;&amp; first_non_black_x &lt;= width</span>
+            <span class="kw">unsafe</span> {
+                <span class="kw">if</span> <span class="ident">first_non_black_y</span> <span class="op">&lt;</span> <span class="number">0</span>
+                    <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">is_black</span>(
+                        <span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(
+                            (<span class="ident">first_non_black_x</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="kw">_</span>,
+                            <span class="ident">first_non_black_y</span> <span class="kw">as</span> <span class="kw">_</span>,
+                        ),
+                    )
+                {
+                    <span class="kw">break</span>;
+                }
             }
 
             <span class="ident">first_non_black_x</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
         }
 
         <span class="kw">while</span> <span class="ident">first_non_black_y</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">first_non_black_x</span> <span class="kw">as</span> <span class="kw">_</span>, (<span class="ident">first_non_black_y</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="kw">_</span>)) {
-                <span class="kw">break</span>;
+            <span class="comment">// Safety: first_non_black_x &gt;= 0 &amp;&amp; first_non_black_y &gt; 0</span>
+            <span class="kw">unsafe</span> {
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_black</span>(
+                    <span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">first_non_black_x</span> <span class="kw">as</span> <span class="kw">_</span>, (<span class="ident">first_non_black_y</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="kw">_</span>),
+                ) {
+                    <span class="kw">break</span>;
+                }
             }
 
             <span class="ident">first_non_black_y</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
@@ -423,7 +458,7 @@
         ));
     }
 
-    <span class="kw">fn</span> <span class="ident">process_osd</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="ident">RawImage</span>) {
+    <span class="kw">fn</span> <span class="ident">process_osd</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Image</span>) {
         <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">width</span>();
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">height</span>();
         <span class="kw">let</span> <span class="ident">width33</span> <span class="op">=</span> <span class="ident">width</span> <span class="op">/</span> <span class="number">3</span>;
@@ -434,25 +469,28 @@
         <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">width</span> <span class="op">-</span> <span class="number">1</span>;
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">height</span> <span class="op">-</span> <span class="number">1</span>;
 
-        <span class="kw">let</span> <span class="ident">first_non_black_x</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">width33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">y_center</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height33</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height66</span>))
-        });
+        <span class="comment">// Safety: all operations are in range of the image dimensions</span>
+        <span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">first_non_black_x</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">width33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
+                <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">y_center</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height33</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="ident">height66</span>))
+            });
 
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">first_non_black_x</span>.<span class="ident">unwrap_or</span>(<span class="ident">width33</span>);
+            <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">first_non_black_x</span>.<span class="ident">unwrap_or</span>(<span class="ident">width33</span>);
 
-        <span class="kw">let</span> <span class="ident">first_non_black_y</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">height33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">y</span><span class="op">|</span> {
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">x</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">x</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width</span> <span class="op">-</span> <span class="ident">x</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width</span> <span class="op">-</span> <span class="ident">x</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
-        });
+            <span class="kw">let</span> <span class="ident">first_non_black_y</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">height33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">y</span><span class="op">|</span> {
+                <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">x</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">x</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width</span> <span class="op">-</span> <span class="ident">x</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width</span> <span class="op">-</span> <span class="ident">x</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
+            });
 
-        <span class="self">self</span>.<span class="ident">update</span>((<span class="ident">first_non_black_x</span>, <span class="ident">first_non_black_y</span>));
+            <span class="self">self</span>.<span class="ident">update</span>((<span class="ident">first_non_black_x</span>, <span class="ident">first_non_black_y</span>));
+        }
     }
 
-    <span class="kw">fn</span> <span class="ident">process_letterbox</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="ident">RawImage</span>) {
+    <span class="kw">fn</span> <span class="ident">process_letterbox</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Image</span>) {
         <span class="kw">let</span> <span class="ident">width</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">width</span>();
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">image</span>.<span class="ident">height</span>();
         <span class="kw">let</span> <span class="ident">height33</span> <span class="op">=</span> <span class="ident">height</span> <span class="op">/</span> <span class="number">3</span>;
@@ -462,25 +500,28 @@
 
         <span class="kw">let</span> <span class="ident">height</span> <span class="op">=</span> <span class="ident">height</span> <span class="op">-</span> <span class="number">1</span>;
 
-        <span class="kw">let</span> <span class="ident">first_non_black_y</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">height33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">y</span><span class="op">|</span> {
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">x_center</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width25</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width75</span>, <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width25</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
-                <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at</span>(<span class="ident">width75</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
-        });
+        <span class="comment">// Safety: all operations are in range of the image dimensions</span>
+        <span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">first_non_black_y</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">height33</span>).<span class="ident">find</span>(<span class="op">|</span><span class="ident">y</span><span class="op">|</span> {
+                <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">x_center</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width25</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width75</span>, <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width25</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
+                    <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_black</span>(<span class="ident">image</span>.<span class="ident">color_at_unchecked</span>(<span class="ident">width75</span>, <span class="ident">height</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">y</span>))
+            });
 
-        <span class="self">self</span>.<span class="ident">update</span>((
-            <span class="ident">first_non_black_y</span>,
-            <span class="kw">if</span> <span class="ident">first_non_black_y</span>.<span class="ident">is_none</span>() {
-                <span class="prelude-val">None</span>
-            } <span class="kw">else</span> {
-                <span class="prelude-val">Some</span>(<span class="number">0</span>)
-            },
-        ));
+            <span class="self">self</span>.<span class="ident">update</span>((
+                <span class="ident">first_non_black_y</span>,
+                <span class="kw">if</span> <span class="ident">first_non_black_y</span>.<span class="ident">is_none</span>() {
+                    <span class="prelude-val">None</span>
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">Some</span>(<span class="number">0</span>)
+                },
+            ));
+        }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="ident">RawImage</span>, <span class="ident">mode</span>: <span class="ident">models::BlackBorderDetectorMode</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Image</span>, <span class="ident">mode</span>: <span class="ident">models::BlackBorderDetectorMode</span>) {
         <span class="kw">match</span> <span class="ident">mode</span> {
             <span class="ident">models::BlackBorderDetectorMode::Default</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_default</span>(<span class="ident">image</span>),
             <span class="ident">models::BlackBorderDetectorMode::Classic</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_classic</span>(<span class="ident">image</span>),
@@ -499,19 +540,18 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_ranges</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">width</span>: <span class="ident">u32</span>, <span class="ident">height</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> ((<span class="ident">u32</span>, <span class="ident">u32</span>), (<span class="ident">u32</span>, <span class="ident">u32</span>)) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_ranges</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">width</span>: <span class="ident">u32</span>,
+        <span class="ident">height</span>: <span class="ident">u32</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">std::ops::Range</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>, <span class="ident">std::ops::Range</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>) {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">unknown</span> {
-            ((<span class="number">0</span>, <span class="ident">width</span>), (<span class="number">0</span>, <span class="ident">height</span>))
+            (<span class="number">0</span>..<span class="ident">width</span>, <span class="number">0</span>..<span class="ident">height</span>)
         } <span class="kw">else</span> {
             (
-                (
-                    <span class="self">self</span>.<span class="ident">vertical_size</span>.<span class="ident">min</span>(<span class="ident">width</span> <span class="op">/</span> <span class="number">2</span>),
-                    (<span class="ident">width</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">vertical_size</span>).<span class="ident">max</span>(<span class="ident">width</span> <span class="op">/</span> <span class="number">2</span>),
-                ),
-                (
-                    <span class="self">self</span>.<span class="ident">horizontal_size</span>.<span class="ident">min</span>(<span class="ident">height</span> <span class="op">/</span> <span class="number">2</span>),
-                    (<span class="ident">height</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">horizontal_size</span>).<span class="ident">max</span>(<span class="ident">height</span> <span class="op">/</span> <span class="number">2</span>),
-                ),
+                <span class="self">self</span>.<span class="ident">vertical_size</span>.<span class="ident">min</span>(<span class="ident">width</span> <span class="op">/</span> <span class="number">2</span>)..(<span class="ident">width</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">vertical_size</span>).<span class="ident">max</span>(<span class="ident">width</span> <span class="op">/</span> <span class="number">2</span>),
+                <span class="self">self</span>.<span class="ident">horizontal_size</span>.<span class="ident">min</span>(<span class="ident">height</span> <span class="op">/</span> <span class="number">2</span>)
+                    ..(<span class="ident">height</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">horizontal_size</span>).<span class="ident">max</span>(<span class="ident">height</span> <span class="op">/</span> <span class="number">2</span>),
             )
         }
     }
@@ -595,7 +635,7 @@
     <span class="doccomment">/// # Returns</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// true if a different border was detected, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="ident">RawImage</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">image</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Image</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">image_border</span> <span class="op">=</span> <span class="ident">BlackBorder::new</span>(<span class="self">self</span>.<span class="ident">threshold</span>());
 
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">config</span>.<span class="ident">enable</span> {

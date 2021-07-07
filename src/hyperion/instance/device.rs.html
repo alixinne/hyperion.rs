@@ -125,11 +125,15 @@
 <span id="122">122</span>
 <span id="123">123</span>
 <span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::models</span>::{<span class="self">self</span>, <span class="ident">DeviceConfig</span>};
+
+<span class="kw">mod</span> <span class="ident">common</span>;
 
 <span class="comment">// Device implementation modules</span>
 
@@ -172,7 +176,7 @@
         <span class="kw">let</span> <span class="ident">inner</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DeviceImpl</span><span class="op">&gt;</span>;
         <span class="kw">match</span> <span class="ident">config</span> {
             <span class="ident">models::Device::Dummy</span>(<span class="ident">dummy</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">inner</span> <span class="op">=</span> <span class="ident">Box::new</span>(<span class="ident">dummy::DummyDevice::new</span>(<span class="ident">dummy</span>));
+                <span class="ident">inner</span> <span class="op">=</span> <span class="ident">Box::new</span>(<span class="ident">dummy::DummyDevice::new</span>(<span class="ident">dummy</span>)<span class="question-mark">?</span>);
             }
             <span class="ident">models::Device::Ws2812Spi</span>(<span class="ident">ws2812spi</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">inner</span> <span class="op">=</span> <span class="ident">Box::new</span>(<span class="ident">ws2812spi::Ws2812SpiDevice::new</span>(<span class="ident">ws2812spi</span>)<span class="question-mark">?</span>);

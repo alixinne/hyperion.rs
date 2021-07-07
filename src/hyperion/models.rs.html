@@ -1714,6 +1714,75 @@
 <span id="1711">1711</span>
 <span id="1712">1712</span>
 <span id="1713">1713</span>
+<span id="1714">1714</span>
+<span id="1715">1715</span>
+<span id="1716">1716</span>
+<span id="1717">1717</span>
+<span id="1718">1718</span>
+<span id="1719">1719</span>
+<span id="1720">1720</span>
+<span id="1721">1721</span>
+<span id="1722">1722</span>
+<span id="1723">1723</span>
+<span id="1724">1724</span>
+<span id="1725">1725</span>
+<span id="1726">1726</span>
+<span id="1727">1727</span>
+<span id="1728">1728</span>
+<span id="1729">1729</span>
+<span id="1730">1730</span>
+<span id="1731">1731</span>
+<span id="1732">1732</span>
+<span id="1733">1733</span>
+<span id="1734">1734</span>
+<span id="1735">1735</span>
+<span id="1736">1736</span>
+<span id="1737">1737</span>
+<span id="1738">1738</span>
+<span id="1739">1739</span>
+<span id="1740">1740</span>
+<span id="1741">1741</span>
+<span id="1742">1742</span>
+<span id="1743">1743</span>
+<span id="1744">1744</span>
+<span id="1745">1745</span>
+<span id="1746">1746</span>
+<span id="1747">1747</span>
+<span id="1748">1748</span>
+<span id="1749">1749</span>
+<span id="1750">1750</span>
+<span id="1751">1751</span>
+<span id="1752">1752</span>
+<span id="1753">1753</span>
+<span id="1754">1754</span>
+<span id="1755">1755</span>
+<span id="1756">1756</span>
+<span id="1757">1757</span>
+<span id="1758">1758</span>
+<span id="1759">1759</span>
+<span id="1760">1760</span>
+<span id="1761">1761</span>
+<span id="1762">1762</span>
+<span id="1763">1763</span>
+<span id="1764">1764</span>
+<span id="1765">1765</span>
+<span id="1766">1766</span>
+<span id="1767">1767</span>
+<span id="1768">1768</span>
+<span id="1769">1769</span>
+<span id="1770">1770</span>
+<span id="1771">1771</span>
+<span id="1772">1772</span>
+<span id="1773">1773</span>
+<span id="1774">1774</span>
+<span id="1775">1775</span>
+<span id="1776">1776</span>
+<span id="1777">1777</span>
+<span id="1778">1778</span>
+<span id="1779">1779</span>
+<span id="1780">1780</span>
+<span id="1781">1781</span>
+<span id="1782">1782</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections::BTreeMap</span>,
@@ -1722,6 +1791,7 @@
 
 <span class="kw">use</span> <span class="ident">ambassador</span>::{<span class="ident">delegatable_trait</span>, <span class="ident">Delegate</span>};
 <span class="kw">use</span> <span class="ident">serde_derive</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
+<span class="kw">use</span> <span class="ident">sha2::Digest</span>;
 <span class="kw">use</span> <span class="ident">strum_macros</span>::{<span class="ident">EnumDiscriminants</span>, <span class="ident">EnumString</span>, <span class="ident">IntoStaticStr</span>};
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 <span class="kw">use</span> <span class="ident">validator::Validate</span>;
@@ -1991,8 +2061,38 @@
 }
 
 <span class="attribute">#[<span class="ident">delegatable_trait</span>]</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">DeviceConfig</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">DeviceConfig</span>: <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Send</span> {
     <span class="kw">fn</span> <span class="ident">hardware_led_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span>;
+
+    <span class="kw">fn</span> <span class="ident">rewrite_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">std::time::Duration</span><span class="op">&gt;</span> {
+        <span class="prelude-val">None</span>
+    }
+
+    <span class="kw">fn</span> <span class="ident">latch_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::time::Duration</span> {
+        <span class="ident">Default::default</span>()
+    }
+}
+
+<span class="macro">macro_rules!</span> <span class="ident">impl_device_config</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>:<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="kw">impl</span> <span class="ident">DeviceConfig</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span> {
+            <span class="kw">fn</span> <span class="ident">hardware_led_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+                <span class="self">self</span>.<span class="ident">hardware_led_count</span> <span class="kw">as</span> <span class="kw">_</span>
+            }
+
+            <span class="kw">fn</span> <span class="ident">rewrite_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">std::time::Duration</span><span class="op">&gt;</span> {
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">rewrite_time</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+                    <span class="prelude-val">None</span>
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">std::time::Duration::from_millis</span>(<span class="self">self</span>.<span class="ident">rewrite_time</span> <span class="kw">as</span> <span class="kw">_</span>))
+                }
+            }
+
+            <span class="kw">fn</span> <span class="ident">latch_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::time::Duration</span> {
+                <span class="ident">std::time::Duration::from_millis</span>(<span class="self">self</span>.<span class="ident">latch_time</span> <span class="kw">as</span> <span class="kw">_</span>)
+            }
+        }
+    };
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
@@ -2000,18 +2100,20 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Dummy</span> {
     <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1</span>))]</span>
     <span class="kw">pub</span> <span class="ident">hardware_led_count</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">rewrite_time</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">latch_time</span>: <span class="ident">u32</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">DeviceConfig</span> <span class="kw">for</span> <span class="ident">Dummy</span> {
-    <span class="kw">fn</span> <span class="ident">hardware_led_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="self">self</span>.<span class="ident">hardware_led_count</span> <span class="kw">as</span> <span class="kw">_</span>
-    }
-}
+<span class="macro">impl_device_config!</span>(<span class="ident">Dummy</span>);
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Dummy</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">hardware_led_count</span>: <span class="number">1</span>,
+            <span class="ident">rewrite_time</span>: <span class="number">0</span>,
+            <span class="ident">latch_time</span>: <span class="number">0</span>,
         }
     }
 }
@@ -2020,7 +2122,7 @@
     <span class="number">3000000</span>
 }
 
-<span class="kw">fn</span> <span class="ident">default_ws_spi_rewrite_time</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i32</span> {
+<span class="kw">fn</span> <span class="ident">default_ws_spi_rewrite_time</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
     <span class="number">1000</span>
 }
 
@@ -2034,19 +2136,15 @@
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_false&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">invert</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">latch_time</span>: <span class="ident">i32</span>,
+    <span class="kw">pub</span> <span class="ident">latch_time</span>: <span class="ident">u32</span>,
     <span class="kw">pub</span> <span class="ident">output</span>: <span class="ident">String</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_ws_spi_rate&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">rate</span>: <span class="ident">i32</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_ws_spi_rewrite_time&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">rewrite_time</span>: <span class="ident">i32</span>,
+    <span class="kw">pub</span> <span class="ident">rewrite_time</span>: <span class="ident">u32</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">DeviceConfig</span> <span class="kw">for</span> <span class="ident">Ws2812Spi</span> {
-    <span class="kw">fn</span> <span class="ident">hardware_led_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="self">self</span>.<span class="ident">hardware_led_count</span> <span class="kw">as</span> <span class="kw">_</span>
-    }
-}
+<span class="macro">impl_device_config!</span>(<span class="ident">Ws2812Spi</span>);
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
@@ -2918,10 +3016,6 @@
         <span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::deserialize&quot;</span>
     )]</span>
     <span class="kw">pub</span> <span class="ident">token</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(
-        <span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::serialize&quot;</span>,
-        <span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;hex::deserialize&quot;</span>
-    )]</span>
     <span class="kw">pub</span> <span class="ident">salt</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_none&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">comment</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
@@ -2931,6 +3025,45 @@
     <span class="kw">pub</span> <span class="ident">created_at</span>: <span class="ident">chrono::DateTime</span><span class="op">&lt;</span><span class="ident">chrono::Utc</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;chrono::Utc::now&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">last_use</span>: <span class="ident">chrono::DateTime</span><span class="op">&lt;</span><span class="ident">chrono::Utc</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">User</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hyperion</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;Hyperion&quot;</span>.<span class="ident">to_owned</span>();
+        <span class="kw">let</span> <span class="ident">salt</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::generate_salt</span>();
+        <span class="kw">let</span> <span class="ident">token</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::generate_token</span>();
+        <span class="kw">let</span> <span class="ident">password</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::hash_password</span>(<span class="string">&quot;hyperion&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">salt</span>);
+        <span class="kw">let</span> <span class="ident">created_at</span> <span class="op">=</span> <span class="ident">chrono::Utc::now</span>();
+        <span class="kw">let</span> <span class="ident">last_use</span> <span class="op">=</span> <span class="ident">created_at</span>;
+
+        <span class="self">Self</span> {
+            <span class="ident">name</span>,
+            <span class="ident">password</span>,
+            <span class="ident">token</span>,
+            <span class="ident">salt</span>,
+            <span class="ident">comment</span>: <span class="prelude-val">None</span>,
+            <span class="ident">id</span>: <span class="prelude-val">None</span>,
+            <span class="ident">created_at</span>,
+            <span class="ident">last_use</span>,
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_token</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hasher</span> <span class="op">=</span> <span class="ident">sha2::Sha512::default</span>();
+        <span class="ident">hasher</span>.<span class="ident">update</span>(<span class="ident">uuid::Uuid::new_v4</span>().<span class="ident">as_bytes</span>());
+        <span class="ident">hasher</span>.<span class="ident">finalize</span>().<span class="ident">to_vec</span>()
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_salt</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+        <span class="ident">hex::encode</span>(<span class="self">Self</span><span class="ident">::generate_token</span>()).<span class="ident">into_bytes</span>()
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hash_password</span>(<span class="ident">password</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">salt</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hasher</span> <span class="op">=</span> <span class="ident">sha2::Sha512::default</span>();
+        <span class="ident">hasher</span>.<span class="ident">update</span>(<span class="ident">password</span>.<span class="ident">as_bytes</span>());
+        <span class="ident">hasher</span>.<span class="ident">update</span>(<span class="ident">salt</span>);
+        <span class="ident">hasher</span>.<span class="ident">finalize</span>().<span class="ident">to_vec</span>()
+    }
 }
 
 <span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">db_models::DbUser</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">User</span> {
@@ -3398,6 +3531,10 @@
     <span class="macro">vec!</span>[<span class="ident">Meta::new</span>()]
 }
 
+<span class="kw">fn</span> <span class="ident">default_users</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">User</span><span class="op">&gt;</span> {
+    <span class="macro">vec!</span>[<span class="ident">User::hyperion</span>()]
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
 <span class="kw">struct</span> <span class="ident">DeserializableConfig</span> {
     <span class="ident">instances</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">InstanceConfig</span><span class="op">&gt;</span>,
@@ -3405,6 +3542,7 @@
     <span class="ident">global</span>: <span class="ident">GlobalConfig</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_meta&quot;</span>)]</span>
     <span class="ident">meta</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Meta</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_users&quot;</span>)]</span>
     <span class="ident">users</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">User</span><span class="op">&gt;</span>,
 }
 

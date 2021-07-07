@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DummyDevice",""]]});
+initSidebarItems({"struct":[["DummyDeviceImpl",""]],"type":[["DummyDevice",""]]});

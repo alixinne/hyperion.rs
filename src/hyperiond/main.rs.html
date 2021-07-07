@@ -146,9 +146,20 @@
 <span id="143">143</span>
 <span id="144">144</span>
 <span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">log</span>;
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">tracing</span>;
 
 <span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
 
@@ -182,7 +193,7 @@
 
     <span class="comment">// Dump configuration if this was asked</span>
     <span class="kw">if</span> <span class="ident">opts</span>.<span class="ident">dump_config</span> {
-        <span class="ident">serde_json::to_writer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::io::stdout</span>(), <span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
+        <span class="ident">serde_json::to_writer_pretty</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::io::stdout</span>(), <span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
         <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
     }
 
@@ -203,7 +214,7 @@
                 <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">inst</span>.<span class="ident">run</span>().<span class="kw">await</span>;
 
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="ident">result</span> {
-                    <span class="macro">error!</span>(<span class="string">&quot;Instance error: {:?}&quot;</span>, <span class="ident">error</span>);
+                    <span class="macro">error!</span>(<span class="ident">error</span> <span class="op">=</span> <span class="op">%</span><span class="ident">error</span>, <span class="string">&quot;instance error&quot;</span>);
                 }
 
                 <span class="ident">global</span>.<span class="ident">unregister_instance</span>(<span class="ident">id</span>).<span class="kw">await</span>;
@@ -264,28 +275,39 @@
     <span class="prelude-val">Ok</span>(())
 }
 
+<span class="kw">fn</span> <span class="ident">install_tracing</span>(<span class="ident">opts</span>: <span class="kw-2">&amp;</span><span class="ident">Opts</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">tracing_subscriber::util::TryInitError</span><span class="op">&gt;</span> {
+    <span class="kw">use</span> <span class="ident">tracing_error::ErrorLayer</span>;
+    <span class="kw">use</span> <span class="ident">tracing_subscriber</span>::{<span class="ident">fmt</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">EnvFilter</span>};
+
+    <span class="kw">let</span> <span class="ident">fmt_layer</span> <span class="op">=</span> <span class="ident">fmt::layer</span>();
+
+    <span class="kw">let</span> <span class="ident">filter_layer</span> <span class="op">=</span> <span class="ident">EnvFilter::try_from_env</span>(<span class="string">&quot;HYPERION_LOG&quot;</span>).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+        <span class="ident">EnvFilter::new</span>(<span class="kw">match</span> <span class="ident">opts</span>.<span class="ident">verbose</span> {
+            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=warn,hyperiond=warn&quot;</span>,
+            <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=info,hyperiond=info&quot;</span>,
+            <span class="number">2</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=debug,hyperiond=debug&quot;</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=trace,hyperiond=trace&quot;</span>,
+        })
+    });
+
+    <span class="ident">tracing_subscriber::registry</span>()
+        .<span class="ident">with</span>(<span class="ident">filter_layer</span>)
+        .<span class="ident">with</span>(<span class="ident">fmt_layer</span>)
+        .<span class="ident">with</span>(<span class="ident">ErrorLayer::default</span>())
+        .<span class="ident">try_init</span>()
+}
+
 <span class="attribute">#[<span class="ident">paw::main</span>]</span>
 <span class="kw">fn</span> <span class="ident">main</span>(<span class="ident">opts</span>: <span class="ident">Opts</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">color_eyre::eyre::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">color_eyre::install</span>()<span class="question-mark">?</span>;
-
-    <span class="ident">env_logger::Builder::from_env</span>(
-        <span class="ident">env_logger::Env::new</span>()
-            .<span class="ident">filter_or</span>(
-                <span class="string">&quot;HYPERION_LOG&quot;</span>,
-                <span class="kw">match</span> <span class="ident">opts</span>.<span class="ident">verbose</span> {
-                    <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=warn,hyperiond=warn&quot;</span>,
-                    <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=info,hyperiond=info&quot;</span>,
-                    <span class="number">2</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=debug,hyperiond=debug&quot;</span>,
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;hyperion=trace,hyperiond=trace&quot;</span>,
-                },
-            )
-            .<span class="ident">write_style</span>(<span class="string">&quot;HYPERION_LOG_STYLE&quot;</span>),
-    )
-    .<span class="ident">try_init</span>()
-    .<span class="ident">ok</span>();
+    <span class="ident">install_tracing</span>(<span class="kw-2">&amp;</span><span class="ident">opts</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// Create tokio runtime</span>
-    <span class="kw">let</span> <span class="ident">thd_count</span> <span class="op">=</span> <span class="ident">num_cpus::get</span>().<span class="ident">min</span>(<span class="number">4</span>);
+    <span class="kw">let</span> <span class="ident">thd_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">num_cpus::get</span>() {
+        <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span>,
+        <span class="ident">other</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">other</span>.<span class="ident">min</span>(<span class="number">4</span>),
+    };
+
     <span class="kw">let</span> <span class="ident">rt</span> <span class="op">=</span> <span class="ident">Builder::new_multi_thread</span>()
         .<span class="ident">worker_threads</span>(<span class="ident">thd_count</span>)
         .<span class="ident">enable_all</span>()

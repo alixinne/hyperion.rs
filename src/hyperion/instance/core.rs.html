@@ -122,7 +122,6 @@
 <span id="119">119</span>
 <span id="120">120</span>
 <span id="121">121</span>
-<span id="122">122</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">color</span>::{<span class="ident">color_to16</span>, <span class="ident">ChannelAdjustments</span>, <span class="ident">ChannelAdjustmentsBuilder</span>},
@@ -198,7 +197,7 @@
         } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">led_count</span> <span class="op">&lt;</span> <span class="ident">data_count</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">notified_inconsistent_led_data</span> {
                 <span class="self">self</span>.<span class="ident">notified_inconsistent_led_data</span> <span class="op">=</span> <span class="bool-val">true</span>;
-                <span class="macro">warn!</span>(<span class="string">&quot;too much LED data: {} extra&quot;</span>, <span class="ident">data_count</span> <span class="op">-</span> <span class="ident">led_count</span>);
+                <span class="macro">warn!</span>(<span class="ident">extra</span> <span class="op">=</span> <span class="op">%</span>(<span class="ident">data_count</span> <span class="op">-</span> <span class="ident">led_count</span>), <span class="string">&quot;too much LED data&quot;</span>);
             }
 
             <span class="kw">let</span> (<span class="ident">dst</span>, <span class="ident">fill</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">color_data</span>.<span class="ident">split_at_mut</span>(<span class="ident">led_count</span>);
@@ -206,7 +205,7 @@
         } <span class="kw">else</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">notified_inconsistent_led_data</span> {
                 <span class="self">self</span>.<span class="ident">notified_inconsistent_led_data</span> <span class="op">=</span> <span class="bool-val">true</span>;
-                <span class="macro">warn!</span>(<span class="string">&quot;not enough LED data: {} missing&quot;</span>, <span class="ident">led_count</span> <span class="op">-</span> <span class="ident">data_count</span>);
+                <span class="macro">warn!</span>(<span class="ident">missing</span> <span class="op">=</span> <span class="op">%</span>(<span class="ident">led_count</span> <span class="op">-</span> <span class="ident">data_count</span>), <span class="string">&quot;not enough LED data&quot;</span>);
             }
 
             <span class="kw">let</span> (<span class="ident">dst</span>, <span class="ident">fill</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">color_data</span>.<span class="ident">split_at_mut</span>(<span class="ident">data_count</span>);
@@ -224,7 +223,6 @@
         <span class="comment">// Update color data</span>
         <span class="kw">match</span> <span class="ident">message</span>.<span class="ident">data</span>() {
             <span class="ident">MuxedMessageData::SolidColor</span> { <span class="ident">color</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="comment">// TODO: Replace with fill once it&#39;s stabilized</span>
                 <span class="self">self</span>.<span class="ident">handle_color</span>(<span class="kw-2">*</span><span class="ident">color</span>);
             }
             <span class="ident">MuxedMessageData::Image</span> { <span class="ident">image</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {

@@ -204,6 +204,27 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
@@ -215,7 +236,7 @@
     <span class="ident">component::ComponentName</span>,
     <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputMessage</span>, <span class="ident">InputMessageData</span>, <span class="ident">InputSourceHandle</span>},
     <span class="ident">image</span>::{<span class="ident">RawImage</span>, <span class="ident">RawImageError</span>},
-    <span class="ident">instance::InstanceHandle</span>,
+    <span class="ident">instance</span>::{<span class="ident">InstanceHandle</span>, <span class="ident">InstanceHandleError</span>},
 };
 
 <span class="doccomment">/// Schema definitions as Serde serializable structures and enums</span>
@@ -234,6 +255,8 @@
     <span class="ident">Validation</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">validator::ValidationErrors</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error receiving system response: {0}&quot;</span>)]</span>
     <span class="ident">Recv</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">tokio::sync::oneshot::error::RecvError</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error accessing the current instance: {0}&quot;</span>)]</span>
+    <span class="ident">Instance</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">InstanceHandleError</span>),
 }
 
 <span class="doccomment">/// A client connected to the JSON endpoint</span>
@@ -273,6 +296,7 @@
         <span class="self">self</span>.<span class="ident">current_instance</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>);
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">skip</span>(<span class="ident">request</span>, <span class="ident">global</span>))]</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_request</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">request</span>: <span class="ident">HyperionMessage</span>,
@@ -340,11 +364,22 @@
             <span class="ident">HyperionCommand::ServerInfo</span>(<span class="ident">message::ServerInfoRequest</span> { <span class="ident">subscribe</span>: <span class="kw">_</span> }) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// TODO: Handle subscribe field</span>
 
-                <span class="kw">let</span> <span class="ident">priorities</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handle</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_instance</span>(<span class="ident">global</span>).<span class="kw">await</span> {
-                    <span class="ident">handle</span>.<span class="ident">current_priorities</span>().<span class="kw">await</span>
-                } <span class="kw">else</span> {
-                    <span class="macro">vec!</span>[]
-                };
+                <span class="kw">let</span> (<span class="ident">adjustments</span>, <span class="ident">priorities</span>) <span class="op">=</span>
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handle</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_instance</span>(<span class="ident">global</span>).<span class="kw">await</span> {
+                        (
+                            <span class="ident">handle</span>
+                                .<span class="ident">config</span>()
+                                .<span class="kw">await</span><span class="question-mark">?</span>
+                                .<span class="ident">color</span>
+                                .<span class="ident">channel_adjustment</span>
+                                .<span class="ident">iter</span>()
+                                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">adj</span><span class="op">|</span> <span class="ident">message::ChannelAdjustment::from</span>(<span class="ident">adj</span>.<span class="ident">clone</span>()))
+                                .<span class="ident">collect</span>(),
+                            <span class="ident">handle</span>.<span class="ident">current_priorities</span>().<span class="kw">await</span><span class="question-mark">?</span>,
+                        )
+                    } <span class="kw">else</span> {
+                        <span class="ident">Default::default</span>()
+                    };
 
                 <span class="comment">// Just answer the serverinfo request, no need to update state</span>
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
@@ -359,8 +394,7 @@
                             <span class="ident">HyperionResponse::server_info</span>(
                                 <span class="ident">request</span>.<span class="ident">tan</span>,
                                 <span class="ident">priorities</span>,
-                                <span class="comment">// TODO: Fill adjustments</span>
-                                <span class="macro">vec!</span>[],
+                                <span class="ident">adjustments</span>,
                                 <span class="comment">// TODO: Fill effects</span>
                                 <span class="macro">vec!</span>[],
                                 <span class="ident">instances</span>,
@@ -406,6 +440,14 @@
         };
 
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">std::fmt::Debug</span> <span class="kw">for</span> <span class="ident">ClientConnection</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::fmt::Result</span> {
+        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;ClientConnection&quot;</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;source&quot;</span>, <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span>.<span class="ident">source</span>))
+            .<span class="ident">finish</span>()
     }
 }
 </pre></div>

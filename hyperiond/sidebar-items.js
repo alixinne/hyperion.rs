@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main",""],["run",""]],"struct":[["Opts",""]]});
+initSidebarItems({"fn":[["install_tracing",""],["main",""],["run",""]],"struct":[["Opts",""]]});

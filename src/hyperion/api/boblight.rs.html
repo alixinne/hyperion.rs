@@ -110,15 +110,57 @@
 <span id="107">107</span>
 <span id="108">108</span>
 <span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
-<span class="kw">use</span> <span class="ident">tokio::sync::mpsc::Sender</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">global</span>::{<span class="ident">InputMessage</span>, <span class="ident">InputMessageData</span>, <span class="ident">InputSourceHandle</span>, <span class="ident">Message</span>},
-    <span class="ident">models</span>::{<span class="ident">Color</span>, <span class="ident">InstanceConfig</span>},
+    <span class="ident">instance</span>::{<span class="ident">InstanceHandle</span>, <span class="ident">InstanceHandleError</span>},
+    <span class="ident">models::Color</span>,
 };
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">message</span>;
@@ -130,42 +172,74 @@
     <span class="ident">Broadcast</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">tokio::sync::mpsc::error::SendError</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;missing command data in protobuf frame&quot;</span>)]</span>
     <span class="ident">MissingCommand</span>,
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;invalid instance&quot;</span>)]</span>
+    <span class="ident">InvalidInstance</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">InstanceHandleError</span>),
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClientConnection</span> {
     <span class="ident">handle</span>: <span class="ident">InputSourceHandle</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>,
     <span class="ident">led_colors</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Color</span><span class="op">&gt;</span>,
     <span class="ident">priority</span>: <span class="ident">i32</span>,
-    <span class="ident">tx</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>,
-    <span class="ident">instance</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">InstanceConfig</span><span class="op">&gt;</span>,
+    <span class="ident">instance</span>: <span class="ident">InstanceHandle</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">ClientConnection</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">handle</span>: <span class="ident">InputSourceHandle</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>,
-        <span class="ident">tx</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>,
-        <span class="ident">instance</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">InstanceConfig</span><span class="op">&gt;</span>,
+        <span class="ident">led_count</span>: <span class="ident">usize</span>,
+        <span class="ident">instance</span>: <span class="ident">InstanceHandle</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">handle</span>,
-            <span class="ident">led_colors</span>: <span class="macro">vec!</span>[<span class="ident">Color::default</span>(); <span class="ident">instance</span>.<span class="ident">leds</span>.<span class="ident">leds</span>.<span class="ident">len</span>()],
+            <span class="ident">led_colors</span>: <span class="macro">vec!</span>[<span class="ident">Color::default</span>(); <span class="ident">led_count</span>],
             <span class="ident">priority</span>: <span class="number">128</span>,
-            <span class="ident">tx</span>,
             <span class="ident">instance</span>,
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">set_priority</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">priority</span>: <span class="ident">i32</span>) {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_priority</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">priority</span>: <span class="ident">i32</span>) {
         <span class="kw">if</span> <span class="ident">priority</span> <span class="op">&lt;</span> <span class="number">128</span> <span class="op">|</span><span class="op">|</span> <span class="ident">priority</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">254</span> {
-            <span class="comment">// TODO: Find first available priority</span>
-            <span class="self">self</span>.<span class="ident">priority</span> <span class="op">=</span> <span class="number">128</span>;
+            <span class="self">self</span>.<span class="ident">priority</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">instance</span>
+                .<span class="ident">current_priorities</span>()
+                .<span class="kw">await</span>
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">priorities</span><span class="op">|</span> {
+                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">used_priorities</span> <span class="op">=</span> <span class="ident">priorities</span>
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">p</span>.<span class="ident">priority</span>)
+                        .<span class="ident">skip_while</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">p</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">128</span>)
+                        .<span class="ident">peekable</span>();
+
+                    <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">128</span>..<span class="number">255</span> {
+                        <span class="kw">loop</span> {
+                            <span class="kw">match</span> <span class="ident">used_priorities</span>.<span class="ident">peek</span>().<span class="ident">cloned</span>() {
+                                <span class="prelude-val">Some</span>(<span class="ident">used</span>) <span class="kw">if</span> <span class="ident">used</span> <span class="op">=</span><span class="op">=</span> <span class="ident">i</span> <span class="op">=</span><span class="op">&gt;</span> {
+                                    <span class="comment">// Current value is used, look at the next one</span>
+                                    <span class="ident">used_priorities</span>.<span class="ident">next</span>();
+                                    <span class="kw">break</span>;
+                                }
+                                <span class="prelude-val">Some</span>(<span class="ident">used</span>) <span class="kw">if</span> <span class="ident">used</span> <span class="op">&lt;</span> <span class="ident">i</span> <span class="op">=</span><span class="op">&gt;</span> {
+                                    <span class="ident">used_priorities</span>.<span class="ident">next</span>();
+                                    <span class="kw">continue</span>;
+                                }
+                                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                                    <span class="kw">return</span> <span class="ident">i</span>;
+                                }
+                            }
+                        }
+                    }
+
+                    <span class="number">128</span>
+                })
+                .<span class="ident">unwrap_or</span>(<span class="number">128</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">priority</span> <span class="op">=</span> <span class="ident">priority</span>;
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">tokio::sync::mpsc::error::SendError</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">tx</span>
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">BoblightApiError</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>
+            .<span class="ident">instance</span>
             .<span class="ident">send</span>(<span class="ident">InputMessage::new</span>(
                 <span class="self">self</span>.<span class="ident">handle</span>.<span class="ident">id</span>(),
                 <span class="kw">crate</span><span class="ident">::component::ComponentName::BoblightServer</span>,
@@ -175,9 +249,10 @@
                     <span class="ident">led_colors</span>: <span class="ident">Arc::new</span>(<span class="self">self</span>.<span class="ident">led_colors</span>.<span class="ident">clone</span>()),
                 },
             ))
-            .<span class="kw">await</span>
+            .<span class="kw">await</span><span class="question-mark">?</span>)
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">skip</span>(<span class="ident">request</span>))]</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_request</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">request</span>: <span class="ident">BoblightRequest</span>,
@@ -188,7 +263,7 @@
             <span class="ident">BoblightRequest::Get</span>(<span class="ident">get</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">get</span> {
                 <span class="ident">message::GetArg::Version</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">BoblightResponse::Version</span>)),
                 <span class="ident">message::GetArg::Lights</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">BoblightResponse::Lights</span> {
-                    <span class="ident">leds</span>: <span class="self">self</span>.<span class="ident">instance</span>.<span class="ident">leds</span>.<span class="ident">leds</span>.<span class="ident">clone</span>(),
+                    <span class="ident">leds</span>: <span class="self">self</span>.<span class="ident">instance</span>.<span class="ident">config</span>().<span class="kw">await</span><span class="question-mark">?</span>.<span class="ident">leds</span>.<span class="ident">leds</span>.<span class="ident">clone</span>(),
                 })),
             },
             <span class="ident">BoblightRequest::Set</span>(<span class="ident">set</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -206,7 +281,7 @@
                         <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {}
                     },
                     <span class="ident">message::SetArg::Priority</span>(<span class="ident">priority</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="self">self</span>.<span class="ident">set_priority</span>(<span class="ident">priority</span>);
+                        <span class="self">self</span>.<span class="ident">set_priority</span>(<span class="ident">priority</span>).<span class="kw">await</span>;
                     }
                 }
 
@@ -218,6 +293,15 @@
                 <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
             }
         }
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">std::fmt::Debug</span> <span class="kw">for</span> <span class="ident">ClientConnection</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::fmt::Result</span> {
+        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;ClientConnection&quot;</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;instance&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">instance</span>.<span class="ident">id</span>())
+            .<span class="ident">field</span>(<span class="string">&quot;source&quot;</span>, <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span>.<span class="ident">handle</span>))
+            .<span class="ident">finish</span>()
     }
 }
 </pre></div>

@@ -70,21 +70,21 @@
 <span id="67">67</span>
 <span id="68">68</span>
 <span id="69">69</span>
+<span id="70">70</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Boblight protocol server implementation</span>
 
 <span class="kw">use</span> <span class="ident">std::net::SocketAddr</span>;
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
 <span class="kw">use</span> <span class="ident">futures::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
-<span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">net::TcpStream</span>, <span class="ident">sync::mpsc::Sender</span>};
+<span class="kw">use</span> <span class="ident">tokio::net::TcpStream</span>;
 <span class="kw">use</span> <span class="ident">tokio_util::codec::Framed</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">api::boblight</span>::{<span class="self">self</span>, <span class="ident">BoblightApiError</span>},
-    <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputMessage</span>, <span class="ident">InputSourceName</span>},
-    <span class="ident">models::InstanceConfig</span>,
+    <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputSourceName</span>},
+    <span class="ident">instance::InstanceHandle</span>,
 };
 
 <span class="doccomment">/// Boblight protocol codec definition</span>
@@ -101,13 +101,14 @@
     <span class="ident">Api</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">BoblightApiError</span>),
 }
 
+<span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">skip</span>(<span class="ident">socket</span>, <span class="ident">led_count</span>, <span class="ident">instance</span>, <span class="ident">global</span>))]</span>
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_client</span>(
     (<span class="ident">socket</span>, <span class="ident">peer_addr</span>): (<span class="ident">TcpStream</span>, <span class="ident">SocketAddr</span>),
-    <span class="ident">tx</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>,
-    <span class="ident">instance</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">InstanceConfig</span><span class="op">&gt;</span>,
+    <span class="ident">led_count</span>: <span class="ident">usize</span>,
+    <span class="ident">instance</span>: <span class="ident">InstanceHandle</span>,
     <span class="ident">global</span>: <span class="ident">Global</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">BoblightServerError</span><span class="op">&gt;</span> {
-    <span class="macro">debug!</span>(<span class="string">&quot;accepted new connection from {}&quot;</span>, <span class="ident">peer_addr</span>,);
+    <span class="macro">debug!</span>(<span class="string">&quot;accepted new connection&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">framed</span> <span class="op">=</span> <span class="ident">Framed::new</span>(<span class="ident">socket</span>, <span class="ident">BoblightCodec::new</span>());
     <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">writer</span>, <span class="kw-2">mut</span> <span class="ident">reader</span>) <span class="op">=</span> <span class="ident">framed</span>.<span class="ident">split</span>();
@@ -116,10 +117,11 @@
         .<span class="ident">register_input_source</span>(<span class="ident">InputSourceName::Boblight</span> { <span class="ident">peer_addr</span> }, <span class="prelude-val">None</span>)
         .<span class="kw">await</span>
         .<span class="ident">unwrap</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">boblight::ClientConnection::new</span>(<span class="ident">source_handle</span>, <span class="ident">tx</span>, <span class="ident">instance</span>);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">boblight::ClientConnection::new</span>(<span class="ident">source_handle</span>, <span class="ident">led_count</span>, <span class="ident">instance</span>);
 
     <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">request</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-        <span class="macro">trace!</span>(<span class="string">&quot;({}) processing request: {:?}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">request</span>);
+        <span class="macro">trace!</span>(<span class="ident">request</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">request</span>, <span class="string">&quot;processing&quot;</span>);
 
         <span class="kw">match</span> <span class="ident">request</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">request</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">connection</span>.<span class="ident">handle_request</span>(<span class="ident">request</span>).<span class="kw">await</span> {
@@ -129,11 +131,11 @@
                     }
                 }
                 <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">warn!</span>(<span class="string">&quot;({}) boblight error: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
+                    <span class="macro">warn!</span>(<span class="ident">error</span> <span class="op">=</span> <span class="op">%</span><span class="ident">error</span>, <span class="string">&quot;boblight error&quot;</span>);
                 }
             },
             <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">warn!</span>(<span class="string">&quot;({}) boblight error: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
+                <span class="macro">warn!</span>(<span class="ident">error</span> <span class="op">=</span> <span class="op">%</span><span class="ident">error</span>, <span class="string">&quot;boblight error&quot;</span>);
             }
         }
     }

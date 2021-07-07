@@ -101,9 +101,11 @@
 <span id="98"> 98</span>
 <span id="99"> 99</span>
 <span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert::TryFrom</span>, <span class="ident">net::SocketAddr</span>};
 
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 
@@ -130,7 +132,9 @@
     <span class="ident">MissingCommand</span>,
 }
 
+<span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">skip</span>(<span class="ident">request</span>, <span class="ident">source</span>))]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">handle_request</span>(
+    <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span>,
     <span class="ident">request</span>: <span class="ident">HyperionRequest</span>,
     <span class="ident">source</span>: <span class="kw-2">&amp;</span><span class="ident">InputSourceHandle</span><span class="op">&lt;</span><span class="ident">InputMessage</span><span class="op">&gt;</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ProtoApiError</span><span class="op">&gt;</span> {

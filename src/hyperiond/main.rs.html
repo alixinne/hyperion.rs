@@ -157,6 +157,10 @@
 <span id="154">154</span>
 <span id="155">155</span>
 <span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">tracing</span>;
@@ -169,12 +173,16 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">struct</span> <span class="ident">Opts</span> {
+    <span class="doccomment">/// Log verbosity. Overrides logger level in config, but is overridden by HYPERION_LOG</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span>, <span class="ident">parse</span>(<span class="ident">from_occurrences</span>))]</span>
     <span class="ident">verbose</span>: <span class="ident">u32</span>,
+    <span class="doccomment">/// Path to the configuration database</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;db-path&quot;</span>)]</span>
     <span class="ident">database_path</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Path to a TOML config file. Overrides the configuration database</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;config&quot;</span>)]</span>
     <span class="ident">config_path</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Dump the loaded configuration</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
     <span class="ident">dump_config</span>: <span class="ident">bool</span>,
 }
@@ -193,7 +201,7 @@
 
     <span class="comment">// Dump configuration if this was asked</span>
     <span class="kw">if</span> <span class="ident">opts</span>.<span class="ident">dump_config</span> {
-        <span class="ident">serde_json::to_writer_pretty</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std::io::stdout</span>(), <span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
+        <span class="macro">print!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">config</span>.<span class="ident">to_string</span>()<span class="question-mark">?</span>);
         <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
     }
 

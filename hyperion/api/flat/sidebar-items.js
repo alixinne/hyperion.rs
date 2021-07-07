@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["FlatApiError",""]],"fn":[["handle_request",""]],"mod":[["message","Schema definitions as Serde serializable structures and enums"]]});
+initSidebarItems({"enum":[["FlatApiError",""]],"fn":[["handle_register",""],["handle_request",""]],"mod":[["message","Schema definitions as Serde serializable structures and enums"]]});

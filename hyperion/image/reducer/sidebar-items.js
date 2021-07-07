@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Reducer",""]]});
+initSidebarItems({"struct":[["LedSpec",""],["Reducer",""]]});

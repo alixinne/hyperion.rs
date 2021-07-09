@@ -76,6 +76,7 @@
 <span id="73">73</span>
 <span id="74">74</span>
 <span id="75">75</span>
+<span id="76">76</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! JSON protocol server implementation</span>
 
@@ -148,6 +149,7 @@
         <span class="macro">trace!</span>(<span class="ident">response</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">reply</span>, <span class="string">&quot;sending response&quot;</span>);
 
         <span class="ident">writer</span>.<span class="ident">send</span>(<span class="ident">reply</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">writer</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     }
 
     <span class="prelude-val">Ok</span>(())

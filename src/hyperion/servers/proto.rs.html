@@ -86,6 +86,7 @@
 <span id="83">83</span>
 <span id="84">84</span>
 <span id="85">85</span>
+<span id="86">86</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! protobuf protocol server implementation</span>
 
@@ -168,6 +169,7 @@
         };
 
         <span class="ident">writer</span>.<span class="ident">send</span>(<span class="ident">reply</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">writer</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     }
 
     <span class="prelude-val">Ok</span>(())

@@ -428,9 +428,9 @@
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RawImageError::ZeroWidth</span>);
         } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">height</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RawImageError::ZeroHeight</span>);
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">width</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">u16::MAX</span> <span class="kw">as</span> <span class="kw">_</span> {
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">width</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">u16::MAX</span> <span class="kw">as</span> <span class="ident">u32</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RawImageError::InvalidWidth</span>);
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">height</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">u16::MAX</span> <span class="kw">as</span> <span class="kw">_</span> {
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">height</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">u16::MAX</span> <span class="kw">as</span> <span class="ident">u32</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RawImageError::InvalidHeight</span>);
         }
 

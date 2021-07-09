@@ -788,6 +788,17 @@
 <span id="785">785</span>
 <span id="786">786</span>
 <span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">path::PathBuf</span>,
@@ -1457,8 +1468,15 @@
     <span class="doccomment">/// Server information response</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;serverinfo&quot;</span>)]</span>
     <span class="ident">ServerInfo</span>(<span class="ident">ServerInfo</span>),
+    <span class="doccomment">/// AdminRequired response</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;authorize-adminRequired&quot;</span>)]</span>
+    <span class="ident">AdminRequired</span> {
+        <span class="doccomment">/// true if admin authentication is required</span>
+        <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;adminRequired&quot;</span>)]</span>
+        <span class="ident">admin_required</span>: <span class="ident">bool</span>,
+    },
     <span class="doccomment">/// TokenRequired response</span>
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;auth-tokenRequired&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;authorize-tokenRequired&quot;</span>)]</span>
     <span class="ident">TokenRequired</span> {
         <span class="doccomment">/// true if an auth token required</span>
         <span class="ident">required</span>: <span class="ident">bool</span>,
@@ -1542,6 +1560,10 @@
                 <span class="ident">hostname</span>: <span class="ident">hostname</span>(),
             }),
         )
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">admin_required</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">admin_required</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span><span class="ident">::success_info</span>(<span class="ident">tan</span>, <span class="ident">HyperionResponseInfo::AdminRequired</span> { <span class="ident">admin_required</span> })
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">token_required</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">required</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {

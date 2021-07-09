@@ -191,6 +191,11 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>};
 <span class="kw">use</span> <span class="ident">std::net::SocketAddr</span>;
@@ -211,6 +216,9 @@
 
 <span class="kw">mod</span> <span class="ident">input_source</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">input_source</span>::<span class="kw-2">*</span>;
+
+<span class="kw">mod</span> <span class="ident">paths</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">paths</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">component::ComponentName</span>, <span class="ident">instance::InstanceHandle</span>, <span class="ident">models::Config</span>};
 
@@ -244,6 +252,8 @@
     <span class="ident">Json</span> { <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span> },
     <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;Protobuf({peer_addr})&quot;</span>)]</span>
     <span class="ident">Protobuf</span> { <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span> },
+    <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;Web({peer_addr})&quot;</span>)]</span>
+    <span class="ident">Web</span> { <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span> },
     <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;PriorityMuxer&quot;</span>)]</span>
     <span class="ident">PriorityMuxer</span>,
 }

@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Smoothing",""]]});
+initSidebarItems({"enum":[["SmoothingUpdate",""]],"struct":[["Smoothing",""]]});

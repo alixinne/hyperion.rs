@@ -278,9 +278,9 @@
 <span class="kw">impl</span> <span class="ident">InputSourceName</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">component</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ComponentName</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">InputSourceName::Boblight</span> { <span class="ident">peer_addr</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::BoblightServer</span>,
-            <span class="ident">InputSourceName::FlatBuffers</span> { <span class="ident">peer_addr</span>, <span class="ident">origin</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::FlatbufServer</span>,
-            <span class="ident">InputSourceName::Protobuf</span> { <span class="ident">peer_addr</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::ProtoServer</span>,
+            <span class="ident">InputSourceName::Boblight</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::BoblightServer</span>,
+            <span class="ident">InputSourceName::FlatBuffers</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::FlatbufServer</span>,
+            <span class="ident">InputSourceName::Protobuf</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::ProtoServer</span>,
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ComponentName::All</span>,
         }
     }

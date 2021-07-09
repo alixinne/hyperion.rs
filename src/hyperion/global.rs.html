@@ -252,8 +252,8 @@
     <span class="ident">Json</span> { <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span> },
     <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;Protobuf({peer_addr})&quot;</span>)]</span>
     <span class="ident">Protobuf</span> { <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span> },
-    <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;Web({peer_addr})&quot;</span>)]</span>
-    <span class="ident">Web</span> { <span class="ident">peer_addr</span>: <span class="ident">SocketAddr</span> },
+    <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;Web({session_id})&quot;</span>)]</span>
+    <span class="ident">Web</span> { <span class="ident">session_id</span>: <span class="ident">uuid::Uuid</span> },
     <span class="attribute">#[<span class="ident">display</span>(<span class="string">&quot;PriorityMuxer&quot;</span>)]</span>
     <span class="ident">PriorityMuxer</span>,
 }

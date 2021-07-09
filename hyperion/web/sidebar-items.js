@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run",""]],"mod":[["session",""]]});
+initSidebarItems({"fn":[["bind",""]],"mod":[["session",""]]});

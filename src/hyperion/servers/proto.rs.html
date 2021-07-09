@@ -87,6 +87,9 @@
 <span id="84">84</span>
 <span id="85">85</span>
 <span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! protobuf protocol server implementation</span>
 
@@ -99,7 +102,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">api::proto</span>::{<span class="self">self</span>, <span class="ident">message</span>, <span class="ident">ProtoApiError</span>},
-    <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputSourceName</span>},
+    <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputSourceName</span>, <span class="ident">PriorityGuard</span>},
 };
 
 <span class="kw">mod</span> <span class="ident">codec</span>;
@@ -148,6 +151,8 @@
         .<span class="kw">await</span>
         .<span class="ident">unwrap</span>();
 
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">priority_guard</span> <span class="op">=</span> <span class="ident">PriorityGuard::new_broadcast</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>);
+
     <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">request</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next</span>().<span class="kw">await</span> {
         <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">rb</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">rb</span>,
@@ -159,14 +164,15 @@
 
         <span class="macro">trace!</span>(<span class="string">&quot;({}) got request: {:?}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">request</span>);
 
-        <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">proto::handle_request</span>(<span class="ident">peer_addr</span>.<span class="ident">clone</span>(), <span class="ident">request</span>, <span class="kw-2">&amp;</span><span class="ident">source</span>) {
-            <span class="prelude-val">Ok</span>(()) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">success_response</span>(<span class="ident">peer_addr</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">error!</span>(<span class="string">&quot;({}) error processing request: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
+        <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span>
+            <span class="kw">match</span> <span class="ident">proto::handle_request</span>(<span class="ident">peer_addr</span>.<span class="ident">clone</span>(), <span class="ident">request</span>, <span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">priority_guard</span>) {
+                <span class="prelude-val">Ok</span>(()) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">success_response</span>(<span class="ident">peer_addr</span>),
+                <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="macro">error!</span>(<span class="string">&quot;({}) error processing request: {}&quot;</span>, <span class="ident">peer_addr</span>, <span class="ident">error</span>);
 
-                <span class="ident">error_response</span>(<span class="ident">peer_addr</span>, <span class="ident">error</span>)
-            }
-        };
+                    <span class="ident">error_response</span>(<span class="ident">peer_addr</span>, <span class="ident">error</span>)
+                }
+            };
 
         <span class="ident">writer</span>.<span class="ident">send</span>(<span class="ident">reply</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">writer</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;

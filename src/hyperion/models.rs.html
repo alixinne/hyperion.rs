@@ -1815,6 +1815,9 @@
 <span id="1812">1812</span>
 <span id="1813">1813</span>
 <span id="1814">1814</span>
+<span id="1815">1815</span>
+<span id="1816">1816</span>
+<span id="1817">1817</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections::BTreeMap</span>,
@@ -2853,6 +2856,8 @@
     <span class="kw">pub</span> <span class="ident">crt_path</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">key_path</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">key_pass_phrase</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1</span>))]</span>
+    <span class="kw">pub</span> <span class="ident">max_sessions</span>: <span class="ident">u32</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">WebConfig</span> {
@@ -2868,6 +2873,7 @@
             <span class="ident">crt_path</span>: <span class="ident">String::new</span>(),
             <span class="ident">key_path</span>: <span class="ident">String::new</span>(),
             <span class="ident">key_pass_phrase</span>: <span class="ident">String::new</span>(),
+            <span class="ident">max_sessions</span>: <span class="number">4</span>,
         }
     }
 }

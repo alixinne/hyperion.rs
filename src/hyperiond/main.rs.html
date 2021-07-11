@@ -230,6 +230,8 @@
 <span id="227">227</span>
 <span id="228">228</span>
 <span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">tracing</span>;
@@ -265,6 +267,9 @@
     <span class="doccomment">/// %APPDATA%\hyperion.rs (Windows)</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
     <span class="ident">user_root</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Number of threads to use for the async runtime</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
+    <span class="ident">core_threads</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">opts</span>: <span class="ident">Opts</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">color_eyre::eyre::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -449,11 +454,10 @@
     <span class="ident">install_tracing</span>(<span class="kw-2">&amp;</span><span class="ident">opts</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// Create tokio runtime</span>
-    <span class="kw">let</span> <span class="ident">thd_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">num_cpus::get</span>() {
-        <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span>,
-        <span class="ident">other</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">other</span>.<span class="ident">min</span>(<span class="number">4</span>),
-    };
-
+    <span class="kw">let</span> <span class="ident">thd_count</span> <span class="op">=</span> <span class="ident">opts</span>
+        .<span class="ident">core_threads</span>
+        .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="kw">if</span> <span class="ident">n</span> <span class="op">&gt;</span> <span class="number">0</span> { <span class="prelude-val">Some</span>(<span class="ident">n</span>) } <span class="kw">else</span> { <span class="prelude-val">None</span> })
+        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">num_cpus::get</span>().<span class="ident">max</span>(<span class="number">2</span>).<span class="ident">min</span>(<span class="number">4</span>));
     <span class="kw">let</span> <span class="ident">rt</span> <span class="op">=</span> <span class="ident">Builder::new_multi_thread</span>()
         .<span class="ident">worker_threads</span>(<span class="ident">thd_count</span>)
         .<span class="ident">enable_all</span>()

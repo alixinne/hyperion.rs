@@ -46,7 +46,7 @@ impl From<&crate::models::ChannelAdjustment> for RgbTransform {
             backlight_enabled: false,
             backlight_colored: settings.backlight_colored,
             sum_brightness_low: 765.0
-                * (((2.0f32.powf(settings.backlight_threshold as f32 / 100.0) * 2.0) - 1.0) / 3.0),
+                * ((2.0f32.powf(settings.backlight_threshold as f32 / 100.0 * 2.0) - 1.0) / 3.0),
             gamma_r: settings.gamma_red,
             gamma_g: settings.gamma_green,
             gamma_b: settings.gamma_blue,

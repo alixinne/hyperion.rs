@@ -79,9 +79,9 @@ impl Reducer {
             }
 
             *value = Color16::new(
-                (r_acc / cnt.max(1)).max(0).min(u16::MAX as _) as u16,
-                (g_acc / cnt.max(1)).max(0).min(u16::MAX as _) as u16,
-                (b_acc / cnt.max(1)).max(0).min(u16::MAX as _) as u16,
+                ((r_acc / cnt.max(1)) * 65535 / (255 * 255)).min(u16::MAX as _) as u16,
+                ((g_acc / cnt.max(1)) * 65535 / (255 * 255)).min(u16::MAX as _) as u16,
+                ((b_acc / cnt.max(1)) * 65535 / (255 * 255)).min(u16::MAX as _) as u16,
             );
         }
     }

@@ -41,6 +41,19 @@ macro_rules! impl_device_config {
     };
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DummyDeviceMode {
+    Text,
+    Ansi,
+}
+
+impl Default for DummyDeviceMode {
+    fn default() -> Self {
+        Self::Text
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct Dummy {
@@ -48,6 +61,7 @@ pub struct Dummy {
     pub hardware_led_count: u32,
     pub rewrite_time: u32,
     pub latch_time: u32,
+    pub mode: DummyDeviceMode,
 }
 
 impl_device_config!(Dummy);
@@ -58,6 +72,7 @@ impl Default for Dummy {
             hardware_led_count: 1,
             rewrite_time: 0,
             latch_time: 0,
+            mode: Default::default(),
         }
     }
 }

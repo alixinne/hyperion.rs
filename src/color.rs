@@ -309,19 +309,19 @@ impl ChannelAdjustmentsBuilder {
 
     pub fn build(&self) -> ChannelAdjustments {
         let mut adjustments = SlotMap::with_capacity(self.adjustments.len());
-        let mut led_mappings = Vec::with_capacity(self.led_count as _);
+        let mut led_mappings = vec![None; self.led_count as _];
 
         for adjustment in &self.adjustments {
             match &adjustment.leds {
                 LedMatch::All => {
                     let key = adjustments.insert(adjustment.data);
-                    led_mappings.fill(key);
+                    led_mappings.fill(Some(key));
                 }
                 LedMatch::Ranges(ranges) => {
                     let key = adjustments.insert(adjustment.data);
                     for range in &ranges.ranges {
                         if let Some(range) = led_mappings.get_mut(range.clone()) {
-                            range.fill(key);
+                            range.fill(Some(key));
                         } else {
                             error!(range = ?range, led_count = %self.led_count, "invalid range");
                         }
@@ -341,7 +341,7 @@ impl ChannelAdjustmentsBuilder {
 #[derive(Debug, Clone)]
 pub struct ChannelAdjustments {
     adjustments: SlotMap<DefaultKey, ColorAdjustmentData>,
-    led_mappings: Vec<DefaultKey>,
+    led_mappings: Vec<Option<DefaultKey>>,
 }
 
 impl ChannelAdjustments {
@@ -350,7 +350,8 @@ impl ChannelAdjustments {
             if let Some(adjustment) = self
                 .led_mappings
                 .get(i)
-                .and_then(|key| self.adjustments.get(*key))
+                .and_then(|key| *key)
+                .and_then(|key| self.adjustments.get(key))
             {
                 // TODO: Actual 16-bit color?
                 *led = color_to16(adjustment.apply(color_to8(*led)));

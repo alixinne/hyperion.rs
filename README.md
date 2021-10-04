@@ -33,6 +33,7 @@ Currently implemented features:
 Extra features not available in hyperion.ng:
 
 * Hooks (global start, stop, and instance start, stop, activate, deactivate)
+* RGB color temperature adjustment
 
 ## Configuration
 

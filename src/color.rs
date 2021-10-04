@@ -282,24 +282,17 @@ impl From<&crate::models::ChannelAdjustment> for ColorAdjustment {
 #[derive(Debug, Clone)]
 pub struct ChannelAdjustmentsBuilder {
     adjustments: Vec<ColorAdjustment>,
+    rgb_temperature: u32,
     led_count: u32,
 }
 
 impl ChannelAdjustmentsBuilder {
-    pub fn new() -> Self {
+    pub fn new(config: &crate::models::ColorAdjustment) -> Self {
         Self {
-            adjustments: Vec::with_capacity(1),
+            adjustments: config.channel_adjustment.iter().map(Into::into).collect(),
+            rgb_temperature: config.rgb_temperature,
             led_count: 0,
         }
-    }
-
-    pub fn adjustments<T: Into<ColorAdjustment>>(
-        &mut self,
-        adjustments: impl IntoIterator<Item = T>,
-    ) -> &mut Self {
-        self.adjustments
-            .extend(adjustments.into_iter().map(Into::into));
-        self
     }
 
     pub fn led_count(&mut self, led_count: u32) -> &mut Self {
@@ -331,9 +324,18 @@ impl ChannelAdjustmentsBuilder {
             }
         }
 
+        let rgb_whitepoint = utils::kelvin_to_rgb16(self.rgb_temperature);
+        debug!(
+            ?rgb_whitepoint,
+            temperature = self.rgb_temperature,
+            "computed RGB whitepoint"
+        );
+
         ChannelAdjustments {
             adjustments,
             led_mappings,
+            rgb_whitepoint,
+            srgb_whitepoint: utils::srgb_white(),
         }
     }
 }
@@ -342,6 +344,8 @@ impl ChannelAdjustmentsBuilder {
 pub struct ChannelAdjustments {
     adjustments: SlotMap<DefaultKey, ColorAdjustmentData>,
     led_mappings: Vec<Option<DefaultKey>>,
+    rgb_whitepoint: Color16,
+    srgb_whitepoint: Color16,
 }
 
 impl ChannelAdjustments {
@@ -353,9 +357,11 @@ impl ChannelAdjustments {
                 .and_then(|key| *key)
                 .and_then(|key| self.adjustments.get(key))
             {
-                // TODO: Actual 16-bit color?
+                // TODO: Actual 16-bit color transforms?
                 *led = color_to16(adjustment.apply(color_to8(*led)));
             }
+
+            *led = utils::whitebalance(*led, self.srgb_whitepoint, self.rgb_whitepoint);
         }
     }
 }

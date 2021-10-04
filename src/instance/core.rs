@@ -23,8 +23,7 @@ impl Core {
     pub async fn new(config: &InstanceConfig) -> Self {
         let led_count = config.leds.leds.len();
         let black_border_detector = BlackBorderDetector::new(config.black_border_detector.clone());
-        let channel_adjustments = ChannelAdjustmentsBuilder::new()
-            .adjustments(config.color.channel_adjustment.iter())
+        let channel_adjustments = ChannelAdjustmentsBuilder::new(&config.color)
             .led_count(led_count as _)
             .build();
         let smoothing = Smoothing::new(config.smoothing.clone(), led_count);

@@ -146,6 +146,8 @@ pub struct ColorAdjustment {
     pub image_to_led_mapping_type: ImageToLedMappingType,
     #[validate]
     pub channel_adjustment: Vec<ChannelAdjustment>,
+    /// RGB color temperature in Kelvins
+    pub rgb_temperature: u32,
 }
 
 impl Default for ColorAdjustment {
@@ -153,6 +155,7 @@ impl Default for ColorAdjustment {
         Self {
             image_to_led_mapping_type: ImageToLedMappingType::MulticolorMean,
             channel_adjustment: vec![ChannelAdjustment::default()],
+            rgb_temperature: 6600,
         }
     }
 }

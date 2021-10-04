@@ -69,7 +69,7 @@ impl RgbTransform {
     }
 
     pub fn brightness_components(&self) -> BrightnessComponents {
-        let fw = self.brightness_compensation as f32 + 2.0 / 100.0 + 1.0;
+        let fw = self.brightness_compensation as f32 * 2.0 / 100.0 + 1.0;
         let fcmy = self.brightness_compensation as f32 / 100.0 + 1.0;
 
         if self.brightness > 0 {
@@ -81,8 +81,8 @@ impl RgbTransform {
 
             BrightnessComponents {
                 rgb: (255.0 / b_in).min(255.0) as u8,
-                cmy: (255.0 / (b_in + fcmy)).min(255.0) as u8,
-                w: (255.0 / (b_in + fw)).min(255.0) as u8,
+                cmy: (255.0 / (b_in * fcmy)).min(255.0) as u8,
+                w: (255.0 / (b_in * fw)).min(255.0) as u8,
             }
         } else {
             BrightnessComponents::default()
@@ -359,4 +359,39 @@ impl ChannelAdjustments {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    lazy_static::lazy_static! {
+        static ref BASE_COLORS: [Color; 8] = [
+            Color::new(0, 0, 0),
+            Color::new(255, 255, 255),
+            Color::new(255, 0, 0),
+            Color::new(0, 255, 0),
+            Color::new(0, 0, 255),
+            Color::new(255, 255, 0),
+            Color::new(0, 255, 255),
+            Color::new(255, 0, 255),
+        ];
+    }
+
+    #[test]
+    fn test_rgb_channel_adjustment() {
+        for &color in &*BASE_COLORS {
+            assert_eq!(color, RgbChannelAdjustment::from(color).apply(255, 255));
+            assert_eq!(color / 2, RgbChannelAdjustment::from(color).apply(127, 255));
+            assert_eq!(color / 2, RgbChannelAdjustment::from(color).apply(255, 127));
+        }
+    }
+
+    #[test]
+    fn test_color_adjustment_data() {
+        let channel_adjustment: ColorAdjustmentData =
+            (&crate::models::ChannelAdjustment::default()).into();
+
+        for &color in &*BASE_COLORS {
+            assert_eq!(color, channel_adjustment.apply(color));
+        }
+    }
+}

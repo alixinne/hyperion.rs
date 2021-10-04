@@ -15,6 +15,8 @@ pub enum UserError {
     Uuid(#[from] uuid::Error),
     #[error("error decoding hex data: {0}")]
     Hex(#[from] hex::FromHexError),
+    #[error("error decoding UTF-8 data: {0}")]
+    Utf8(#[from] std::string::FromUtf8Error),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,7 +33,7 @@ pub struct User {
         deserialize_with = "hex::deserialize"
     )]
     pub token: Vec<u8>,
-    pub salt: Vec<u8>,
+    pub salt: String,
     #[serde(default = "default_none")]
     pub comment: Option<String>,
     #[serde(default = "default_none")]
@@ -47,7 +49,7 @@ impl User {
         let name = "Hyperion".to_owned();
         let salt = Self::generate_salt();
         let token = Self::generate_token();
-        let password = Self::hash_password("hyperion", &salt);
+        let password = Self::hash_password("hyperion", salt.as_bytes());
         let created_at = chrono::Utc::now();
         let last_use = created_at;
 
@@ -69,8 +71,8 @@ impl User {
         hasher.finalize().to_vec()
     }
 
-    pub fn generate_salt() -> Vec<u8> {
-        hex::encode(Self::generate_token()).into_bytes()
+    pub fn generate_salt() -> String {
+        hex::encode(Self::generate_token())
     }
 
     pub fn hash_password(password: &str, salt: &[u8]) -> Vec<u8> {
@@ -89,7 +91,7 @@ impl TryFrom<db_models::DbUser> for User {
             name: db.user,
             password: hex::decode(db.password)?,
             token: hex::decode(db.token)?,
-            salt: hex::decode(db.salt)?,
+            salt: String::from_utf8(db.salt)?,
             comment: db.comment,
             id: db.id,
             created_at: chrono::DateTime::parse_from_rfc3339(&db.created_at)?

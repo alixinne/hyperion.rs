@@ -610,6 +610,9 @@
 <span id="607">607</span>
 <span id="608">608</span>
 <span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
 
@@ -759,6 +762,8 @@
     <span class="kw">pub</span> <span class="ident">image_to_led_mapping_type</span>: <span class="ident">ImageToLedMappingType</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
     <span class="kw">pub</span> <span class="ident">channel_adjustment</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ChannelAdjustment</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// RGB color temperature in Kelvins</span>
+    <span class="kw">pub</span> <span class="ident">rgb_temperature</span>: <span class="ident">u32</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ColorAdjustment</span> {
@@ -766,6 +771,7 @@
         <span class="self">Self</span> {
             <span class="ident">image_to_led_mapping_type</span>: <span class="ident">ImageToLedMappingType::MulticolorMean</span>,
             <span class="ident">channel_adjustment</span>: <span class="macro">vec!</span>[<span class="ident">ChannelAdjustment::default</span>()],
+            <span class="ident">rgb_temperature</span>: <span class="number">6600</span>,
         }
     }
 }

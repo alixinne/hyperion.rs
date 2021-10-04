@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["FACTOR",""]],"fn":[["color_to16",""],["color_to8",""],["kelvin_to_rgb16",""],["kelvin_to_rgbf32","Return the whitepoint for a given color temperature"],["srgb_white","Get the sRGB whitepoint"],["whitebalance","Transforms the given color to fix its white balance"]]});

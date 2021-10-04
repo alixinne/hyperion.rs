@@ -368,12 +368,52 @@
 <span id="365">365</span>
 <span id="366">366</span>
 <span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert::TryFrom</span>, <span class="ident">num::ParseIntError</span>};
 
 <span class="kw">use</span> <span class="ident">slotmap</span>::{<span class="ident">DefaultKey</span>, <span class="ident">SlotMap</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::models</span>::{<span class="ident">Color</span>, <span class="ident">Color16</span>};
+
+<span class="kw">mod</span> <span class="ident">utils</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">utils</span>::{<span class="ident">color_to16</span>, <span class="ident">color_to8</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">struct</span> <span class="ident">RgbChannelAdjustment</span> {
@@ -414,7 +454,7 @@
             <span class="ident">backlight_enabled</span>: <span class="bool-val">false</span>,
             <span class="ident">backlight_colored</span>: <span class="ident">settings</span>.<span class="ident">backlight_colored</span>,
             <span class="ident">sum_brightness_low</span>: <span class="number">765.0</span>
-                <span class="op">*</span> (((<span class="number">2.0f32</span>.<span class="ident">powf</span>(<span class="ident">settings</span>.<span class="ident">backlight_threshold</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">/</span> <span class="number">100.0</span>) <span class="op">*</span> <span class="number">2.0</span>) <span class="op">-</span> <span class="number">1.0</span>) <span class="op">/</span> <span class="number">3.0</span>),
+                <span class="op">*</span> ((<span class="number">2.0f32</span>.<span class="ident">powf</span>(<span class="ident">settings</span>.<span class="ident">backlight_threshold</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">/</span> <span class="number">100.0</span> <span class="op">*</span> <span class="number">2.0</span>) <span class="op">-</span> <span class="number">1.0</span>) <span class="op">/</span> <span class="number">3.0</span>),
             <span class="ident">gamma_r</span>: <span class="ident">settings</span>.<span class="ident">gamma_red</span>,
             <span class="ident">gamma_g</span>: <span class="ident">settings</span>.<span class="ident">gamma_green</span>,
             <span class="ident">gamma_b</span>: <span class="ident">settings</span>.<span class="ident">gamma_blue</span>,
@@ -437,7 +477,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">brightness_components</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BrightnessComponents</span> {
-        <span class="kw">let</span> <span class="ident">fw</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">brightness_compensation</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">+</span> <span class="number">2.0</span> <span class="op">/</span> <span class="number">100.0</span> <span class="op">+</span> <span class="number">1.0</span>;
+        <span class="kw">let</span> <span class="ident">fw</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">brightness_compensation</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">*</span> <span class="number">2.0</span> <span class="op">/</span> <span class="number">100.0</span> <span class="op">+</span> <span class="number">1.0</span>;
         <span class="kw">let</span> <span class="ident">fcmy</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">brightness_compensation</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">/</span> <span class="number">100.0</span> <span class="op">+</span> <span class="number">1.0</span>;
 
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">brightness</span> <span class="op">&gt;</span> <span class="number">0</span> {
@@ -449,8 +489,8 @@
 
             <span class="ident">BrightnessComponents</span> {
                 <span class="ident">rgb</span>: (<span class="number">255.0</span> <span class="op">/</span> <span class="ident">b_in</span>).<span class="ident">min</span>(<span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>,
-                <span class="ident">cmy</span>: (<span class="number">255.0</span> <span class="op">/</span> (<span class="ident">b_in</span> <span class="op">+</span> <span class="ident">fcmy</span>)).<span class="ident">min</span>(<span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>,
-                <span class="ident">w</span>: (<span class="number">255.0</span> <span class="op">/</span> (<span class="ident">b_in</span> <span class="op">+</span> <span class="ident">fw</span>)).<span class="ident">min</span>(<span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>,
+                <span class="ident">cmy</span>: (<span class="number">255.0</span> <span class="op">/</span> (<span class="ident">b_in</span> <span class="op">*</span> <span class="ident">fcmy</span>)).<span class="ident">min</span>(<span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>,
+                <span class="ident">w</span>: (<span class="number">255.0</span> <span class="op">/</span> (<span class="ident">b_in</span> <span class="op">*</span> <span class="ident">fw</span>)).<span class="ident">min</span>(<span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>,
             }
         } <span class="kw">else</span> {
             <span class="ident">BrightnessComponents::default</span>()
@@ -650,24 +690,17 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ChannelAdjustmentsBuilder</span> {
     <span class="ident">adjustments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ColorAdjustment</span><span class="op">&gt;</span>,
+    <span class="ident">rgb_temperature</span>: <span class="ident">u32</span>,
     <span class="ident">led_count</span>: <span class="ident">u32</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">ChannelAdjustmentsBuilder</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="kw">crate</span><span class="ident">::models::ColorAdjustment</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">adjustments</span>: <span class="ident">Vec::with_capacity</span>(<span class="number">1</span>),
+            <span class="ident">adjustments</span>: <span class="ident">config</span>.<span class="ident">channel_adjustment</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">Into::into</span>).<span class="ident">collect</span>(),
+            <span class="ident">rgb_temperature</span>: <span class="ident">config</span>.<span class="ident">rgb_temperature</span>,
             <span class="ident">led_count</span>: <span class="number">0</span>,
         }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">adjustments</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ColorAdjustment</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">adjustments</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">adjustments</span>
-            .<span class="ident">extend</span>(<span class="ident">adjustments</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">Into::into</span>));
-        <span class="self">self</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">led_count</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">led_count</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
@@ -677,19 +710,19 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChannelAdjustments</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adjustments</span> <span class="op">=</span> <span class="ident">SlotMap::with_capacity</span>(<span class="self">self</span>.<span class="ident">adjustments</span>.<span class="ident">len</span>());
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">led_mappings</span> <span class="op">=</span> <span class="ident">Vec::with_capacity</span>(<span class="self">self</span>.<span class="ident">led_count</span> <span class="kw">as</span> <span class="kw">_</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">led_mappings</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="prelude-val">None</span>; <span class="self">self</span>.<span class="ident">led_count</span> <span class="kw">as</span> <span class="kw">_</span>];
 
         <span class="kw">for</span> <span class="ident">adjustment</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">adjustments</span> {
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">adjustment</span>.<span class="ident">leds</span> {
                 <span class="ident">LedMatch::All</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">adjustments</span>.<span class="ident">insert</span>(<span class="ident">adjustment</span>.<span class="ident">data</span>);
-                    <span class="ident">led_mappings</span>.<span class="ident">fill</span>(<span class="ident">key</span>);
+                    <span class="ident">led_mappings</span>.<span class="ident">fill</span>(<span class="prelude-val">Some</span>(<span class="ident">key</span>));
                 }
                 <span class="ident">LedMatch::Ranges</span>(<span class="ident">ranges</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">adjustments</span>.<span class="ident">insert</span>(<span class="ident">adjustment</span>.<span class="ident">data</span>);
                     <span class="kw">for</span> <span class="ident">range</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">ranges</span>.<span class="ident">ranges</span> {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">range</span>) <span class="op">=</span> <span class="ident">led_mappings</span>.<span class="ident">get_mut</span>(<span class="ident">range</span>.<span class="ident">clone</span>()) {
-                            <span class="ident">range</span>.<span class="ident">fill</span>(<span class="ident">key</span>);
+                            <span class="ident">range</span>.<span class="ident">fill</span>(<span class="prelude-val">Some</span>(<span class="ident">key</span>));
                         } <span class="kw">else</span> {
                             <span class="macro">error!</span>(<span class="ident">range</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">range</span>, <span class="ident">led_count</span> <span class="op">=</span> <span class="op">%</span><span class="self">self</span>.<span class="ident">led_count</span>, <span class="string">&quot;invalid range&quot;</span>);
                         }
@@ -699,9 +732,18 @@
             }
         }
 
+        <span class="kw">let</span> <span class="ident">rgb_whitepoint</span> <span class="op">=</span> <span class="ident">utils::kelvin_to_rgb16</span>(<span class="self">self</span>.<span class="ident">rgb_temperature</span>);
+        <span class="macro">debug!</span>(
+            <span class="question-mark">?</span><span class="ident">rgb_whitepoint</span>,
+            <span class="ident">temperature</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">rgb_temperature</span>,
+            <span class="string">&quot;computed RGB whitepoint&quot;</span>
+        );
+
         <span class="ident">ChannelAdjustments</span> {
             <span class="ident">adjustments</span>,
             <span class="ident">led_mappings</span>,
+            <span class="ident">rgb_whitepoint</span>,
+            <span class="ident">srgb_whitepoint</span>: <span class="ident">utils::srgb_white</span>(),
         }
     }
 }
@@ -709,7 +751,9 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ChannelAdjustments</span> {
     <span class="ident">adjustments</span>: <span class="ident">SlotMap</span><span class="op">&lt;</span><span class="ident">DefaultKey</span>, <span class="ident">ColorAdjustmentData</span><span class="op">&gt;</span>,
-    <span class="ident">led_mappings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">DefaultKey</span><span class="op">&gt;</span>,
+    <span class="ident">led_mappings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DefaultKey</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">rgb_whitepoint</span>: <span class="ident">Color16</span>,
+    <span class="ident">srgb_whitepoint</span>: <span class="ident">Color16</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">ChannelAdjustments</span> {
@@ -718,23 +762,53 @@
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">adjustment</span>) <span class="op">=</span> <span class="self">self</span>
                 .<span class="ident">led_mappings</span>
                 .<span class="ident">get</span>(<span class="ident">i</span>)
-                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">key</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">adjustments</span>.<span class="ident">get</span>(<span class="kw-2">*</span><span class="ident">key</span>))
+                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">key</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">key</span>)
+                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">key</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">adjustments</span>.<span class="ident">get</span>(<span class="ident">key</span>))
             {
-                <span class="comment">// TODO: Actual 16-bit color?</span>
+                <span class="comment">// TODO: Actual 16-bit color transforms?</span>
                 <span class="kw-2">*</span><span class="ident">led</span> <span class="op">=</span> <span class="ident">color_to16</span>(<span class="ident">adjustment</span>.<span class="ident">apply</span>(<span class="ident">color_to8</span>(<span class="kw-2">*</span><span class="ident">led</span>)));
             }
+
+            <span class="kw-2">*</span><span class="ident">led</span> <span class="op">=</span> <span class="ident">utils::whitebalance</span>(<span class="kw-2">*</span><span class="ident">led</span>, <span class="self">self</span>.<span class="ident">srgb_whitepoint</span>, <span class="self">self</span>.<span class="ident">rgb_whitepoint</span>);
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">color_to8</span>(<span class="ident">color</span>: <span class="ident">Color16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Color</span> {
-    <span class="kw">let</span> (<span class="ident">r</span>, <span class="ident">g</span>, <span class="ident">b</span>) <span class="op">=</span> <span class="ident">color</span>.<span class="ident">into_components</span>();
-    <span class="ident">Color::from_components</span>(((<span class="ident">r</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>, (<span class="ident">g</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>, (<span class="ident">b</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">8</span>) <span class="kw">as</span> <span class="ident">u8</span>))
-}
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">color_to16</span>(<span class="ident">color</span>: <span class="ident">Color</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Color16</span> {
-    <span class="kw">let</span> (<span class="ident">r</span>, <span class="ident">g</span>, <span class="ident">b</span>) <span class="op">=</span> <span class="ident">color</span>.<span class="ident">into_components</span>();
-    <span class="ident">Color16::from_components</span>(((<span class="ident">r</span> <span class="kw">as</span> <span class="ident">u16</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>, (<span class="ident">g</span> <span class="kw">as</span> <span class="ident">u16</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>, (<span class="ident">b</span> <span class="kw">as</span> <span class="ident">u16</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>))
+    <span class="macro">lazy_static::lazy_static!</span> {
+        <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">BASE_COLORS</span>: [<span class="ident">Color</span>; <span class="number">8</span>] <span class="op">=</span> [
+            <span class="ident">Color::new</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>),
+            <span class="ident">Color::new</span>(<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>),
+            <span class="ident">Color::new</span>(<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>),
+            <span class="ident">Color::new</span>(<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>),
+            <span class="ident">Color::new</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>),
+            <span class="ident">Color::new</span>(<span class="number">255</span>, <span class="number">255</span>, <span class="number">0</span>),
+            <span class="ident">Color::new</span>(<span class="number">0</span>, <span class="number">255</span>, <span class="number">255</span>),
+            <span class="ident">Color::new</span>(<span class="number">255</span>, <span class="number">0</span>, <span class="number">255</span>),
+        ];
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_rgb_channel_adjustment</span>() {
+        <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">color</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">BASE_COLORS</span> {
+            <span class="macro">assert_eq!</span>(<span class="ident">color</span>, <span class="ident">RgbChannelAdjustment::from</span>(<span class="ident">color</span>).<span class="ident">apply</span>(<span class="number">255</span>, <span class="number">255</span>));
+            <span class="macro">assert_eq!</span>(<span class="ident">color</span> <span class="op">/</span> <span class="number">2</span>, <span class="ident">RgbChannelAdjustment::from</span>(<span class="ident">color</span>).<span class="ident">apply</span>(<span class="number">127</span>, <span class="number">255</span>));
+            <span class="macro">assert_eq!</span>(<span class="ident">color</span> <span class="op">/</span> <span class="number">2</span>, <span class="ident">RgbChannelAdjustment::from</span>(<span class="ident">color</span>).<span class="ident">apply</span>(<span class="number">255</span>, <span class="number">127</span>));
+        }
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_color_adjustment_data</span>() {
+        <span class="kw">let</span> <span class="ident">channel_adjustment</span>: <span class="ident">ColorAdjustmentData</span> <span class="op">=</span>
+            (<span class="kw-2">&amp;</span><span class="kw">crate</span><span class="ident">::models::ChannelAdjustment::default</span>()).<span class="ident">into</span>();
+
+        <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">color</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">BASE_COLORS</span> {
+            <span class="macro">assert_eq!</span>(<span class="ident">color</span>, <span class="ident">channel_adjustment</span>.<span class="ident">apply</span>(<span class="ident">color</span>));
+        }
+    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="hyperion" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>

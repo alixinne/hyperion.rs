@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::sync::Arc;
 
 use thiserror::Error;
+use tokio::sync::{oneshot, Mutex};
 use validator::Validate;
 
 use crate::{
@@ -133,6 +134,40 @@ impl ClientConnection {
                 )?;
             }
 
+            HyperionCommand::Effect(message::Effect {
+                priority,
+                duration,
+                origin: _,
+                effect,
+                python_script: _,
+                image_data: _,
+            }) => {
+                // TODO: Handle origin, python_script, image_data
+
+                let (tx, rx) = oneshot::channel();
+
+                self.source.send(
+                    ComponentName::All,
+                    InputMessageData::Effect {
+                        priority,
+                        duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
+                        effect: effect.into(),
+                        response: Arc::new(Mutex::new(Some(tx))),
+                    },
+                )?;
+
+                return Ok(match rx.await {
+                    Ok(result) => match result {
+                        Ok(_) => None,
+                        Err(err) => Some(HyperionResponse::error(request.tan, err)),
+                    },
+                    Err(_) => Some(HyperionResponse::error(
+                        request.tan,
+                        "effect request dropped",
+                    )),
+                });
+            }
+
             HyperionCommand::ServerInfo(message::ServerInfoRequest { subscribe: _ }) => {
                 // TODO: Handle subscribe field
 
@@ -153,6 +188,12 @@ impl ClientConnection {
                         Default::default()
                     };
 
+                // Read effect info
+                // TODO: Add per-instance effects
+                let effects: Vec<message::EffectDefinition> = global
+                    .read_effects(|effects| effects.iter().map(Into::into).collect())
+                    .await;
+
                 // Just answer the serverinfo request, no need to update state
                 return Ok(Some(
                     global
@@ -167,8 +208,7 @@ impl ClientConnection {
                                 request.tan,
                                 priorities,
                                 adjustments,
-                                // TODO: Fill effects
-                                vec![],
+                                effects,
                                 instances,
                             )
                         })

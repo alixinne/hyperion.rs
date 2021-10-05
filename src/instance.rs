@@ -23,6 +23,7 @@ mod device;
 use device::*;
 
 mod muxer;
+pub use muxer::StartEffectError;
 use muxer::*;
 
 mod smoothing;
@@ -71,6 +72,8 @@ impl Instance {
                 .await
                 .into();
 
+        let led_count = config.leds.leds.len();
+
         if let Err(error) = &device.inner {
             error!(
                 instance = %config.instance.id,
@@ -83,7 +86,7 @@ impl Instance {
         let receiver = global.subscribe_input().await;
         let (local_tx, local_receiver) = mpsc::channel(4);
 
-        let muxer = PriorityMuxer::new(global.clone()).await;
+        let muxer = PriorityMuxer::new(global.clone(), MuxerConfig { led_count }).await;
         let core = Core::new(&config).await;
 
         let (tx, handle_rx) = mpsc::channel(1);
@@ -97,7 +100,6 @@ impl Instance {
                 config.boblight_server.clone(),
                 global.clone(),
                 {
-                    let led_count = config.leds.leds.len();
                     let handle = handle.clone();
 
                     move |tcp, global| {

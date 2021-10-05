@@ -143,6 +143,11 @@ impl Paths {
                                 components.next();
                                 out_path.extend(&PathBuf::from("ext/hyperion.ng/assets/webconfig"));
                             }
+                            Some("effects") => {
+                                // Effects mapping
+                                components.next();
+                                out_path.extend(&PathBuf::from("ext/hyperion.ng/effects"));
+                            }
                             _ => {
                                 // No matching mapping
                             }

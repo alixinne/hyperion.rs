@@ -11,6 +11,7 @@ mkdir -p $ROOT/bin \
 # Copy assets
 cp target/$1/release/hyperiond $ROOT/bin/hyperiond-rs
 cp -rv ext/hyperion.ng/assets/webconfig $ROOT/share/hyperion
+cp -rv ext/hyperion.ng/effects $ROOT/share/hyperion
 
 # Create archive
 cd release

@@ -5,6 +5,7 @@ pub mod api;
 pub mod color;
 pub mod component;
 pub mod db;
+pub mod effects;
 pub mod global;
 pub mod image;
 pub mod instance;

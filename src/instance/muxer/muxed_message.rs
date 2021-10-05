@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{convert::TryFrom, sync::Arc};
 
 use super::InputMessageData;
 use crate::{image::RawImage, models::Color};
@@ -62,38 +62,41 @@ impl MuxedMessageData {
     }
 }
 
-impl From<InputMessageData> for MuxedMessageData {
-    fn from(data: InputMessageData) -> Self {
-        match data {
-            InputMessageData::ClearAll => panic!("ClearAll cannot be muxed"),
-            InputMessageData::Clear { .. } => panic!("Clear cannot be muxed"),
+impl TryFrom<InputMessageData> for MuxedMessageData {
+    type Error = ();
+
+    fn try_from(value: InputMessageData) -> Result<Self, Self::Error> {
+        match value {
+            InputMessageData::ClearAll
+            | InputMessageData::Clear { .. }
+            | InputMessageData::Effect { .. } => Err(()),
             InputMessageData::SolidColor {
                 priority,
                 duration,
                 color,
-            } => Self::SolidColor {
+            } => Ok(Self::SolidColor {
                 priority,
                 duration,
                 color,
-            },
+            }),
             InputMessageData::Image {
                 priority,
                 duration,
                 image,
-            } => Self::Image {
+            } => Ok(Self::Image {
                 priority,
                 duration,
                 image,
-            },
+            }),
             InputMessageData::LedColors {
                 priority,
                 duration,
                 led_colors,
-            } => Self::LedColors {
+            } => Ok(Self::LedColors {
                 priority,
                 duration,
                 led_colors,
-            },
+            }),
         }
     }
 }

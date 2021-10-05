@@ -29,6 +29,8 @@ Currently implemented features:
 * WS2812SPI device
 * JSON, Protobuf, Flatbuffers and Boblight server
 * Black border detector, color channel adjustments, smoothing
+* Basic effect support (only setColor and setImage, no custom smoothing, no
+  per-instance effect directory)
 
 Extra features not available in hyperion.ng:
 

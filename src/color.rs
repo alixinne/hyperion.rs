@@ -366,6 +366,34 @@ impl ChannelAdjustments {
     }
 }
 
+pub trait AnsiDisplayExt: Sized {
+    fn to_ansi_truecolor(self, buffer: &mut String);
+}
+
+impl<T> AnsiDisplayExt for T
+where
+    T: IntoIterator<Item = Color>,
+{
+    fn to_ansi_truecolor(self, buffer: &mut String) {
+        use std::fmt::Write;
+
+        // Push colors
+        for led in self {
+            write!(
+                buffer,
+                "\x1B[38;2;{red};{green};{blue}m█",
+                red = led.red,
+                green = led.green,
+                blue = led.blue
+            )
+            .expect("failed to format escape sequence");
+        }
+
+        // Reset
+        write!(buffer, "\x1B[0m").expect("failed to format escape sequence");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

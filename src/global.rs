@@ -24,6 +24,7 @@ pub use paths::*;
 mod priority_guard;
 pub use priority_guard::*;
 
+use crate::effects::EffectDefinition;
 use crate::{component::ComponentName, instance::InstanceHandle, models::Config};
 
 pub trait Message: Sized {
@@ -60,6 +61,8 @@ pub enum InputSourceName {
     Web { session_id: uuid::Uuid },
     #[display("PriorityMuxer")]
     PriorityMuxer,
+    #[display("Effect({name})")]
+    Effect { name: String },
 }
 
 impl InputSourceName {
@@ -68,6 +71,7 @@ impl InputSourceName {
             InputSourceName::Boblight { .. } => ComponentName::BoblightServer,
             InputSourceName::FlatBuffers { .. } => ComponentName::FlatbufServer,
             InputSourceName::Protobuf { .. } => ComponentName::ProtoServer,
+            InputSourceName::Effect { .. } => ComponentName::Effect,
             _ => ComponentName::All,
         }
     }
@@ -127,6 +131,16 @@ impl Global {
         f(&data.config)
     }
 
+    pub async fn read_effects<T>(&self, f: impl FnOnce(&[EffectDefinition]) -> T) -> T {
+        let data = self.0.read().await;
+        f(&data.effects)
+    }
+
+    pub async fn write_effects<T>(&self, f: impl FnOnce(&mut Vec<EffectDefinition>) -> T) -> T {
+        let mut data = self.0.write().await;
+        f(&mut data.effects)
+    }
+
     pub async fn read_input_sources<T>(
         &self,
         f: impl FnOnce(&HashMap<usize, Arc<InputSource<InputMessage>>>) -> T,
@@ -151,6 +165,7 @@ pub struct GlobalData {
     config: Config,
     instances: BTreeMap<i32, InstanceHandle>,
     event_tx: broadcast::Sender<Event>,
+    effects: Vec<EffectDefinition>,
 }
 
 impl GlobalData {
@@ -165,6 +180,7 @@ impl GlobalData {
             config: config.clone(),
             instances: Default::default(),
             event_tx,
+            effects: Default::default(),
         }
     }
 

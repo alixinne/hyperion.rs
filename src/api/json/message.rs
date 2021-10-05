@@ -144,14 +144,16 @@ pub struct Config {
     pub config: serde_json::Map<String, serde_json::Value>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ImageData(#[serde(deserialize_with = "crate::serde::from_base64")] pub Vec<u8>);
+
 #[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct EffectCreate {
     pub name: String,
     pub script: String,
     pub args: serde_json::Map<String, serde_json::Value>,
-    #[serde(deserialize_with = "crate::serde::from_base64")]
-    pub image_data: Vec<u8>,
+    pub image_data: Option<ImageData>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -181,8 +183,7 @@ pub struct Effect {
     pub origin: Option<String>,
     pub effect: EffectRequest,
     pub python_script: Option<String>,
-    #[serde(deserialize_with = "crate::serde::from_base64")]
-    pub image_data: Vec<u8>,
+    pub image_data: Option<ImageData>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -405,6 +406,17 @@ pub struct EffectDefinition {
     pub script: String,
     /// Extra script arguments
     pub args: serde_json::Value,
+}
+
+impl From<&crate::effects::EffectDefinition> for EffectDefinition {
+    fn from(value: &crate::effects::EffectDefinition) -> Self {
+        Self {
+            name: value.name.clone(),
+            file: value.file.to_string_lossy().to_string(),
+            script: value.script.clone(),
+            args: value.args.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]

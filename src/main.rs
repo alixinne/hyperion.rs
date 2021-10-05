@@ -62,6 +62,29 @@ async fn run(opts: Opts) -> color_eyre::eyre::Result<()> {
     // Create the global state object
     let global = hyperion::global::GlobalData::new(&config).wrap();
 
+    // Discover effects
+    let mut effects = Vec::new();
+
+    // TODO: Per-instance effect discovery
+    for path in ["$SYSTEM/effects"] {
+        // Resolve path variables
+        let path = paths.resolve_path(path);
+
+        let mut discovered = hyperion::effects::EffectDefinition::read_dir(&path).await?;
+        discovered.sort_by(|a, b| a.file.cmp(&b.file));
+
+        // Add discovered effects
+        effects.extend(discovered);
+    }
+
+    info!("discovered {} effects", effects.len());
+
+    global
+        .write_effects(|e| {
+            *e = effects;
+        })
+        .await;
+
     // Spawn the hook runner
     tokio::spawn(
         hyperion::global::HookRunner::new(

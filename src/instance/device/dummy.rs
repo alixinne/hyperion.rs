@@ -1,9 +1,8 @@
-use std::fmt::Write;
-
 use async_trait::async_trait;
 
+use crate::{color::AnsiDisplayExt, models};
+
 use super::{common::*, DeviceError};
-use crate::models;
 
 pub type DummyDevice = Rewriter<DummyDeviceImpl>;
 
@@ -52,20 +51,10 @@ impl WritingDevice for DummyDeviceImpl {
                 // Build a truecolor ANSI sequence for all LEDs
                 self.ansi_buf.clear();
 
-                // Push LED colors
-                for led in self.leds.iter() {
-                    write!(
-                        &mut self.ansi_buf,
-                        "\x1B[38;2;{red};{green};{blue}m█",
-                        red = led.red,
-                        green = led.green,
-                        blue = led.blue
-                    )
-                    .expect("failed to format escape sequence");
-                }
-
-                // Reset
-                write!(&mut self.ansi_buf, "\x1B[0m").expect("failed to format escape sequence");
+                self.leds
+                    .iter()
+                    .copied()
+                    .to_ansi_truecolor(&mut self.ansi_buf);
 
                 // Output
                 info!("{}", &self.ansi_buf);

@@ -1,7 +1,13 @@
 use std::sync::Arc;
 
+use tokio::sync::{oneshot, Mutex};
+
+use crate::{
+    api::json::message::EffectRequest, component::ComponentName, image::RawImage,
+    instance::StartEffectError, models::Color,
+};
+
 use super::Message;
-use crate::{component::ComponentName, image::RawImage, models::Color};
 
 #[derive(Debug, Clone)]
 pub struct InputMessage {
@@ -59,6 +65,12 @@ pub enum InputMessageData {
         duration: Option<chrono::Duration>,
         led_colors: Arc<Vec<Color>>,
     },
+    Effect {
+        priority: i32,
+        duration: Option<chrono::Duration>,
+        effect: Arc<EffectRequest>,
+        response: Arc<Mutex<Option<oneshot::Sender<Result<(), StartEffectError>>>>>,
+    },
 }
 
 impl InputMessageData {
@@ -69,6 +81,7 @@ impl InputMessageData {
             InputMessageData::SolidColor { priority, .. } => Some(*priority),
             InputMessageData::Image { priority, .. } => Some(*priority),
             InputMessageData::LedColors { priority, .. } => Some(*priority),
+            InputMessageData::Effect { priority, .. } => Some(*priority),
         }
     }
 
@@ -79,6 +92,7 @@ impl InputMessageData {
             InputMessageData::SolidColor { duration, .. } => *duration,
             InputMessageData::Image { duration, .. } => *duration,
             InputMessageData::LedColors { duration, .. } => *duration,
+            InputMessageData::Effect { duration, .. } => *duration,
         }
     }
 }

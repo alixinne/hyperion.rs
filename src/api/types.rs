@@ -69,7 +69,8 @@ impl PriorityInfo {
                 value: Some(color.into()),
             },
             InputMessageData::Image { priority, .. }
-            | InputMessageData::LedColors { priority, .. } => Self {
+            | InputMessageData::LedColors { priority, .. }
+            | InputMessageData::Effect { priority, .. } => Self {
                 priority: *priority,
                 duration_ms,
                 owner: None,

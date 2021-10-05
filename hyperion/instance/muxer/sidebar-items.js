@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["MAX_PRIORITY",""],["MUXER_ID",""]],"mod":[["muxed_message",""]],"struct":[["InputEntry",""],["PriorityMuxer",""]]});
+initSidebarItems({"constant":[["MAX_PRIORITY",""],["MUXER_ID",""]],"mod":[["effect_runner",""],["muxed_message",""]],"struct":[["InputEntry",""],["MuxerConfig",""],["PriorityMuxer",""]]});

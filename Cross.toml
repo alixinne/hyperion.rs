@@ -1,0 +1,8 @@
+[build.env]
+passthrough = ["ENABLE_PYO3"]
+
+[target.x86_64-unknown-linux-gnu]
+image = "vtavernier/cross:x86_64-bullseye"
+
+[target.arm-unknown-linux-gnueabihf]
+image = "vtavernier/cross:raspberrypi"

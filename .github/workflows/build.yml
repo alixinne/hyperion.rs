@@ -2,6 +2,9 @@ name: build
 
 on: push
 
+env:
+  ENABLE_PYO3: 1
+
 jobs:
   build:
     strategy:
@@ -13,8 +16,10 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             cross: ""
+            image: "vtavernier/cross:x86_64-bullseye"
           - target: arm-unknown-linux-gnueabihf
             cross: arm-linux-gnueabihf-
+            image: "vtavernier/cross:raspberrypi"
 
     runs-on: ubuntu-20.04
 
@@ -48,7 +53,7 @@ jobs:
           args: --release --target=${{ matrix.target }}
 
       - name: Strip resulting binary
-        run: docker run -v ${{ github.workspace }}:/src rustembedded/cross:${{ matrix.target }} ${{ matrix.cross }}strip /src/target/${{ matrix.target }}/release/hyperiond
+        run: docker run -v ${{ github.workspace }}:/src ${{ matrix.image }} ${{ matrix.cross }}strip /src/target/${{ matrix.target }}/release/hyperiond
 
       - name: Prepare release
         run: |

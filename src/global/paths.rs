@@ -23,7 +23,7 @@ impl Paths {
     fn find_dev_root(first_root: &Path) -> Option<PathBuf> {
         let bn = first_root.file_name().and_then(std::ffi::OsStr::to_str);
 
-        if bn == Some("release") || bn == Some("debug") {
+        if bn == Some("release") || bn == Some("debug") || bn == Some("deps") {
             // A Rust release dir?
             let mut current_root = first_root.parent();
             while let Some(root) = current_root {

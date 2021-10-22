@@ -364,6 +364,8 @@
 <span id="364">364</span>
 <span id="365">365</span>
 <span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>};
 <span class="kw">use</span> <span class="ident">std::convert::TryInto</span>;
 <span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
@@ -632,12 +634,14 @@
                     <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {}
                 }
 
-                <span class="comment">// We ignore send errors, this means the caller doesn&#39;t care for the response</span>
-                (<span class="kw-2">*</span><span class="ident">response</span>.<span class="ident">lock</span>().<span class="kw">await</span>)
-                    .<span class="ident">take</span>()
-                    .<span class="ident">expect</span>(<span class="string">&quot;effect request already answered&quot;</span>)
-                    .<span class="ident">send</span>(<span class="ident">result</span>.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()))
-                    .<span class="ident">ok</span>();
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tx</span>) <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">response</span>.<span class="ident">lock</span>().<span class="kw">await</span>).<span class="ident">take</span>() {
+                    <span class="comment">// We ignore send errors, this means the caller doesn&#39;t care for the response</span>
+                    <span class="ident">tx</span>.<span class="ident">send</span>(<span class="ident">result</span>.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())).<span class="ident">ok</span>();
+                } <span class="kw">else</span> {
+                    <span class="comment">// TODO: Remove this when effect requests are properly forwarded to only one</span>
+                    <span class="comment">// instance</span>
+                    <span class="macro">warn!</span>(<span class="string">&quot;effect request already answered&quot;</span>);
+                }
 
                 <span class="comment">// No MuxedMessage results from this, the effect will publish updates later</span>
                 <span class="prelude-val">None</span>

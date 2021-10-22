@@ -266,6 +266,7 @@
 <span id="266">266</span>
 <span id="267">267</span>
 <span id="268">268</span>
+<span id="269">269</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
@@ -414,6 +415,7 @@
 
                 <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">oneshot::channel</span>();
 
+                <span class="comment">// TODO: This should only target one instance?</span>
                 <span class="self">self</span>.<span class="ident">source</span>.<span class="ident">send</span>(
                     <span class="ident">ComponentName::All</span>,
                     <span class="ident">InputMessageData::Effect</span> {

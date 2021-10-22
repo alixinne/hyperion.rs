@@ -97,6 +97,7 @@ Rust target arm-unknown-linux-gnueabihf.
 
 ```bash
 $ export TARGET=arm-unknown-linux-gnueabihf
+$ export ENABLE_PYO3=1
 
 # (if not done already) Install cross
 $ cargo install --force cross

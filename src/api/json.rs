@@ -146,6 +146,7 @@ impl ClientConnection {
 
                 let (tx, rx) = oneshot::channel();
 
+                // TODO: This should only target one instance?
                 self.source.send(
                     ComponentName::All,
                     InputMessageData::Effect {

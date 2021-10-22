@@ -266,12 +266,14 @@ impl PriorityMuxer {
                     Err(_) => {}
                 }
 
-                // We ignore send errors, this means the caller doesn't care for the response
-                (*response.lock().await)
-                    .take()
-                    .expect("effect request already answered")
-                    .send(result.map(|_| ()))
-                    .ok();
+                if let Some(tx) = (*response.lock().await).take() {
+                    // We ignore send errors, this means the caller doesn't care for the response
+                    tx.send(result.map(|_| ())).ok();
+                } else {
+                    // TODO: Remove this when effect requests are properly forwarded to only one
+                    // instance
+                    warn!("effect request already answered");
+                }
 
                 // No MuxedMessage results from this, the effect will publish updates later
                 None

@@ -116,21 +116,20 @@ impl Session {
         let api = match self.json_api(global).await {
             Ok(api) => api,
             Err(error) => {
-                return HyperionResponse::error(tan, &error);
+                return HyperionResponse::error(&error).with_tan(tan);
             }
         };
 
         let response = match api.handle_request(request, global).await {
-            Ok(None) => HyperionResponse::success(tan),
-            Ok(Some(response)) => response,
+            Ok(response) => response,
             Err(error) => {
                 error!(error =  %error, "error processing request");
-                HyperionResponse::error(tan, &error)
+                HyperionResponse::error(&error)
             }
         };
 
         trace!(response = ?response, "ws response");
-        response
+        response.with_tan(tan)
     }
 }
 

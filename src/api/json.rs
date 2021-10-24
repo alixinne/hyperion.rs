@@ -9,7 +9,7 @@ use crate::{
     component::ComponentName,
     global::{Global, InputMessage, InputMessageData, InputSourceHandle, Message},
     image::{RawImage, RawImageError},
-    instance::{InstanceHandle, InstanceHandleError},
+    instance::{InstanceHandle, InstanceHandleError, StartEffectError},
 };
 
 /// Schema definitions as Serde serializable structures and enums
@@ -27,11 +27,13 @@ pub enum JsonApiError {
     #[error("error validating request: {0}")]
     Validation(#[from] validator::ValidationErrors),
     #[error("error receiving system response: {0}")]
-    Recv(#[from] tokio::sync::oneshot::error::RecvError),
+    Recv(#[from] oneshot::error::RecvError),
     #[error("error accessing the current instance: {0}")]
     Instance(#[from] InstanceHandleError),
     #[error("no current instance found")]
     InstanceNotFound,
+    #[error(transparent)]
+    StartEffect(#[from] StartEffectError),
 }
 
 /// A client connected to the JSON endpoint
@@ -76,7 +78,7 @@ impl ClientConnection {
         &mut self,
         request: HyperionMessage,
         global: &Global,
-    ) -> Result<Option<HyperionResponse>, JsonApiError> {
+    ) -> Result<HyperionResponse, JsonApiError> {
         request.validate()?;
 
         match request.command {
@@ -146,40 +148,23 @@ impl ClientConnection {
             }) => {
                 // TODO: Handle origin, python_script, image_data
 
-                match self.current_instance(global).await {
-                    Ok(instance) => {
-                        let (tx, rx) = oneshot::channel();
+                let instance = self.current_instance(global).await?;
+                let (tx, rx) = oneshot::channel();
 
-                        instance
-                            .send(InputMessage::new(
-                                self.source.id(),
-                                ComponentName::All,
-                                InputMessageData::Effect {
-                                    priority,
-                                    duration: duration
-                                        .map(|ms| chrono::Duration::milliseconds(ms as _)),
-                                    effect: effect.into(),
-                                    response: Arc::new(Mutex::new(Some(tx))),
-                                },
-                            ))
-                            .await?;
+                instance
+                    .send(InputMessage::new(
+                        self.source.id(),
+                        ComponentName::All,
+                        InputMessageData::Effect {
+                            priority,
+                            duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
+                            effect: effect.into(),
+                            response: Arc::new(Mutex::new(Some(tx))),
+                        },
+                    ))
+                    .await?;
 
-                        return Ok(match rx.await {
-                            Ok(result) => match result {
-                                Ok(_) => None,
-                                Err(err) => Some(HyperionResponse::error(request.tan, err)),
-                            },
-                            Err(_) => Some(HyperionResponse::error(
-                                request.tan,
-                                "effect request dropped",
-                            )),
-                        });
-                    }
-
-                    Err(err) => {
-                        return Ok(Some(HyperionResponse::error(request.tan, err)));
-                    }
-                }
+                return Ok(rx.await?.map(|_| HyperionResponse::success())?);
             }
 
             HyperionCommand::ServerInfo(message::ServerInfoRequest { subscribe: _ }) => {
@@ -209,35 +194,27 @@ impl ClientConnection {
                     .await;
 
                 // Just answer the serverinfo request, no need to update state
-                return Ok(Some(
-                    global
-                        .read_config(|config| {
-                            let instances = config
-                                .instances
-                                .iter()
-                                .map(|instance_config| (&instance_config.1.instance).into())
-                                .collect();
+                return Ok(global
+                    .read_config(|config| {
+                        let instances = config
+                            .instances
+                            .iter()
+                            .map(|instance_config| (&instance_config.1.instance).into())
+                            .collect();
 
-                            HyperionResponse::server_info(
-                                request.tan,
-                                priorities,
-                                adjustments,
-                                effects,
-                                instances,
-                            )
-                        })
-                        .await,
-                ));
+                        HyperionResponse::server_info(priorities, adjustments, effects, instances)
+                    })
+                    .await);
             }
 
             HyperionCommand::Authorize(message::Authorize { subcommand, .. }) => match subcommand {
                 message::AuthorizeCommand::AdminRequired => {
                     // TODO: Perform actual authentication flow
-                    return Ok(Some(HyperionResponse::admin_required(request.tan, false)));
+                    return Ok(HyperionResponse::admin_required(false));
                 }
                 message::AuthorizeCommand::TokenRequired => {
                     // TODO: Perform actual authentication flow
-                    return Ok(Some(HyperionResponse::token_required(request.tan, false)));
+                    return Ok(HyperionResponse::token_required(false));
                 }
                 _ => {
                     return Err(JsonApiError::NotImplemented);
@@ -245,10 +222,9 @@ impl ClientConnection {
             },
 
             HyperionCommand::SysInfo => {
-                return Ok(Some(HyperionResponse::sys_info(
-                    request.tan,
+                return Ok(HyperionResponse::sys_info(
                     global.read_config(|config| config.uuid()).await,
-                )));
+                ));
             }
 
             HyperionCommand::Instance(message::Instance {
@@ -258,18 +234,18 @@ impl ClientConnection {
             }) => {
                 if global.get_instance(id).await.is_some() {
                     self.set_current_instance(id);
-                    return Ok(Some(HyperionResponse::switch_to(request.tan, Some(id))));
+                    return Ok(HyperionResponse::switch_to(Some(id)));
                 } else {
                     // Note: it's an "Ok" but should be an Err. Find out how to represent errors
                     // better
-                    return Ok(Some(HyperionResponse::switch_to(request.tan, None)));
+                    return Ok(HyperionResponse::switch_to(None));
                 }
             }
 
             _ => return Err(JsonApiError::NotImplemented),
         };
 
-        Ok(None)
+        Ok(HyperionResponse::success())
     }
 }
 

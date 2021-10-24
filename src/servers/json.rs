@@ -57,14 +57,14 @@ pub async fn handle_client(
                 Err(error) => Err(JsonServerError::from(error)),
             }
         } {
-            Ok(None) => json::message::HyperionResponse::success(tan),
-            Ok(Some(response)) => response,
+            Ok(response) => response,
             Err(error) => {
                 error!(error = %error, "error processing request");
 
-                json::message::HyperionResponse::error(tan, &error)
+                json::message::HyperionResponse::error(&error)
             }
-        };
+        }
+        .with_tan(tan);
 
         trace!(response = ?reply, "sending response");
 

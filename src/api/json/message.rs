@@ -703,44 +703,45 @@ pub enum HyperionResponseInfo {
 }
 
 impl HyperionResponse {
-    fn success_info(tan: Option<i32>, info: HyperionResponseInfo) -> Self {
+    pub fn with_tan(mut self, tan: Option<i32>) -> Self {
+        self.tan = tan;
+        self
+    }
+
+    fn success_info(info: HyperionResponseInfo) -> Self {
         Self {
             success: true,
-            tan,
+            tan: None,
             error: None,
             info: Some(info),
         }
     }
 
     /// Return a success response
-    pub fn success(tan: Option<i32>) -> Self {
+    pub fn success() -> Self {
         Self {
             success: true,
-            tan,
+            tan: None,
             error: None,
             info: None,
         }
     }
 
     /// Return an error response
-    pub fn error(tan: Option<i32>, error: impl std::fmt::Display) -> Self {
+    pub fn error(error: impl std::fmt::Display) -> Self {
         Self {
             success: false,
-            tan,
+            tan: None,
             error: Some(error.to_string()),
             info: None,
         }
     }
 
     /// Return an error response
-    pub fn error_info(
-        tan: Option<i32>,
-        error: impl std::fmt::Display,
-        info: HyperionResponseInfo,
-    ) -> Self {
+    pub fn error_info(error: impl std::fmt::Display, info: HyperionResponseInfo) -> Self {
         Self {
             success: false,
-            tan,
+            tan: None,
             error: Some(error.to_string()),
             info: Some(info),
         }
@@ -748,50 +749,45 @@ impl HyperionResponse {
 
     /// Return a server information response
     pub fn server_info(
-        tan: Option<i32>,
         priorities: Vec<PriorityInfo>,
         adjustment: Vec<ChannelAdjustment>,
         effects: Vec<EffectDefinition>,
         instances: Vec<InstanceInfo>,
     ) -> Self {
-        Self::success_info(
-            tan,
-            HyperionResponseInfo::ServerInfo(ServerInfo {
-                priorities,
-                // TODO: Actual autoselect value
-                priorities_autoselect: true,
-                adjustment,
-                effects,
-                led_devices: LedDevicesInfo::new(),
-                grabbers: GrabbersInfo::new(),
-                // TODO: Actual video mode
-                video_mode: VideoMode::Mode2D,
-                instances,
-                hostname: hostname(),
-            }),
-        )
+        Self::success_info(HyperionResponseInfo::ServerInfo(ServerInfo {
+            priorities,
+            // TODO: Actual autoselect value
+            priorities_autoselect: true,
+            adjustment,
+            effects,
+            led_devices: LedDevicesInfo::new(),
+            grabbers: GrabbersInfo::new(),
+            // TODO: Actual video mode
+            video_mode: VideoMode::Mode2D,
+            instances,
+            hostname: hostname(),
+        }))
     }
 
-    pub fn admin_required(tan: Option<i32>, admin_required: bool) -> Self {
-        Self::success_info(tan, HyperionResponseInfo::AdminRequired { admin_required })
+    pub fn admin_required(admin_required: bool) -> Self {
+        Self::success_info(HyperionResponseInfo::AdminRequired { admin_required })
     }
 
-    pub fn token_required(tan: Option<i32>, required: bool) -> Self {
-        Self::success_info(tan, HyperionResponseInfo::TokenRequired { required })
+    pub fn token_required(required: bool) -> Self {
+        Self::success_info(HyperionResponseInfo::TokenRequired { required })
     }
 
-    pub fn sys_info(tan: Option<i32>, id: uuid::Uuid) -> Self {
+    pub fn sys_info(id: uuid::Uuid) -> Self {
         // TODO: Properly fill out this response
-        Self::success_info(tan, HyperionResponseInfo::SysInfo(SysInfo::new(id)))
+        Self::success_info(HyperionResponseInfo::SysInfo(SysInfo::new(id)))
     }
 
-    pub fn switch_to(tan: Option<i32>, id: Option<i32>) -> Self {
+    pub fn switch_to(id: Option<i32>) -> Self {
         if let Some(id) = id {
             // Switch successful
-            Self::success_info(tan, HyperionResponseInfo::SwitchTo { instance: Some(id) })
+            Self::success_info(HyperionResponseInfo::SwitchTo { instance: Some(id) })
         } else {
             Self::error_info(
-                tan,
                 "selected hyperion instance not found",
                 HyperionResponseInfo::SwitchTo { instance: None },
             )

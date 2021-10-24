@@ -256,17 +256,6 @@
 <span id="256">256</span>
 <span id="257">257</span>
 <span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::convert::TryFrom</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
@@ -276,9 +265,9 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">component::ComponentName</span>,
-    <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputMessage</span>, <span class="ident">InputMessageData</span>, <span class="ident">InputSourceHandle</span>},
+    <span class="ident">global</span>::{<span class="ident">Global</span>, <span class="ident">InputMessage</span>, <span class="ident">InputMessageData</span>, <span class="ident">InputSourceHandle</span>, <span class="ident">Message</span>},
     <span class="ident">image</span>::{<span class="ident">RawImage</span>, <span class="ident">RawImageError</span>},
-    <span class="ident">instance</span>::{<span class="ident">InstanceHandle</span>, <span class="ident">InstanceHandleError</span>},
+    <span class="ident">instance</span>::{<span class="ident">InstanceHandle</span>, <span class="ident">InstanceHandleError</span>, <span class="ident">StartEffectError</span>},
 };
 
 <span class="doccomment">/// Schema definitions as Serde serializable structures and enums</span>
@@ -296,9 +285,13 @@
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error validating request: {0}&quot;</span>)]</span>
     <span class="ident">Validation</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">validator::ValidationErrors</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error receiving system response: {0}&quot;</span>)]</span>
-    <span class="ident">Recv</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">tokio::sync::oneshot::error::RecvError</span>),
+    <span class="ident">Recv</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">oneshot::error::RecvError</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error accessing the current instance: {0}&quot;</span>)]</span>
     <span class="ident">Instance</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">InstanceHandleError</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;no current instance found&quot;</span>)]</span>
+    <span class="ident">InstanceNotFound</span>,
+    <span class="attribute">#[<span class="ident">error</span>(<span class="ident">transparent</span>)]</span>
+    <span class="ident">StartEffect</span>(<span class="attribute">#[<span class="ident">from</span>]</span> <span class="ident">StartEffectError</span>),
 }
 
 <span class="doccomment">/// A client connected to the JSON endpoint</span>
@@ -315,10 +308,10 @@
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">current_instance</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">global</span>: <span class="kw-2">&amp;</span><span class="ident">Global</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">InstanceHandle</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">current_instance</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">global</span>: <span class="kw-2">&amp;</span><span class="ident">Global</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">InstanceHandle</span>, <span class="ident">JsonApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">current_instance</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_instance</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span> <span class="ident">global</span>.<span class="ident">get_instance</span>(<span class="ident">current_instance</span>).<span class="kw">await</span> {
-                <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">instance</span>);
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">instance</span>);
             } <span class="kw">else</span> {
                 <span class="comment">// Instance id now invalid, reset</span>
                 <span class="self">self</span>.<span class="ident">current_instance</span> <span class="op">=</span> <span class="prelude-val">None</span>;
@@ -327,10 +320,10 @@
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">id</span>, <span class="ident">inst</span>)) <span class="op">=</span> <span class="ident">global</span>.<span class="ident">default_instance</span>().<span class="kw">await</span> {
             <span class="self">self</span>.<span class="ident">set_current_instance</span>(<span class="ident">id</span>);
-            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">inst</span>);
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">inst</span>);
         }
 
-        <span class="prelude-val">None</span>
+        <span class="prelude-val">Err</span>(<span class="ident">JsonApiError::InstanceNotFound</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">set_current_instance</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">id</span>: <span class="ident">i32</span>) {
@@ -343,7 +336,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">request</span>: <span class="ident">HyperionMessage</span>,
         <span class="ident">global</span>: <span class="kw-2">&amp;</span><span class="ident">Global</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HyperionResponse</span><span class="op">&gt;</span>, <span class="ident">JsonApiError</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">HyperionResponse</span>, <span class="ident">JsonApiError</span><span class="op">&gt;</span> {
         <span class="ident">request</span>.<span class="ident">validate</span>()<span class="question-mark">?</span>;
 
         <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">command</span> {
@@ -413,36 +406,30 @@
             }) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// TODO: Handle origin, python_script, image_data</span>
 
+                <span class="kw">let</span> <span class="ident">instance</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_instance</span>(<span class="ident">global</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">oneshot::channel</span>();
 
-                <span class="comment">// TODO: This should only target one instance?</span>
-                <span class="self">self</span>.<span class="ident">source</span>.<span class="ident">send</span>(
-                    <span class="ident">ComponentName::All</span>,
-                    <span class="ident">InputMessageData::Effect</span> {
-                        <span class="ident">priority</span>,
-                        <span class="ident">duration</span>: <span class="ident">duration</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">ms</span><span class="op">|</span> <span class="ident">chrono::Duration::milliseconds</span>(<span class="ident">ms</span> <span class="kw">as</span> <span class="kw">_</span>)),
-                        <span class="ident">effect</span>: <span class="ident">effect</span>.<span class="ident">into</span>(),
-                        <span class="ident">response</span>: <span class="ident">Arc::new</span>(<span class="ident">Mutex::new</span>(<span class="prelude-val">Some</span>(<span class="ident">tx</span>))),
-                    },
-                )<span class="question-mark">?</span>;
+                <span class="ident">instance</span>
+                    .<span class="ident">send</span>(<span class="ident">InputMessage::new</span>(
+                        <span class="self">self</span>.<span class="ident">source</span>.<span class="ident">id</span>(),
+                        <span class="ident">ComponentName::All</span>,
+                        <span class="ident">InputMessageData::Effect</span> {
+                            <span class="ident">priority</span>,
+                            <span class="ident">duration</span>: <span class="ident">duration</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">ms</span><span class="op">|</span> <span class="ident">chrono::Duration::milliseconds</span>(<span class="ident">ms</span> <span class="kw">as</span> <span class="kw">_</span>)),
+                            <span class="ident">effect</span>: <span class="ident">effect</span>.<span class="ident">into</span>(),
+                            <span class="ident">response</span>: <span class="ident">Arc::new</span>(<span class="ident">Mutex::new</span>(<span class="prelude-val">Some</span>(<span class="ident">tx</span>))),
+                        },
+                    ))
+                    .<span class="kw">await</span><span class="question-mark">?</span>;
 
-                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">rx</span>.<span class="kw">await</span> {
-                    <span class="prelude-val">Ok</span>(<span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">result</span> {
-                        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
-                        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::error</span>(<span class="ident">request</span>.<span class="ident">tan</span>, <span class="ident">err</span>)),
-                    },
-                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::error</span>(
-                        <span class="ident">request</span>.<span class="ident">tan</span>,
-                        <span class="string">&quot;effect request dropped&quot;</span>,
-                    )),
-                });
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">rx</span>.<span class="kw">await</span><span class="question-mark">?</span>.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">HyperionResponse::success</span>())<span class="question-mark">?</span>);
             }
 
             <span class="ident">HyperionCommand::ServerInfo</span>(<span class="ident">message::ServerInfoRequest</span> { <span class="ident">subscribe</span>: <span class="kw">_</span> }) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// TODO: Handle subscribe field</span>
 
                 <span class="kw">let</span> (<span class="ident">adjustments</span>, <span class="ident">priorities</span>) <span class="op">=</span>
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handle</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_instance</span>(<span class="ident">global</span>).<span class="kw">await</span> {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">handle</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_instance</span>(<span class="ident">global</span>).<span class="kw">await</span> {
                         (
                             <span class="ident">handle</span>
                                 .<span class="ident">config</span>()
@@ -465,35 +452,27 @@
                     .<span class="kw">await</span>;
 
                 <span class="comment">// Just answer the serverinfo request, no need to update state</span>
-                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
-                    <span class="ident">global</span>
-                        .<span class="ident">read_config</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-                            <span class="kw">let</span> <span class="ident">instances</span> <span class="op">=</span> <span class="ident">config</span>
-                                .<span class="ident">instances</span>
-                                .<span class="ident">iter</span>()
-                                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">instance_config</span><span class="op">|</span> (<span class="kw-2">&amp;</span><span class="ident">instance_config</span>.<span class="number">1</span>.<span class="ident">instance</span>).<span class="ident">into</span>())
-                                .<span class="ident">collect</span>();
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">global</span>
+                    .<span class="ident">read_config</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
+                        <span class="kw">let</span> <span class="ident">instances</span> <span class="op">=</span> <span class="ident">config</span>
+                            .<span class="ident">instances</span>
+                            .<span class="ident">iter</span>()
+                            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">instance_config</span><span class="op">|</span> (<span class="kw-2">&amp;</span><span class="ident">instance_config</span>.<span class="number">1</span>.<span class="ident">instance</span>).<span class="ident">into</span>())
+                            .<span class="ident">collect</span>();
 
-                            <span class="ident">HyperionResponse::server_info</span>(
-                                <span class="ident">request</span>.<span class="ident">tan</span>,
-                                <span class="ident">priorities</span>,
-                                <span class="ident">adjustments</span>,
-                                <span class="ident">effects</span>,
-                                <span class="ident">instances</span>,
-                            )
-                        })
-                        .<span class="kw">await</span>,
-                ));
+                        <span class="ident">HyperionResponse::server_info</span>(<span class="ident">priorities</span>, <span class="ident">adjustments</span>, <span class="ident">effects</span>, <span class="ident">instances</span>)
+                    })
+                    .<span class="kw">await</span>);
             }
 
             <span class="ident">HyperionCommand::Authorize</span>(<span class="ident">message::Authorize</span> { <span class="ident">subcommand</span>, .. }) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">subcommand</span> {
                 <span class="ident">message::AuthorizeCommand::AdminRequired</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// TODO: Perform actual authentication flow</span>
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::admin_required</span>(<span class="ident">request</span>.<span class="ident">tan</span>, <span class="bool-val">false</span>)));
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">HyperionResponse::admin_required</span>(<span class="bool-val">false</span>));
                 }
                 <span class="ident">message::AuthorizeCommand::TokenRequired</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// TODO: Perform actual authentication flow</span>
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::token_required</span>(<span class="ident">request</span>.<span class="ident">tan</span>, <span class="bool-val">false</span>)));
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">HyperionResponse::token_required</span>(<span class="bool-val">false</span>));
                 }
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">JsonApiError::NotImplemented</span>);
@@ -501,10 +480,9 @@
             },
 
             <span class="ident">HyperionCommand::SysInfo</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::sys_info</span>(
-                    <span class="ident">request</span>.<span class="ident">tan</span>,
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">HyperionResponse::sys_info</span>(
                     <span class="ident">global</span>.<span class="ident">read_config</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">uuid</span>()).<span class="kw">await</span>,
-                )));
+                ));
             }
 
             <span class="ident">HyperionCommand::Instance</span>(<span class="ident">message::Instance</span> {
@@ -514,18 +492,18 @@
             }) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="ident">global</span>.<span class="ident">get_instance</span>(<span class="ident">id</span>).<span class="kw">await</span>.<span class="ident">is_some</span>() {
                     <span class="self">self</span>.<span class="ident">set_current_instance</span>(<span class="ident">id</span>);
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::switch_to</span>(<span class="ident">request</span>.<span class="ident">tan</span>, <span class="prelude-val">Some</span>(<span class="ident">id</span>))));
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">HyperionResponse::switch_to</span>(<span class="prelude-val">Some</span>(<span class="ident">id</span>)));
                 } <span class="kw">else</span> {
                     <span class="comment">// Note: it&#39;s an &quot;Ok&quot; but should be an Err. Find out how to represent errors</span>
                     <span class="comment">// better</span>
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">HyperionResponse::switch_to</span>(<span class="ident">request</span>.<span class="ident">tan</span>, <span class="prelude-val">None</span>)));
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">HyperionResponse::switch_to</span>(<span class="prelude-val">None</span>));
                 }
             }
 
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">JsonApiError::NotImplemented</span>),
         };
 
-        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+        <span class="prelude-val">Ok</span>(<span class="ident">HyperionResponse::success</span>())
     }
 }
 

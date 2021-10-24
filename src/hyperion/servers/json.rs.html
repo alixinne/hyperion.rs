@@ -133,14 +133,14 @@
                 <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">JsonServerError::from</span>(<span class="ident">error</span>)),
             }
         } {
-            <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">json::message::HyperionResponse::success</span>(<span class="ident">tan</span>),
-            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">response</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">response</span>,
+            <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">response</span>,
             <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">error!</span>(<span class="ident">error</span> <span class="op">=</span> <span class="op">%</span><span class="ident">error</span>, <span class="string">&quot;error processing request&quot;</span>);
 
-                <span class="ident">json::message::HyperionResponse::error</span>(<span class="ident">tan</span>, <span class="kw-2">&amp;</span><span class="ident">error</span>)
+                <span class="ident">json::message::HyperionResponse::error</span>(<span class="kw-2">&amp;</span><span class="ident">error</span>)
             }
-        };
+        }
+        .<span class="ident">with_tan</span>(<span class="ident">tan</span>);
 
         <span class="macro">trace!</span>(<span class="ident">response</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">reply</span>, <span class="string">&quot;sending response&quot;</span>);
 

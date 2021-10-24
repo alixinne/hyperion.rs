@@ -804,10 +804,6 @@
 <span id="804">804</span>
 <span id="805">805</span>
 <span id="806">806</span>
-<span id="807">807</span>
-<span id="808">808</span>
-<span id="809">809</span>
-<span id="810">810</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">path::PathBuf</span>,
     <span class="ident">process</span>::{<span class="ident">Command</span>, <span class="ident">Stdio</span>},
@@ -1513,44 +1509,45 @@
 }
 
 <span class="kw">impl</span> <span class="ident">HyperionResponse</span> {
-    <span class="kw">fn</span> <span class="ident">success_info</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">info</span>: <span class="ident">HyperionResponseInfo</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_tan</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">self</span>.<span class="ident">tan</span> <span class="op">=</span> <span class="ident">tan</span>;
+        <span class="self">self</span>
+    }
+
+    <span class="kw">fn</span> <span class="ident">success_info</span>(<span class="ident">info</span>: <span class="ident">HyperionResponseInfo</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">success</span>: <span class="bool-val">true</span>,
-            <span class="ident">tan</span>,
+            <span class="ident">tan</span>: <span class="prelude-val">None</span>,
             <span class="ident">error</span>: <span class="prelude-val">None</span>,
             <span class="ident">info</span>: <span class="prelude-val">Some</span>(<span class="ident">info</span>),
         }
     }
 
     <span class="doccomment">/// Return a success response</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">success</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">success</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">success</span>: <span class="bool-val">true</span>,
-            <span class="ident">tan</span>,
+            <span class="ident">tan</span>: <span class="prelude-val">None</span>,
             <span class="ident">error</span>: <span class="prelude-val">None</span>,
             <span class="ident">info</span>: <span class="prelude-val">None</span>,
         }
     }
 
     <span class="doccomment">/// Return an error response</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">error</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">error</span>: <span class="kw">impl</span> <span class="ident">std::fmt::Display</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">error</span>(<span class="ident">error</span>: <span class="kw">impl</span> <span class="ident">std::fmt::Display</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">success</span>: <span class="bool-val">false</span>,
-            <span class="ident">tan</span>,
+            <span class="ident">tan</span>: <span class="prelude-val">None</span>,
             <span class="ident">error</span>: <span class="prelude-val">Some</span>(<span class="ident">error</span>.<span class="ident">to_string</span>()),
             <span class="ident">info</span>: <span class="prelude-val">None</span>,
         }
     }
 
     <span class="doccomment">/// Return an error response</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">error_info</span>(
-        <span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>,
-        <span class="ident">error</span>: <span class="kw">impl</span> <span class="ident">std::fmt::Display</span>,
-        <span class="ident">info</span>: <span class="ident">HyperionResponseInfo</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">error_info</span>(<span class="ident">error</span>: <span class="kw">impl</span> <span class="ident">std::fmt::Display</span>, <span class="ident">info</span>: <span class="ident">HyperionResponseInfo</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">success</span>: <span class="bool-val">false</span>,
-            <span class="ident">tan</span>,
+            <span class="ident">tan</span>: <span class="prelude-val">None</span>,
             <span class="ident">error</span>: <span class="prelude-val">Some</span>(<span class="ident">error</span>.<span class="ident">to_string</span>()),
             <span class="ident">info</span>: <span class="prelude-val">Some</span>(<span class="ident">info</span>),
         }
@@ -1558,50 +1555,45 @@
 
     <span class="doccomment">/// Return a server information response</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">server_info</span>(
-        <span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>,
         <span class="ident">priorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PriorityInfo</span><span class="op">&gt;</span>,
         <span class="ident">adjustment</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ChannelAdjustment</span><span class="op">&gt;</span>,
         <span class="ident">effects</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EffectDefinition</span><span class="op">&gt;</span>,
         <span class="ident">instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">InstanceInfo</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::success_info</span>(
-            <span class="ident">tan</span>,
-            <span class="ident">HyperionResponseInfo::ServerInfo</span>(<span class="ident">ServerInfo</span> {
-                <span class="ident">priorities</span>,
-                <span class="comment">// TODO: Actual autoselect value</span>
-                <span class="ident">priorities_autoselect</span>: <span class="bool-val">true</span>,
-                <span class="ident">adjustment</span>,
-                <span class="ident">effects</span>,
-                <span class="ident">led_devices</span>: <span class="ident">LedDevicesInfo::new</span>(),
-                <span class="ident">grabbers</span>: <span class="ident">GrabbersInfo::new</span>(),
-                <span class="comment">// TODO: Actual video mode</span>
-                <span class="ident">video_mode</span>: <span class="ident">VideoMode::Mode2D</span>,
-                <span class="ident">instances</span>,
-                <span class="ident">hostname</span>: <span class="ident">hostname</span>(),
-            }),
-        )
+        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">HyperionResponseInfo::ServerInfo</span>(<span class="ident">ServerInfo</span> {
+            <span class="ident">priorities</span>,
+            <span class="comment">// TODO: Actual autoselect value</span>
+            <span class="ident">priorities_autoselect</span>: <span class="bool-val">true</span>,
+            <span class="ident">adjustment</span>,
+            <span class="ident">effects</span>,
+            <span class="ident">led_devices</span>: <span class="ident">LedDevicesInfo::new</span>(),
+            <span class="ident">grabbers</span>: <span class="ident">GrabbersInfo::new</span>(),
+            <span class="comment">// TODO: Actual video mode</span>
+            <span class="ident">video_mode</span>: <span class="ident">VideoMode::Mode2D</span>,
+            <span class="ident">instances</span>,
+            <span class="ident">hostname</span>: <span class="ident">hostname</span>(),
+        }))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">admin_required</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">admin_required</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">tan</span>, <span class="ident">HyperionResponseInfo::AdminRequired</span> { <span class="ident">admin_required</span> })
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">admin_required</span>(<span class="ident">admin_required</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">HyperionResponseInfo::AdminRequired</span> { <span class="ident">admin_required</span> })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">token_required</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">required</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">tan</span>, <span class="ident">HyperionResponseInfo::TokenRequired</span> { <span class="ident">required</span> })
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">token_required</span>(<span class="ident">required</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">HyperionResponseInfo::TokenRequired</span> { <span class="ident">required</span> })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sys_info</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">id</span>: <span class="ident">uuid::Uuid</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sys_info</span>(<span class="ident">id</span>: <span class="ident">uuid::Uuid</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="comment">// TODO: Properly fill out this response</span>
-        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">tan</span>, <span class="ident">HyperionResponseInfo::SysInfo</span>(<span class="ident">SysInfo::new</span>(<span class="ident">id</span>)))
+        <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">HyperionResponseInfo::SysInfo</span>(<span class="ident">SysInfo::new</span>(<span class="ident">id</span>)))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">switch_to</span>(<span class="ident">tan</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>, <span class="ident">id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">switch_to</span>(<span class="ident">id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span> <span class="ident">id</span> {
             <span class="comment">// Switch successful</span>
-            <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">tan</span>, <span class="ident">HyperionResponseInfo::SwitchTo</span> { <span class="ident">instance</span>: <span class="prelude-val">Some</span>(<span class="ident">id</span>) })
+            <span class="ident"><span class="self">Self</span>::success_info</span>(<span class="ident">HyperionResponseInfo::SwitchTo</span> { <span class="ident">instance</span>: <span class="prelude-val">Some</span>(<span class="ident">id</span>) })
         } <span class="kw">else</span> {
             <span class="ident"><span class="self">Self</span>::error_info</span>(
-                <span class="ident">tan</span>,
                 <span class="string">&quot;selected hyperion instance not found&quot;</span>,
                 <span class="ident">HyperionResponseInfo::SwitchTo</span> { <span class="ident">instance</span>: <span class="prelude-val">None</span> },
             )

@@ -7,7 +7,7 @@ use validator::Validate;
 
 use crate::{
     component::ComponentName,
-    global::{Global, InputMessage, InputMessageData, InputSourceHandle},
+    global::{Global, InputMessage, InputMessageData, InputSourceHandle, Message},
     image::{RawImage, RawImageError},
     instance::{InstanceHandle, InstanceHandleError},
 };
@@ -30,6 +30,8 @@ pub enum JsonApiError {
     Recv(#[from] tokio::sync::oneshot::error::RecvError),
     #[error("error accessing the current instance: {0}")]
     Instance(#[from] InstanceHandleError),
+    #[error("no current instance found")]
+    InstanceNotFound,
 }
 
 /// A client connected to the JSON endpoint
@@ -46,10 +48,10 @@ impl ClientConnection {
         }
     }
 
-    async fn current_instance(&mut self, global: &Global) -> Option<InstanceHandle> {
+    async fn current_instance(&mut self, global: &Global) -> Result<InstanceHandle, JsonApiError> {
         if let Some(current_instance) = self.current_instance {
             if let Some(instance) = global.get_instance(current_instance).await {
-                return Some(instance);
+                return Ok(instance);
             } else {
                 // Instance id now invalid, reset
                 self.current_instance = None;
@@ -58,10 +60,10 @@ impl ClientConnection {
 
         if let Some((id, inst)) = global.default_instance().await {
             self.set_current_instance(id);
-            return Some(inst);
+            return Ok(inst);
         }
 
-        None
+        Err(JsonApiError::InstanceNotFound)
     }
 
     fn set_current_instance(&mut self, id: i32) {
@@ -144,36 +146,47 @@ impl ClientConnection {
             }) => {
                 // TODO: Handle origin, python_script, image_data
 
-                let (tx, rx) = oneshot::channel();
+                match self.current_instance(global).await {
+                    Ok(instance) => {
+                        let (tx, rx) = oneshot::channel();
 
-                // TODO: This should only target one instance?
-                self.source.send(
-                    ComponentName::All,
-                    InputMessageData::Effect {
-                        priority,
-                        duration: duration.map(|ms| chrono::Duration::milliseconds(ms as _)),
-                        effect: effect.into(),
-                        response: Arc::new(Mutex::new(Some(tx))),
-                    },
-                )?;
+                        instance
+                            .send(InputMessage::new(
+                                self.source.id(),
+                                ComponentName::All,
+                                InputMessageData::Effect {
+                                    priority,
+                                    duration: duration
+                                        .map(|ms| chrono::Duration::milliseconds(ms as _)),
+                                    effect: effect.into(),
+                                    response: Arc::new(Mutex::new(Some(tx))),
+                                },
+                            ))
+                            .await?;
 
-                return Ok(match rx.await {
-                    Ok(result) => match result {
-                        Ok(_) => None,
-                        Err(err) => Some(HyperionResponse::error(request.tan, err)),
-                    },
-                    Err(_) => Some(HyperionResponse::error(
-                        request.tan,
-                        "effect request dropped",
-                    )),
-                });
+                        return Ok(match rx.await {
+                            Ok(result) => match result {
+                                Ok(_) => None,
+                                Err(err) => Some(HyperionResponse::error(request.tan, err)),
+                            },
+                            Err(_) => Some(HyperionResponse::error(
+                                request.tan,
+                                "effect request dropped",
+                            )),
+                        });
+                    }
+
+                    Err(err) => {
+                        return Ok(Some(HyperionResponse::error(request.tan, err)));
+                    }
+                }
             }
 
             HyperionCommand::ServerInfo(message::ServerInfoRequest { subscribe: _ }) => {
                 // TODO: Handle subscribe field
 
                 let (adjustments, priorities) =
-                    if let Some(handle) = self.current_instance(global).await {
+                    if let Ok(handle) = self.current_instance(global).await {
                         (
                             handle
                                 .config()

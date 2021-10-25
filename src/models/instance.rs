@@ -143,19 +143,19 @@ pub enum ImageToLedMappingType {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct ColorAdjustment {
+    /// RGB color temperature in Kelvins
+    pub rgb_temperature: u32,
     pub image_to_led_mapping_type: ImageToLedMappingType,
     #[validate]
     pub channel_adjustment: Vec<ChannelAdjustment>,
-    /// RGB color temperature in Kelvins
-    pub rgb_temperature: u32,
 }
 
 impl Default for ColorAdjustment {
     fn default() -> Self {
         Self {
+            rgb_temperature: 6600,
             image_to_led_mapping_type: ImageToLedMappingType::MulticolorMean,
             channel_adjustment: vec![ChannelAdjustment::default()],
-            rgb_temperature: 6600,
         }
     }
 }

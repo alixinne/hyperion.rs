@@ -755,19 +755,19 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>, <span class="ident">deny_unknown_fields</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ColorAdjustment</span> {
+    <span class="doccomment">/// RGB color temperature in Kelvins</span>
+    <span class="kw">pub</span> <span class="ident">rgb_temperature</span>: <span class="ident">u32</span>,
     <span class="kw">pub</span> <span class="ident">image_to_led_mapping_type</span>: <span class="ident">ImageToLedMappingType</span>,
     <span class="attribute">#[<span class="ident">validate</span>]</span>
     <span class="kw">pub</span> <span class="ident">channel_adjustment</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ChannelAdjustment</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// RGB color temperature in Kelvins</span>
-    <span class="kw">pub</span> <span class="ident">rgb_temperature</span>: <span class="ident">u32</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ColorAdjustment</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
+            <span class="ident">rgb_temperature</span>: <span class="number">6600</span>,
             <span class="ident">image_to_led_mapping_type</span>: <span class="ident">ImageToLedMappingType::MulticolorMean</span>,
             <span class="ident">channel_adjustment</span>: <span class="macro">vec!</span>[<span class="ident">ChannelAdjustment::default</span>()],
-            <span class="ident">rgb_temperature</span>: <span class="number">6600</span>,
         }
     }
 }

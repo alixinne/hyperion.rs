@@ -80,5 +80,15 @@ jobs:
           title: "Development Build"
           files: |
             release/**/*
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          title: ${{ github.ref_name }}
+          files: |
+            release/**/*
+        if: "startsWith(github.ref, 'refs/tags/v')"
 
 # vim: ts=2:sw=2

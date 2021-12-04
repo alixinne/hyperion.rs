@@ -75,9 +75,9 @@ pub fn whitebalance(c: Color16, src_white: Color16, dst_white: Color16) -> Color
     let (dr, dg, db) = dst_white.into_components();
 
     Color16::new(
-        ((cr as u32 * dr as u32) / sr as u32) as u16,
-        ((cg as u32 * dg as u32) / sg as u32) as u16,
-        ((cb as u32 * db as u32) / sb as u32) as u16,
+        ((cr as u32 * dr as u32) / sr as u32).min(u16::MAX as u32) as u16,
+        ((cg as u32 * dg as u32) / sg as u32).min(u16::MAX as u32) as u16,
+        ((cb as u32 * db as u32) / sb as u32).min(u16::MAX as u32) as u16,
     )
 }
 

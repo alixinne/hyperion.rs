@@ -91,7 +91,7 @@ If running from a release archive, invoke the `hyperiond-rs` binary directly.
 
 ## Cross-compiling
 
-Cross-compiling is done using [cross](https://github.com/rustembedded/cross).
+Cross-compiling is done using [cross](https://github.com/rust-embedded/cross).
 Let's say we are building for the Raspberry Pi Zero, which corresponds to the
 Rust target arm-unknown-linux-gnueabihf.
 

@@ -49,114 +49,114 @@ impl ConfigBackend for DbBackend {
             let setting = setting?;
             match setting.config {
                 SettingData::BackgroundEffect(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("backgroundEffect"))?,
-                        )
-                        .unwrap()
-                        .background_effect = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("backgroundEffect"))?,
+                    ) {
+                        Some(instance) => instance.background_effect = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::BlackBorderDetector(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("blackborderdetector"))?,
-                        )
-                        .unwrap()
-                        .black_border_detector = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("blackborderdetector"))?,
+                    ) {
+                        Some(instance) => instance.black_border_detector = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::BoblightServer(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("boblightServer"))?,
-                        )
-                        .unwrap()
-                        .boblight_server = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("boblightServer"))?,
+                    ) {
+                        Some(instance) => instance.boblight_server = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::ColorAdjustment(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("color"))?,
-                        )
-                        .unwrap()
-                        .color = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("color"))?,
+                    ) {
+                        Some(instance) => instance.color = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::Device(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("device"))?,
-                        )
-                        .unwrap()
-                        .device = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("device"))?,
+                    ) {
+                        Some(instance) => instance.device = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::Effects(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("effects"))?,
-                        )
-                        .unwrap()
-                        .effects = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("effects"))?,
+                    ) {
+                        Some(instance) => instance.effects = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::ForegroundEffect(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("foregroundEffect"))?,
-                        )
-                        .unwrap()
-                        .foreground_effect = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("foregroundEffect"))?,
+                    ) {
+                        Some(instance) => instance.foreground_effect = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::InstanceCapture(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("instCapture"))?,
-                        )
-                        .unwrap()
-                        .instance_capture = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("instCapture"))?,
+                    ) {
+                        Some(instance) => instance.instance_capture = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::LedConfig(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("ledConfig"))?,
-                        )
-                        .unwrap()
-                        .led_config = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("ledConfig"))?,
+                    ) {
+                        Some(instance) => instance.led_config = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::Leds(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("leds"))?,
-                        )
-                        .unwrap()
-                        .leds = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("leds"))?,
+                    ) {
+                        Some(instance) => instance.leds = Some(config),
+                        None => continue,
+                    }
                 }
                 SettingData::Smoothing(config) => {
-                    instances
-                        .get_mut(
-                            &setting
-                                .hyperion_inst
-                                .ok_or(ConfigError::MissingHyperionInst("smoothing"))?,
-                        )
-                        .unwrap()
-                        .smoothing = Some(config)
+                    match instances.get_mut(
+                        &setting
+                            .hyperion_inst
+                            .ok_or(ConfigError::MissingHyperionInst("smoothing"))?,
+                    ) {
+                        Some(instance) => instance.smoothing = Some(config),
+                        None => continue,
+                    }
                 }
 
                 SettingData::FlatbuffersServer(config) => {

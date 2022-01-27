@@ -26,7 +26,7 @@ Programming Language. This version features:
 Currently implemented features:
 
 * Loading settings from the hyperion.ng database
-* WS2812SPI device
+* File, WS2812SPI devices
 * JSON, Protobuf, Flatbuffers and Boblight server
 * Black border detector, color channel adjustments, smoothing
 * Basic effect support (only setColor and setImage, no custom smoothing, no

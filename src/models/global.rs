@@ -70,12 +70,22 @@ impl Default for FramegrabberType {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct Framegrabber {
+    pub enable: bool,
     #[serde(rename = "type")]
     pub ty: FramegrabberType,
+    #[serde(rename = "available_devices")]
+    pub available_devices: String,
+    pub device: String,
+    #[serde(rename = "device_inputs")]
+    pub device_inputs: String,
     #[validate(range(min = 10))]
     pub width: u32,
     #[validate(range(min = 10))]
     pub height: u32,
+    pub fps: u32,
+    pub framerates: String,
+    pub input: u32,
+    pub resolutions: String,
     #[serde(rename = "frequency_Hz")]
     #[validate(range(min = 1))]
     pub frequency_hz: u32,
@@ -92,9 +102,17 @@ pub struct Framegrabber {
 impl Default for Framegrabber {
     fn default() -> Self {
         Self {
+            enable: false,
             ty: Default::default(),
+            available_devices: "".to_owned(),
+            device: "".to_owned(),
+            device_inputs: "0".to_owned(),
             width: 80,
             height: 45,
+            fps: 25,
+            framerates: "25".to_owned(),
+            input: 0,
+            resolutions: "0".to_owned(),
             frequency_hz: 10,
             crop_left: 0,
             crop_right: 0,
@@ -120,6 +138,8 @@ pub struct General {
     pub name: String,
     pub watched_version_branch: WatchedVersionBranch,
     pub show_opt_help: bool,
+    pub previous_version: String,
+    pub config_version: String,
 }
 
 impl Default for General {
@@ -128,6 +148,8 @@ impl Default for General {
             name: "My Hyperion Config".to_owned(),
             watched_version_branch: WatchedVersionBranch::Stable,
             show_opt_help: true,
+            previous_version: "".to_owned(),
+            config_version: "".to_owned(),
         }
     }
 }
@@ -150,13 +172,17 @@ impl Default for V4L2Standard {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct GrabberV4L2 {
+    pub enable: bool,
     pub device: String,
     pub input: i32,
     pub standard: V4L2Standard,
     pub width: u32,
     pub height: u32,
+    pub encoding: String,
+    pub flip: String,
     #[validate(range(min = 1))]
     pub fps: u32,
+    pub fps_software_decimation: u32,
     #[validate(range(min = 1, max = 30))]
     pub size_decimation: u32,
     pub crop_left: u32,
@@ -164,6 +190,15 @@ pub struct GrabberV4L2 {
     pub crop_top: u32,
     pub crop_bottom: u32,
     pub cec_detection: bool,
+    #[serde(rename = "hardware_brightness")]
+    pub hardware_brightness: u32,
+    #[serde(rename = "hardware_contrast")]
+    pub hardware_contrast: u32,
+    #[serde(rename = "hardware_hue")]
+    pub hardware_hue: u32,
+    #[serde(rename = "hardware_saturation")]
+    pub hardware_saturation: u32,
+    pub no_signal_counter_threshold: u32,
     pub signal_detection: bool,
     #[validate(range(min = 0, max = 100))]
     pub red_signal_threshold: u32,
@@ -188,18 +223,27 @@ pub struct GrabberV4L2 {
 impl Default for GrabberV4L2 {
     fn default() -> Self {
         Self {
+            enable: false,
             device: "auto".to_owned(),
             input: 0,
             standard: Default::default(),
             width: 0,
             height: 0,
+            encoding: "NO_CHANGE".to_owned(),
+            flip: "NO_CHANGE".to_owned(),
             fps: 15,
+            fps_software_decimation: 0,
             size_decimation: 6,
             crop_left: 0,
             crop_right: 0,
             crop_top: 0,
             crop_bottom: 0,
             cec_detection: false,
+            hardware_brightness: 0,
+            hardware_contrast: 0,
+            hardware_hue: 0,
+            hardware_saturation: 0,
+            no_signal_counter_threshold: 200,
             signal_detection: false,
             red_signal_threshold: 5,
             green_signal_threshold: 5,

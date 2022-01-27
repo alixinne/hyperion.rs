@@ -295,9 +295,11 @@ impl Default for ForegroundEffect {
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct InstanceCapture {
     pub system_enable: bool,
+    pub system_grabber_device: String,
     #[validate(range(min = 100, max = 253))]
     pub system_priority: i32,
     pub v4l_enable: bool,
+    pub v4l_grabber_device: String,
     #[validate(range(min = 100, max = 253))]
     pub v4l_priority: i32,
 }
@@ -306,8 +308,10 @@ impl Default for InstanceCapture {
     fn default() -> Self {
         Self {
             system_enable: true,
+            system_grabber_device: "NONE".to_owned(),
             system_priority: 250,
             v4l_enable: false,
+            v4l_grabber_device: "NONE".to_owned(),
             v4l_priority: 240,
         }
     }
@@ -416,12 +420,13 @@ impl Default for MatrixLedConfig {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
-#[serde(default, deny_unknown_fields)]
+#[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct LedConfig {
     #[validate]
     pub classic: ClassicLedConfig,
     #[validate]
     pub matrix: MatrixLedConfig,
+    pub led_blacklist: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]

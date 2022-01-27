@@ -8,6 +8,7 @@ mod common;
 // Device implementation modules
 
 mod dummy;
+mod file;
 mod ws2812spi;
 
 #[derive(Debug, Error)]
@@ -16,6 +17,8 @@ pub enum DeviceError {
     NotSupported(&'static str),
     #[error("i/o error: {0}")]
     FuturesIo(#[from] futures_io::Error),
+    #[error("Format error: {0}")]
+    FormatError(#[from] std::fmt::Error),
 }
 
 #[async_trait]
@@ -50,6 +53,9 @@ impl Device {
             }
             models::Device::Ws2812Spi(ws2812spi) => {
                 inner = Box::new(ws2812spi::Ws2812SpiDevice::new(ws2812spi)?);
+            }
+            models::Device::File(file) => {
+                inner = Box::new(file::FileDevice::new(file)?);
             }
             other => {
                 return Err(DeviceError::NotSupported(other.into()));

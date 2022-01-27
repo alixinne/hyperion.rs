@@ -144,6 +144,32 @@ impl DeviceConfig for PhilipsHue {
     }
 }
 
+fn default_file_rewrite_time() -> u32 {
+    1000
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct File {
+    #[serde(default = "Default::default")]
+    pub color_order: ColorOrder,
+    #[validate(range(min = 1))]
+    pub hardware_led_count: u32,
+    #[serde(default = "Default::default")]
+    pub latch_time: u32,
+    pub output: String,
+    #[serde(default = "default_file_rewrite_time")]
+    pub rewrite_time: u32,
+    #[serde(default = "Default::default")]
+    pub print_time_stamp: bool,
+}
+
+impl DeviceConfig for File {
+    fn hardware_led_count(&self) -> usize {
+        self.hardware_led_count as _
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, IntoStaticStr, Delegate, From)]
 #[serde(rename_all = "lowercase", tag = "type", deny_unknown_fields)]
 #[delegate(DeviceConfig)]
@@ -151,6 +177,7 @@ pub enum Device {
     Dummy(Dummy),
     Ws2812Spi(Ws2812Spi),
     PhilipsHue(PhilipsHue),
+    File(File),
 }
 
 impl Default for Device {
@@ -165,6 +192,7 @@ impl Validate for Device {
             Device::Dummy(device) => device.validate(),
             Device::Ws2812Spi(device) => device.validate(),
             Device::PhilipsHue(device) => device.validate(),
+            Device::File(device) => device.validate(),
         }
     }
 }

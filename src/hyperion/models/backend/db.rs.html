@@ -369,114 +369,114 @@
             <span class="kw">let</span> <span class="ident">setting</span> <span class="op">=</span> <span class="ident">setting</span><span class="question-mark">?</span>;
             <span class="kw">match</span> <span class="ident">setting</span>.<span class="ident">config</span> {
                 <span class="ident">SettingData::BackgroundEffect</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;backgroundEffect&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">background_effect</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;backgroundEffect&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">background_effect</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::BlackBorderDetector</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;blackborderdetector&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">black_border_detector</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;blackborderdetector&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">black_border_detector</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::BoblightServer</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;boblightServer&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">boblight_server</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;boblightServer&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">boblight_server</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::ColorAdjustment</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;color&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">color</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;color&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">color</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::Device</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;device&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;device&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::Effects</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;effects&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">effects</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;effects&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">effects</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::ForegroundEffect</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;foregroundEffect&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">foreground_effect</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;foregroundEffect&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">foreground_effect</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::InstanceCapture</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;instCapture&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">instance_capture</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;instCapture&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">instance_capture</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::LedConfig</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;ledConfig&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">led_config</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;ledConfig&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">led_config</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::Leds</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;leds&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">leds</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;leds&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">leds</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
                 <span class="ident">SettingData::Smoothing</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">instances</span>
-                        .<span class="ident">get_mut</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">setting</span>
-                                .<span class="ident">hyperion_inst</span>
-                                .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;smoothing&quot;</span>))<span class="question-mark">?</span>,
-                        )
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">smoothing</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>)
+                    <span class="kw">match</span> <span class="ident">instances</span>.<span class="ident">get_mut</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">setting</span>
+                            .<span class="ident">hyperion_inst</span>
+                            .<span class="ident">ok_or</span>(<span class="ident">ConfigError::MissingHyperionInst</span>(<span class="string">&quot;smoothing&quot;</span>))<span class="question-mark">?</span>,
+                    ) {
+                        <span class="prelude-val">Some</span>(<span class="ident">instance</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">instance</span>.<span class="ident">smoothing</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">config</span>),
+                        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
+                    }
                 }
 
                 <span class="ident">SettingData::FlatbuffersServer</span>(<span class="ident">config</span>) <span class="op">=</span><span class="op">&gt;</span> {

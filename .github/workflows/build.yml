@@ -6,6 +6,28 @@ env:
   ENABLE_PYO3: 1
 
 jobs:
+  checks:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          profile: minimal
+          components: rustfmt
+
+      - name: Check formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
   build:
     strategy:
       fail-fast: false

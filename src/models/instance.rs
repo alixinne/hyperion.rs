@@ -422,11 +422,11 @@ impl Default for MatrixLedConfig {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct LedConfig {
+    pub led_blacklist: Vec<u32>,
     #[validate]
     pub classic: ClassicLedConfig,
     #[validate]
     pub matrix: MatrixLedConfig,
-    pub led_blacklist: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]

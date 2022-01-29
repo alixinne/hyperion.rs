@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ProviderError",""]],"mod":[["python",""]],"struct":[["Providers",""]],"trait":[["Provider","Trait for effect providers."]]});

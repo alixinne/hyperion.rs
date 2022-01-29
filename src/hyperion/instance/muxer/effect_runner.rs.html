@@ -233,8 +233,6 @@
 <span id="233">233</span>
 <span id="234">234</span>
 <span id="235">235</span>
-<span id="236">236</span>
-<span id="237">237</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">slotmap::SlotMap</span>;
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
@@ -350,36 +348,34 @@
             .<span class="ident">clone</span>()
             .<span class="ident">read_effects</span>(<span class="op">|</span><span class="ident">effects</span><span class="op">|</span> {
                 <span class="comment">// Find the effect definition</span>
-                <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span>
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">definition</span>) <span class="op">=</span> <span class="ident">effects</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">effect</span>.<span class="ident">name</span> <span class="op">=</span><span class="op">=</span> <span class="ident">e</span>.<span class="ident">name</span>) {
-                        <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">running_effects</span>.<span class="ident">insert</span>(<span class="prelude-val">None</span>);
+                <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handle</span>) <span class="op">=</span> <span class="ident">effects</span>.<span class="ident">find_effect</span>(<span class="kw-2">&amp;</span><span class="ident">effect</span>.<span class="ident">name</span>) {
+                    <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">running_effects</span>.<span class="ident">insert</span>(<span class="prelude-val">None</span>);
 
-                        <span class="kw">match</span> <span class="ident">effects::run</span>(
-                            <span class="ident">definition</span>,
-                            <span class="ident">effect</span>.<span class="ident">args</span>.<span class="ident">clone</span>().<span class="ident">into</span>(),
-                            <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">led_count</span>,
-                            <span class="ident">duration</span>,
-                            <span class="ident">priority</span>,
-                            <span class="self">self</span>.<span class="ident">effect_tx</span>.<span class="ident">clone</span>(),
-                            <span class="ident">key</span>,
-                        ) {
-                            <span class="prelude-val">Ok</span>(<span class="ident">handle</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                                <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">running_effects</span>.<span class="ident">get_mut</span>(<span class="ident">key</span>).<span class="ident">unwrap</span>() <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">handle</span>);
-                                <span class="macro">info!</span>(<span class="ident">name</span> <span class="op">=</span> <span class="op">%</span><span class="ident">effect</span>.<span class="ident">name</span>, <span class="string">&quot;started effect&quot;</span>);
-                                <span class="prelude-val">Ok</span>(<span class="ident">key</span>)
-                            }
-                            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                                <span class="self">self</span>.<span class="ident">running_effects</span>.<span class="ident">remove</span>(<span class="ident">key</span>);
-                                <span class="macro">warn!</span>(<span class="ident">name</span> <span class="op">=</span> <span class="op">%</span><span class="ident">effect</span>.<span class="ident">name</span>, <span class="ident">error</span> <span class="op">=</span> <span class="op">%</span><span class="ident">err</span>, <span class="string">&quot;could not start effect&quot;</span>);
-                                <span class="prelude-val">Err</span>(<span class="ident">err</span>.<span class="ident">into</span>())
-                            }
+                    <span class="kw">match</span> <span class="ident">handle</span>.<span class="ident">run</span>(
+                        <span class="ident">effect</span>.<span class="ident">args</span>.<span class="ident">clone</span>().<span class="ident">into</span>(),
+                        <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">led_count</span>,
+                        <span class="ident">duration</span>,
+                        <span class="ident">priority</span>,
+                        <span class="self">self</span>.<span class="ident">effect_tx</span>.<span class="ident">clone</span>(),
+                        <span class="ident">key</span>,
+                    ) {
+                        <span class="prelude-val">Ok</span>(<span class="ident">handle</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">running_effects</span>.<span class="ident">get_mut</span>(<span class="ident">key</span>).<span class="ident">unwrap</span>() <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">handle</span>);
+                            <span class="macro">info!</span>(<span class="ident">name</span> <span class="op">=</span> <span class="op">%</span><span class="ident">effect</span>.<span class="ident">name</span>, <span class="string">&quot;started effect&quot;</span>);
+                            <span class="prelude-val">Ok</span>(<span class="ident">key</span>)
                         }
-                    } <span class="kw">else</span> {
-                        <span class="macro">warn!</span>(<span class="ident">name</span> <span class="op">=</span> <span class="op">%</span><span class="ident">effect</span>.<span class="ident">name</span>, <span class="string">&quot;effect not found&quot;</span>);
-                        <span class="prelude-val">Err</span>(<span class="ident">StartEffectError::NotFound</span> {
-                            <span class="ident">name</span>: <span class="ident">effect</span>.<span class="ident">name</span>.<span class="ident">clone</span>(),
-                        })
-                    };
+                        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="self">self</span>.<span class="ident">running_effects</span>.<span class="ident">remove</span>(<span class="ident">key</span>);
+                            <span class="macro">warn!</span>(<span class="ident">name</span> <span class="op">=</span> <span class="op">%</span><span class="ident">effect</span>.<span class="ident">name</span>, <span class="ident">error</span> <span class="op">=</span> <span class="op">%</span><span class="ident">err</span>, <span class="string">&quot;could not start effect&quot;</span>);
+                            <span class="prelude-val">Err</span>(<span class="ident">err</span>.<span class="ident">into</span>())
+                        }
+                    }
+                } <span class="kw">else</span> {
+                    <span class="macro">warn!</span>(<span class="ident">name</span> <span class="op">=</span> <span class="op">%</span><span class="ident">effect</span>.<span class="ident">name</span>, <span class="string">&quot;effect not found&quot;</span>);
+                    <span class="prelude-val">Err</span>(<span class="ident">StartEffectError::NotFound</span> {
+                        <span class="ident">name</span>: <span class="ident">effect</span>.<span class="ident">name</span>.<span class="ident">clone</span>(),
+                    })
+                };
 
                 <span class="kw">async</span> <span class="kw">move</span> {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">key</span>) <span class="op">=</span> <span class="ident">result</span> {

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["EffectDefinitionError",""],["EffectMessageKind",""],["RunEffectError",""]],"fn":[["run",""]],"mod":[["definition",""],["instance",""],["runtime",""]],"struct":[["EffectDefinition",""],["EffectMessage",""],["EffectRunHandle",""]]});
+initSidebarItems({"enum":[["EffectDefinitionError",""],["EffectMessageKind",""],["RunEffectError",""]],"mod":[["definition",""],["instance",""],["providers",""]],"struct":[["EffectDefinition",""],["EffectHandle",""],["EffectMessage",""],["EffectRegistry",""],["EffectRunHandle",""],["Providers",""]]});

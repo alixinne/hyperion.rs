@@ -24,8 +24,9 @@ pub use paths::*;
 mod priority_guard;
 pub use priority_guard::*;
 
-use crate::effects::EffectDefinition;
-use crate::{component::ComponentName, instance::InstanceHandle, models::Config};
+use crate::{
+    component::ComponentName, effects::EffectRegistry, instance::InstanceHandle, models::Config,
+};
 
 pub trait Message: Sized {
     type Data;
@@ -131,12 +132,12 @@ impl Global {
         f(&data.config)
     }
 
-    pub async fn read_effects<T>(&self, f: impl FnOnce(&[EffectDefinition]) -> T) -> T {
+    pub async fn read_effects<T>(&self, f: impl FnOnce(&EffectRegistry) -> T) -> T {
         let data = self.0.read().await;
         f(&data.effects)
     }
 
-    pub async fn write_effects<T>(&self, f: impl FnOnce(&mut Vec<EffectDefinition>) -> T) -> T {
+    pub async fn write_effects<T>(&self, f: impl FnOnce(&mut EffectRegistry) -> T) -> T {
         let mut data = self.0.write().await;
         f(&mut data.effects)
     }
@@ -165,7 +166,7 @@ pub struct GlobalData {
     config: Config,
     instances: BTreeMap<i32, InstanceHandle>,
     event_tx: broadcast::Sender<Event>,
-    effects: Vec<EffectDefinition>,
+    effects: EffectRegistry,
 }
 
 impl GlobalData {

@@ -30,7 +30,8 @@ Currently implemented features:
 * JSON, Protobuf, Flatbuffers and Boblight server
 * Black border detector, color channel adjustments, smoothing
 * Basic effect support (only setColor and setImage, no custom smoothing, no
-  per-instance effect directory)
+  per-instance effect directory). Can be disabled if Python is not available
+  for the target platform (see the `python` feature).
 
 Extra features not available in hyperion.ng:
 

@@ -11,10 +11,13 @@ use crate::{global::InputSourceError, image::RawImage, models::Color};
 mod definition;
 pub use definition::*;
 
-mod runtime;
+mod providers;
+pub use providers::Providers;
 
 mod instance;
 use instance::*;
+
+use self::providers::{Provider, ProviderError};
 
 pub struct EffectRunHandle {
     ctx: Sender<ControlMessage>,
@@ -69,52 +72,141 @@ pub enum EffectMessageKind {
     SetColor { color: Color },
     SetImage { image: Arc<RawImage> },
     SetLedColors { colors: Arc<Vec<Color>> },
-    Completed { result: Result<(), pyo3::PyErr> },
+    Completed { result: Result<(), ProviderError> },
 }
 
-pub fn run<X: std::fmt::Debug + Clone + Send + 'static>(
-    effect: &EffectDefinition,
-    args: serde_json::Value,
-    led_count: usize,
-    duration: Option<chrono::Duration>,
-    priority: i32,
-    tx: Sender<EffectMessage<X>>,
-    extra: X,
-) -> Result<EffectRunHandle, RunEffectError> {
-    // Resolve path
-    let full_path = effect.script_path()?;
+#[derive(Default, Debug, Clone)]
+pub struct EffectRegistry {
+    effects: Vec<EffectHandle>,
+}
 
-    // Create control channel
-    let (ctx, crx) = channel(1);
+impl EffectRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-    // Create instance methods
-    let methods = InstanceMethods::new(
-        tx.clone(),
-        crx,
-        led_count,
-        duration.and_then(|d| d.to_std().ok()),
-        extra.clone(),
-    );
+    pub fn iter(&self) -> impl Iterator<Item = &EffectDefinition> {
+        self.effects.iter().map(|handle| &handle.definition)
+    }
 
-    // Run effect
-    let join_handle = tokio::task::spawn(async move {
-        // Run the blocking task
-        let result = tokio::task::spawn_blocking(move || runtime::run(&full_path, args, methods))
+    pub fn find_effect(&self, name: &str) -> Option<&EffectHandle> {
+        self.effects.iter().find(|e| e.definition.name == name)
+    }
+
+    pub fn len(&self) -> usize {
+        self.effects.len()
+    }
+
+    /// Add definitions to this registry
+    ///
+    /// # Parameters
+    ///
+    /// * `providers`: effect providers
+    /// * `definitions`: effect definitions to register
+    ///
+    /// # Returns
+    ///
+    /// Effect definitions that are not supported by any provider.
+    pub fn add_definitions(
+        &mut self,
+        providers: &Providers,
+        definitions: Vec<EffectDefinition>,
+    ) -> Vec<EffectDefinition> {
+        let mut remaining = vec![];
+
+        for definition in definitions {
+            if let Some(provider) = providers.get(&definition.script) {
+                debug!(provider=?provider, effect=%definition.name, "assigned provider to effect");
+
+                self.effects.push(EffectHandle {
+                    definition,
+                    provider,
+                });
+            } else {
+                debug!(effect=%definition.name, "no provider for effect");
+
+                remaining.push(definition);
+            }
+        }
+
+        remaining
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EffectHandle {
+    pub definition: EffectDefinition,
+    provider: Arc<dyn Provider>,
+}
+
+impl EffectHandle {
+    pub fn run<X: std::fmt::Debug + Clone + Send + 'static>(
+        &self,
+        args: serde_json::Value,
+        led_count: usize,
+        duration: Option<chrono::Duration>,
+        priority: i32,
+        tx: Sender<EffectMessage<X>>,
+        extra: X,
+    ) -> Result<EffectRunHandle, RunEffectError> {
+        // Resolve path
+        let full_path = self.definition.script_path()?;
+
+        // Clone provider arc
+        let provider = self.provider.clone();
+
+        // Create control channel
+        let (ctx, crx) = channel(1);
+
+        // Create channel to wrap data
+        let (etx, mut erx) = channel(1);
+
+        // Create instance methods
+        let methods =
+            InstanceMethods::new(etx, crx, led_count, duration.and_then(|d| d.to_std().ok()));
+
+        // Run effect
+        let join_handle = tokio::task::spawn(async move {
+            // Create the blocking task
+            let mut run_effect =
+                tokio::task::spawn_blocking(move || provider.run(&full_path, args, methods));
+
+            // Join the blocking task while forwarding the effect messages
+            let result = loop {
+                tokio::select! {
+                    kind = erx.recv() => {
+                        if let Some(kind) = kind {
+                            // Add the extra marker to the message and forward it to the instance
+                            let msg = EffectMessage { kind, extra: extra.clone() };
+
+                            if let Err(err) = tx.send(msg).await {
+                                // This would happen if the effect is running and the instance has
+                                // already shutdown.
+                                error!(err=%err, "failed to forward effect message");
+                                return;
+                            }
+                        }
+                    }
+                    result = &mut run_effect => {
+                        // Unwrap blocking result
+                        break result.expect("failed to await blocking task");
+                    }
+                }
+            };
+
+            // Send the completion, ignoring failures in case we're shutting down
+            tx.send(EffectMessage {
+                kind: EffectMessageKind::Completed { result },
+                extra,
+            })
             .await
-            .expect("failed to await blocking task");
+            .ok();
+        });
 
-        // Send the completion, ignoring failures in case we're shutting down
-        tx.send(EffectMessage {
-            kind: EffectMessageKind::Completed { result },
-            extra,
+        Ok(EffectRunHandle {
+            ctx,
+            join_handle: join_handle.into(),
+            priority,
         })
-        .await
-        .ok();
-    });
-
-    Ok(EffectRunHandle {
-        ctx,
-        join_handle: join_handle.into(),
-        priority,
-    })
+    }
 }

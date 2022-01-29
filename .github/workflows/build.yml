@@ -4,9 +4,12 @@ on: [push, pull_request]
 
 env:
   ENABLE_PYO3: 1
+  RUSTFLAGS: -D warnings
 
 jobs:
   checks:
+    name: Check code
+
     runs-on: ubuntu-20.04
 
     steps:
@@ -20,7 +23,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           profile: minimal
-          components: rustfmt
+          components: rustfmt,clippy
 
       - name: Check formatting
         uses: actions-rs/cargo@v1
@@ -28,7 +31,28 @@ jobs:
           command: fmt
           args: -- --check
 
+      - name: Install cargo-hack
+        run: >
+          wget -O-
+          https://github.com/taiki-e/cargo-hack/releases/download/v0.5.12/cargo-hack-x86_64-unknown-linux-gnu.tar.gz |
+          tar -C $HOME/.cargo/bin -xz
+
+      - name: Run cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: hack
+          args: check --feature-powerset --no-dev-deps
+
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: hack
+          # Allow clippy warnings until they're fixed, but report them
+          args: clippy --feature-powerset --no-dev-deps -- -A warnings
+
   build:
+    name: Build hyperion.rs binaries
+
     strategy:
       fail-fast: false
       matrix:
@@ -87,9 +111,12 @@ jobs:
           path: release/hyperion.rs-${{ matrix.target }}.tar.xz
 
   release-nightly:
-    needs: build
+    name: Release hyperion.rs
+
+    needs: [ checks, build ]
     runs-on: ubuntu-latest
     if: "github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')"
+
     steps:
       - uses: actions/download-artifact@v2
         with:

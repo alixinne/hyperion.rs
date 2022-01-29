@@ -3,36 +3,35 @@ use std::{
     time::{Duration, Instant},
 };
 
+use thiserror::Error;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::image::RawImage;
-
-use super::{
-    runtime::{RuntimeMethodError, RuntimeMethods},
-    EffectMessage, EffectMessageKind,
+use crate::{
+    image::{RawImage, RawImageError},
+    models::Color,
 };
+
+use super::EffectMessageKind;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ControlMessage {
     Abort,
 }
 
-pub struct InstanceMethods<X> {
-    tx: Sender<EffectMessage<X>>,
+pub struct InstanceMethods {
+    tx: Sender<EffectMessageKind>,
     crx: RefCell<Receiver<ControlMessage>>,
     led_count: usize,
     deadline: Option<Instant>,
     aborted: Cell<bool>,
-    extra: X,
 }
 
-impl<X> InstanceMethods<X> {
+impl InstanceMethods {
     pub fn new(
-        tx: Sender<EffectMessage<X>>,
+        tx: Sender<EffectMessageKind>,
         crx: Receiver<ControlMessage>,
         led_count: usize,
         duration: Option<Duration>,
-        extra: X,
     ) -> Self {
         Self {
             tx,
@@ -40,7 +39,6 @@ impl<X> InstanceMethods<X> {
             led_count,
             deadline: duration.map(|d| Instant::now() + d),
             aborted: false.into(),
-            extra,
         }
     }
 
@@ -93,7 +91,7 @@ impl<X> InstanceMethods<X> {
     }
 }
 
-impl<X: std::fmt::Debug + Clone> RuntimeMethods for InstanceMethods<X> {
+impl RuntimeMethods for InstanceMethods {
     fn get_led_count(&self) -> usize {
         self.led_count
     }
@@ -105,31 +103,51 @@ impl<X: std::fmt::Debug + Clone> RuntimeMethods for InstanceMethods<X> {
     fn set_color(&self, color: crate::models::Color) -> Result<(), RuntimeMethodError> {
         self.poll_control()?;
 
-        self.wrap_result(self.tx.blocking_send(EffectMessage {
-            kind: EffectMessageKind::SetColor { color },
-            extra: self.extra.clone(),
-        }))
+        self.wrap_result(self.tx.blocking_send(EffectMessageKind::SetColor { color }))
     }
 
     fn set_led_colors(&self, colors: Vec<crate::models::Color>) -> Result<(), RuntimeMethodError> {
         self.poll_control()?;
 
-        self.wrap_result(self.tx.blocking_send(EffectMessage {
-            kind: EffectMessageKind::SetLedColors {
-                colors: colors.into(),
-            },
-            extra: self.extra.clone(),
+        self.wrap_result(self.tx.blocking_send(EffectMessageKind::SetLedColors {
+            colors: colors.into(),
         }))
     }
 
     fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError> {
         self.poll_control()?;
 
-        self.wrap_result(self.tx.blocking_send(EffectMessage {
-            kind: EffectMessageKind::SetImage {
-                image: image.into(),
-            },
-            extra: self.extra.clone(),
+        self.wrap_result(self.tx.blocking_send(EffectMessageKind::SetImage {
+            image: image.into(),
         }))
+    }
+}
+
+pub trait RuntimeMethods {
+    fn get_led_count(&self) -> usize;
+    fn abort(&self) -> bool;
+
+    fn set_color(&self, color: Color) -> Result<(), RuntimeMethodError>;
+    fn set_led_colors(&self, colors: Vec<Color>) -> Result<(), RuntimeMethodError>;
+    fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError>;
+}
+
+#[derive(Debug, Error)]
+pub enum RuntimeMethodError {
+    #[cfg(feature = "python")]
+    #[error("Invalid arguments to hyperion.{name}")]
+    InvalidArguments { name: &'static str },
+    #[cfg(feature = "python")]
+    #[error("Length of bytearray argument should be 3*ledCount")]
+    InvalidByteArray,
+    #[error("Effect aborted")]
+    EffectAborted,
+    #[error(transparent)]
+    InvalidImageData(#[from] RawImageError),
+}
+
+impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RuntimeMethodError {
+    fn from(_: tokio::sync::mpsc::error::SendError<T>) -> Self {
+        Self::EffectAborted
     }
 }

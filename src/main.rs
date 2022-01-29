@@ -3,6 +3,7 @@ extern crate tracing;
 
 use std::path::PathBuf;
 
+use hyperion::effects::EffectRegistry;
 use structopt::StructOpt;
 use tokio::runtime::Builder;
 use tokio::signal;
@@ -63,24 +64,27 @@ async fn run(opts: Opts) -> color_eyre::eyre::Result<()> {
     let global = hyperion::global::GlobalData::new(&config).wrap();
 
     // Discover effects
-    let mut effects = Vec::new();
+    let mut effects = EffectRegistry::new();
+    let providers = hyperion::effects::Providers::new();
 
     // TODO: Per-instance effect discovery
     for path in ["$SYSTEM/effects"] {
         // Resolve path variables
         let path = paths.resolve_path(path);
 
+        // Discover effect files
         let mut discovered = hyperion::effects::EffectDefinition::read_dir(&path).await?;
         discovered.sort_by(|a, b| a.file.cmp(&b.file));
 
-        // Add discovered effects
-        effects.extend(discovered);
+        // Register them
+        effects.add_definitions(&providers, discovered);
     }
 
     info!("discovered {} effects", effects.len());
 
     global
         .write_effects(|e| {
+            // Replace effect registry with our discovered one
             *e = effects;
         })
         .await;

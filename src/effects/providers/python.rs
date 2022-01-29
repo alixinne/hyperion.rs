@@ -6,26 +6,49 @@ use pyo3::{
     types::{PyByteArray, PyTuple},
 };
 use pythonize::pythonize;
-use thiserror::Error;
 
 use crate::{
-    image::{RawImage, RawImageError},
+    effects::{RuntimeMethodError, RuntimeMethods},
+    image::RawImage,
     models::Color,
 };
 
 mod context;
 use context::Context;
 
-#[derive(Debug, Error)]
-pub enum RuntimeMethodError {
-    #[error("Invalid arguments to hyperion.{name}")]
-    InvalidArguments { name: &'static str },
-    #[error("Length of bytearray argument should be 3*ledCount")]
-    InvalidByteArray,
-    #[error("Effect aborted")]
-    EffectAborted,
-    #[error(transparent)]
-    InvalidImageData(#[from] RawImageError),
+pub type Error = pyo3::PyErr;
+
+#[derive(Default, Debug, Clone, Copy)]
+pub struct PythonProvider;
+
+impl PythonProvider {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl super::Provider for PythonProvider {
+    fn supports(&self, script_path: &str) -> bool {
+        script_path.ends_with(".py")
+    }
+
+    fn run(
+        &self,
+        full_script_path: &Path,
+        args: serde_json::Value,
+        methods: crate::effects::instance::InstanceMethods,
+    ) -> Result<(), super::ProviderError> {
+        Ok(do_run(methods, args, |py| {
+            // Run script
+            py.run(
+                std::fs::read_to_string(&full_script_path)?.as_str(),
+                None,
+                None,
+            )?;
+
+            Ok(())
+        })?)
+    }
 }
 
 impl From<RuntimeMethodError> for PyErr {
@@ -35,21 +58,6 @@ impl From<RuntimeMethodError> for PyErr {
             _ => PyRuntimeError::new_err(value.to_string()),
         }
     }
-}
-
-impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RuntimeMethodError {
-    fn from(_: tokio::sync::mpsc::error::SendError<T>) -> Self {
-        Self::EffectAborted
-    }
-}
-
-pub trait RuntimeMethods {
-    fn get_led_count(&self) -> usize;
-    fn abort(&self) -> bool;
-
-    fn set_color(&self, color: Color) -> Result<(), RuntimeMethodError>;
-    fn set_led_colors(&self, colors: Vec<Color>) -> Result<(), RuntimeMethodError>;
-    fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError>;
 }
 
 /// Check if the effect should abort execution
@@ -134,19 +142,6 @@ fn do_run<T>(
                 f(py)
             })
         })
-    })
-}
-
-pub fn run(
-    full_path: &Path,
-    args: serde_json::Value,
-    methods: impl RuntimeMethods + 'static,
-) -> Result<(), PyErr> {
-    do_run(methods, args, |py| {
-        // Run script
-        py.run(std::fs::read_to_string(&full_path)?.as_str(), None, None)?;
-
-        Ok(())
     })
 }
 

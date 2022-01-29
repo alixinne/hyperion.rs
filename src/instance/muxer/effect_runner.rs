@@ -113,36 +113,34 @@ impl EffectRunner {
             .clone()
             .read_effects(|effects| {
                 // Find the effect definition
-                let result =
-                    if let Some(definition) = effects.iter().find(|e| effect.name == e.name) {
-                        let key = self.running_effects.insert(None);
+                let result = if let Some(handle) = effects.find_effect(&effect.name) {
+                    let key = self.running_effects.insert(None);
 
-                        match effects::run(
-                            definition,
-                            effect.args.clone().into(),
-                            self.config.led_count,
-                            duration,
-                            priority,
-                            self.effect_tx.clone(),
-                            key,
-                        ) {
-                            Ok(handle) => {
-                                *self.running_effects.get_mut(key).unwrap() = Some(handle);
-                                info!(name = %effect.name, "started effect");
-                                Ok(key)
-                            }
-                            Err(err) => {
-                                self.running_effects.remove(key);
-                                warn!(name = %effect.name, error = %err, "could not start effect");
-                                Err(err.into())
-                            }
+                    match handle.run(
+                        effect.args.clone().into(),
+                        self.config.led_count,
+                        duration,
+                        priority,
+                        self.effect_tx.clone(),
+                        key,
+                    ) {
+                        Ok(handle) => {
+                            *self.running_effects.get_mut(key).unwrap() = Some(handle);
+                            info!(name = %effect.name, "started effect");
+                            Ok(key)
                         }
-                    } else {
-                        warn!(name = %effect.name, "effect not found");
-                        Err(StartEffectError::NotFound {
-                            name: effect.name.clone(),
-                        })
-                    };
+                        Err(err) => {
+                            self.running_effects.remove(key);
+                            warn!(name = %effect.name, error = %err, "could not start effect");
+                            Err(err.into())
+                        }
+                    }
+                } else {
+                    warn!(name = %effect.name, "effect not found");
+                    Err(StartEffectError::NotFound {
+                        name: effect.name.clone(),
+                    })
+                };
 
                 async move {
                     if let Ok(key) = result {

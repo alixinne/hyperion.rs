@@ -168,6 +168,34 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">ambassador</span>::{<span class="ident">delegatable_trait</span>, <span class="ident">Delegate</span>};
 <span class="kw">use</span> <span class="ident">derive_more::From</span>;
 <span class="kw">use</span> <span class="ident">serde_derive</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
@@ -314,6 +342,32 @@
     }
 }
 
+<span class="kw">fn</span> <span class="ident">default_file_rewrite_time</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
+    <span class="number">1000</span>
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Validate</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>, <span class="ident">deny_unknown_fields</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">File</span> {
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">color_order</span>: <span class="ident">ColorOrder</span>,
+    <span class="attribute">#[<span class="ident">validate</span>(<span class="ident">range</span>(<span class="ident">min</span> <span class="op">=</span> <span class="number">1</span>))]</span>
+    <span class="kw">pub</span> <span class="ident">hardware_led_count</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">latch_time</span>: <span class="ident">u32</span>,
+    <span class="kw">pub</span> <span class="ident">output</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;default_file_rewrite_time&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">rewrite_time</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">print_time_stamp</span>: <span class="ident">bool</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">DeviceConfig</span> <span class="kw">for</span> <span class="ident">File</span> {
+    <span class="kw">fn</span> <span class="ident">hardware_led_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="self">self</span>.<span class="ident">hardware_led_count</span> <span class="kw">as</span> <span class="kw">_</span>
+    }
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">IntoStaticStr</span>, <span class="ident">Delegate</span>, <span class="ident">From</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>, <span class="ident">tag</span> <span class="op">=</span> <span class="string">&quot;type&quot;</span>, <span class="ident">deny_unknown_fields</span>)]</span>
 <span class="attribute">#[<span class="ident">delegate</span>(<span class="ident">DeviceConfig</span>)]</span>
@@ -321,6 +375,7 @@
     <span class="ident">Dummy</span>(<span class="ident">Dummy</span>),
     <span class="ident">Ws2812Spi</span>(<span class="ident">Ws2812Spi</span>),
     <span class="ident">PhilipsHue</span>(<span class="ident">PhilipsHue</span>),
+    <span class="ident">File</span>(<span class="ident">File</span>),
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Device</span> {
@@ -335,6 +390,7 @@
             <span class="ident">Device::Dummy</span>(<span class="ident">device</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">device</span>.<span class="ident">validate</span>(),
             <span class="ident">Device::Ws2812Spi</span>(<span class="ident">device</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">device</span>.<span class="ident">validate</span>(),
             <span class="ident">Device::PhilipsHue</span>(<span class="ident">device</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">device</span>.<span class="ident">validate</span>(),
+            <span class="ident">Device::File</span>(<span class="ident">device</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">device</span>.<span class="ident">validate</span>(),
         }
     }
 }

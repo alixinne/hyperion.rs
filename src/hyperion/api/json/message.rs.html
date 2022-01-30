@@ -804,6 +804,8 @@
 <span id="804">804</span>
 <span id="805">805</span>
 <span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">path::PathBuf</span>,
     <span class="ident">process</span>::{<span class="ident">Command</span>, <span class="ident">Stdio</span>},
@@ -1231,6 +1233,8 @@
     <span class="ident">PhilipsHue</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;Ws2812SPI&quot;</span>)]</span>
     <span class="ident">Ws2812Spi</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;file&quot;</span>)]</span>
+    <span class="ident">File</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>)]</span>
@@ -1243,7 +1247,7 @@
         <span class="kw">use</span> <span class="ident">LedDeviceClass</span>::<span class="kw-2">*</span>;
 
         <span class="self">Self</span> {
-            <span class="ident">available</span>: <span class="macro">vec!</span>[<span class="ident">Dummy</span>, <span class="ident">PhilipsHue</span>, <span class="ident">Ws2812Spi</span>],
+            <span class="ident">available</span>: <span class="macro">vec!</span>[<span class="ident">Dummy</span>, <span class="ident">PhilipsHue</span>, <span class="ident">Ws2812Spi</span>, <span class="ident">File</span>],
         }
     }
 }

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["DeviceError",""]],"mod":[["common",""],["dummy",""],["ws2812spi",""]],"struct":[["Device",""]],"trait":[["DeviceImpl",""]]});
+initSidebarItems({"enum":[["DeviceError",""]],"mod":[["common",""],["dummy",""],["file",""],["ws2812spi",""]],"struct":[["Device",""]],"trait":[["DeviceImpl",""]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Device",""],["DummyDeviceMode",""]],"fn":[["default_ws_spi_rate",""],["default_ws_spi_rewrite_time",""]],"macro":[["impl_device_config",""]],"struct":[["Dummy",""],["PhilipsHue",""],["Ws2812Spi",""]],"trait":[["DeviceConfig",""]]});
+initSidebarItems({"enum":[["Device",""],["DummyDeviceMode",""]],"fn":[["default_file_rewrite_time",""],["default_ws_spi_rate",""],["default_ws_spi_rewrite_time",""]],"macro":[["impl_device_config",""]],"struct":[["Dummy",""],["File",""],["PhilipsHue",""],["Ws2812Spi",""]],"trait":[["DeviceConfig",""]]});

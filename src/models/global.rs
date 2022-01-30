@@ -169,6 +169,44 @@ impl Default for V4L2Standard {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase", deny_unknown_fields)]
+pub enum FlipMode {
+    #[serde(rename = "NO_CHANGE")]
+    NoChange,
+    Horizontal,
+    Vertical,
+    Both,
+}
+
+impl Default for FlipMode {
+    fn default() -> Self {
+        Self::NoChange
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE", deny_unknown_fields)]
+pub enum Pixelformat {
+    #[serde(rename = "NO_CHANGE")]
+    NoChange,
+    Yuyv,
+    Uyvy,
+    Bgr16,
+    Bgr24,
+    Rgb32,
+    Bgr32,
+    I420,
+    Nv12,
+    Mjpeg,
+}
+
+impl Default for Pixelformat {
+    fn default() -> Self {
+        Self::NoChange
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct GrabberV4L2 {
@@ -178,8 +216,8 @@ pub struct GrabberV4L2 {
     pub standard: V4L2Standard,
     pub width: u32,
     pub height: u32,
-    pub encoding: String,
-    pub flip: String,
+    pub encoding: Pixelformat,
+    pub flip: FlipMode,
     #[validate(range(min = 1))]
     pub fps: u32,
     pub fps_software_decimation: u32,
@@ -229,8 +267,8 @@ impl Default for GrabberV4L2 {
             standard: Default::default(),
             width: 0,
             height: 0,
-            encoding: "NO_CHANGE".to_owned(),
-            flip: "NO_CHANGE".to_owned(),
+            encoding: Default::default(),
+            flip: Default::default(),
             fps: 15,
             fps_software_decimation: 0,
             size_decimation: 6,

@@ -138,7 +138,7 @@ pub struct General {
     pub name: String,
     pub watched_version_branch: WatchedVersionBranch,
     pub show_opt_help: bool,
-    pub previous_version: String,
+    pub previous_version: Option<String>,
     pub config_version: String,
 }
 
@@ -148,7 +148,7 @@ impl Default for General {
             name: "My Hyperion Config".to_owned(),
             watched_version_branch: WatchedVersionBranch::Stable,
             show_opt_help: true,
-            previous_version: "".to_owned(),
+            previous_version: None,
             config_version: "".to_owned(),
         }
     }

@@ -48,7 +48,7 @@ jobs:
         with:
           command: hack
           # Allow clippy warnings until they're fixed, but report them
-          args: clippy --feature-powerset --no-dev-deps -- -A warnings
+          args: clippy --feature-powerset --no-dev-deps -- -W warnings
 
   build:
     name: Build hyperion.rs binaries

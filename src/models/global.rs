@@ -187,7 +187,7 @@ impl Default for FlipMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE", deny_unknown_fields)]
-pub enum Pixelformat {
+pub enum PixelFormat {
     #[serde(rename = "NO_CHANGE")]
     NoChange,
     Yuyv,
@@ -201,7 +201,7 @@ pub enum Pixelformat {
     Mjpeg,
 }
 
-impl Default for Pixelformat {
+impl Default for PixelFormat {
     fn default() -> Self {
         Self::NoChange
     }
@@ -216,7 +216,7 @@ pub struct GrabberV4L2 {
     pub standard: V4L2Standard,
     pub width: u32,
     pub height: u32,
-    pub encoding: Pixelformat,
+    pub encoding: PixelFormat,
     pub flip: FlipMode,
     #[validate(range(min = 1))]
     pub fps: u32,

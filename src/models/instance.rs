@@ -295,11 +295,13 @@ impl Default for ForegroundEffect {
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct InstanceCapture {
     pub system_enable: bool,
-    pub system_grabber_device: String,
+    #[serde(deserialize_with = "crate::serde::from_config_optional")]
+    pub system_grabber_device: Option<String>,
     #[validate(range(min = 100, max = 253))]
     pub system_priority: i32,
     pub v4l_enable: bool,
-    pub v4l_grabber_device: String,
+    #[serde(deserialize_with = "crate::serde::from_config_optional")]
+    pub v4l_grabber_device: Option<String>,
     #[validate(range(min = 100, max = 253))]
     pub v4l_priority: i32,
 }
@@ -308,10 +310,10 @@ impl Default for InstanceCapture {
     fn default() -> Self {
         Self {
             system_enable: true,
-            system_grabber_device: "NONE".to_owned(),
+            system_grabber_device: None,
             system_priority: 250,
             v4l_enable: false,
-            v4l_grabber_device: "NONE".to_owned(),
+            v4l_grabber_device: None,
             v4l_priority: 240,
         }
     }

@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, path::Path};
+use std::{convert::TryFrom, path::Path, sync::Arc};
 
 use pyo3::{
     exceptions::{PyRuntimeError, PyTypeError},
@@ -36,7 +36,7 @@ impl super::Provider for PythonProvider {
         &self,
         full_script_path: &Path,
         args: serde_json::Value,
-        methods: crate::effects::instance::InstanceMethods,
+        methods: Arc<dyn RuntimeMethods>,
     ) -> Result<(), super::ProviderError> {
         Ok(do_run(methods, args, |py| {
             // Run script
@@ -63,7 +63,7 @@ impl From<RuntimeMethodError> for PyErr {
 /// Check if the effect should abort execution
 #[pyfunction]
 fn abort() -> bool {
-    Context::with_current(|m| m.abort())
+    Context::with_current(|m| async move { m.abort().await })
 }
 
 /// Set a new color for the leds
@@ -71,28 +71,31 @@ fn abort() -> bool {
 #[pyo3(name = "setColor")]
 fn set_color(args: &PyTuple) -> Result<(), PyErr> {
     Context::with_current(|m| {
-        if let Result::<(u8, u8, u8), _>::Ok((r, g, b)) = args.extract() {
-            m.set_color(Color::new(r, g, b))?;
-        } else if let Result::<(&PyByteArray,), _>::Ok((bytearray,)) = args.extract() {
-            if bytearray.len() == 3 * m.get_led_count() {
-                // Safety: we are not modifying bytearray while accessing it
-                unsafe {
-                    m.set_led_colors(
-                        bytearray
-                            .as_bytes()
-                            .chunks_exact(3)
-                            .map(|rgb| Color::new(rgb[0], rgb[1], rgb[2]))
-                            .collect(),
-                    )?;
+        async move {
+            if let Result::<(u8, u8, u8), _>::Ok((r, g, b)) = args.extract() {
+                m.set_color(Color::new(r, g, b)).await?;
+            } else if let Result::<(&PyByteArray,), _>::Ok((bytearray,)) = args.extract() {
+                if bytearray.len() == 3 * m.get_led_count() {
+                    // Safety: we are not modifying bytearray while accessing it
+                    unsafe {
+                        m.set_led_colors(
+                            bytearray
+                                .as_bytes()
+                                .chunks_exact(3)
+                                .map(|rgb| Color::new(rgb[0], rgb[1], rgb[2]))
+                                .collect(),
+                        )
+                        .await?;
+                    }
+                } else {
+                    return Err(RuntimeMethodError::InvalidByteArray.into());
                 }
             } else {
-                return Err(RuntimeMethodError::InvalidByteArray.into());
+                return Err(RuntimeMethodError::InvalidArguments { name: "setColor" }.into());
             }
-        } else {
-            return Err(RuntimeMethodError::InvalidArguments { name: "setColor" }.into());
-        }
 
-        Ok(())
+            Ok(())
+        }
     })
 }
 
@@ -101,13 +104,16 @@ fn set_color(args: &PyTuple) -> Result<(), PyErr> {
 #[pyo3(name = "setImage")]
 fn set_image(width: u16, height: u16, data: &PyByteArray) -> Result<(), PyErr> {
     Context::with_current(|m| {
-        // unwrap: we did all the necessary checks already
-        m.set_image(
-            RawImage::try_from((data.to_vec(), width as u32, height as u32))
-                .map_err(|err| RuntimeMethodError::InvalidImageData(err))?,
-        )?;
+        async move {
+            // unwrap: we did all the necessary checks already
+            m.set_image(
+                RawImage::try_from((data.to_vec(), width as u32, height as u32))
+                    .map_err(|err| RuntimeMethodError::InvalidImageData(err))?,
+            )
+            .await?;
 
-        Ok(())
+            Ok(())
+        }
     })
 }
 
@@ -117,7 +123,10 @@ fn hyperion(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(set_color, m)?)?;
     m.add_function(wrap_pyfunction!(set_image, m)?)?;
 
-    m.add("ledCount", Context::with_current(|m| m.get_led_count()))?;
+    m.add(
+        "ledCount",
+        Context::with_current(|m| async move { m.get_led_count() }),
+    )?;
 
     Ok(())
 }
@@ -127,7 +136,7 @@ extern "C" fn hyperion_init() -> *mut pyo3::ffi::PyObject {
 }
 
 fn do_run<T>(
-    methods: impl RuntimeMethods + 'static,
+    methods: Arc<dyn RuntimeMethods>,
     args: serde_json::Value,
     f: impl FnOnce(Python) -> Result<T, PyErr>,
 ) -> Result<T, PyErr> {

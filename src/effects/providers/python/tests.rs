@@ -4,16 +4,22 @@ use std::{
     time::Duration,
 };
 
+use async_trait::async_trait;
 use pyo3::{prelude::*, types::PyDict};
 
-use crate::{color::AnsiDisplayExt, effects::EffectDefinition, image::RawImage, models::Color};
+use crate::{
+    color::AnsiDisplayExt,
+    effects::{providers::Provider, EffectDefinition},
+    image::RawImage,
+    models::Color,
+};
 
-use super::{do_run, run, RuntimeMethodError, RuntimeMethods};
+use super::{do_run, PythonProvider, RuntimeMethodError, RuntimeMethods};
 
 fn run_string(
     source: &str,
     args: serde_json::Value,
-    methods: impl RuntimeMethods + 'static,
+    methods: Arc<dyn RuntimeMethods>,
 ) -> Result<Py<PyDict>, PyErr> {
     do_run(methods, args, |py| {
         let locals = pyo3::types::PyDict::new(py);
@@ -48,21 +54,25 @@ impl TestMethods {
     }
 }
 
+#[async_trait]
 impl RuntimeMethods for TestMethods {
     fn get_led_count(&self) -> usize {
         self.0.lock().unwrap().leds.len()
     }
 
-    fn abort(&self) -> bool {
+    async fn abort(&self) -> bool {
         self.0.lock().unwrap().abort
     }
 
-    fn set_color(&self, color: Color) -> Result<(), RuntimeMethodError> {
+    async fn set_color(&self, color: Color) -> Result<(), RuntimeMethodError> {
         eprintln!("set_color({:?})", color);
         Ok(())
     }
 
-    fn set_led_colors(&self, colors: Vec<crate::models::Color>) -> Result<(), RuntimeMethodError> {
+    async fn set_led_colors(
+        &self,
+        colors: Vec<crate::models::Color>,
+    ) -> Result<(), RuntimeMethodError> {
         eprintln!("set_led_colors({})", {
             let mut buf = String::new();
             colors.iter().copied().to_ansi_truecolor(&mut buf);
@@ -71,7 +81,7 @@ impl RuntimeMethods for TestMethods {
         Ok(())
     }
 
-    fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError> {
+    async fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError> {
         eprintln!("set_image({:?})", image);
         image.write_to_kitty(&mut std::io::stderr()).unwrap();
         Ok(())
@@ -80,11 +90,12 @@ impl RuntimeMethods for TestMethods {
 
 #[tokio::test]
 async fn test_abort() {
-    let tm = TestMethods::new();
+    let tm = Arc::new(TestMethods::new());
 
     // Start the effect code
     let effect = tokio::task::spawn_blocking({
         let tm = tm.clone();
+
         move || {
             run_string(
                 "import hyperion, time
@@ -118,15 +129,15 @@ duration = time.time() - start
                     .extract::<f32>()
                     .unwrap())
             .abs()
-                < 0.1
+                < 0.2
         )
     })
 }
 
 #[test]
 fn test_led_count() {
-    let led_count = 12;
-    let tm = TestMethods::with_led_count(led_count);
+    let led_count = 24;
+    let tm = Arc::new(TestMethods::with_led_count(led_count));
 
     let result = run_string(
         "import hyperion
@@ -162,7 +173,7 @@ async fn run_effect(path: impl AsRef<Path>, duration: Duration) -> Result<(), St
         .expect("failed to read effect definition");
 
     // Methods
-    let tm = TestMethods::with_led_count(12);
+    let tm = Arc::new(TestMethods::with_led_count(24));
 
     // Spawn timer
     tokio::spawn({
@@ -175,7 +186,7 @@ async fn run_effect(path: impl AsRef<Path>, duration: Duration) -> Result<(), St
 
     // Run effect file with its arguments
     tokio::task::spawn_blocking(move || {
-        run(
+        PythonProvider::new().run(
             effect_definition.script_path().unwrap().as_ref(),
             effect_definition.args.clone(),
             tm,
@@ -187,101 +198,69 @@ async fn run_effect(path: impl AsRef<Path>, duration: Duration) -> Result<(), St
 }
 
 macro_rules! test_effect {
+    (#[$attr:meta] $name:ident, $path:expr) => {
+        #[tokio::test]
+        #[$attr]
+        async fn $name() {
+            assert_eq!(
+                Ok(()),
+                run_effect($path, std::time::Duration::from_millis(1000)).await
+            );
+        }
+    };
+
     ($name:ident, $path:expr) => {
         #[tokio::test]
         async fn $name() {
-            assert_eq!(Ok(()), run_effect($path, Duration::from_millis(1000)).await);
+            assert_eq!(
+                Ok(()),
+                run_effect($path, std::time::Duration::from_millis(1000)).await
+            );
         }
     };
 }
 
-test_effect!(test_effect_atomic, "$SYSTEM/effects/atomic.json");
-test_effect!(test_effect_breath, "$SYSTEM/effects/breath.json");
-test_effect!(test_effect_candle, "$SYSTEM/effects/candle.json");
-test_effect!(
-    test_effect_cinema_fade_in,
-    "$SYSTEM/effects/cinema-fade-in.json"
-);
-test_effect!(
-    test_effect_cinema_fade_off,
-    "$SYSTEM/effects/cinema-fade-off.json"
-);
-test_effect!(test_effect_collision, "$SYSTEM/effects/collision.json");
-test_effect!(
-    test_effect_double_swirl,
-    "$SYSTEM/effects/double-swirl.json"
-);
-test_effect!(test_effect_fire, "$SYSTEM/effects/fire.json");
-test_effect!(test_effect_flag, "$SYSTEM/effects/flag.json");
-test_effect!(
-    test_effect_knight_rider,
-    "$SYSTEM/effects/knight-rider.json"
-);
-test_effect!(test_effect_ledtest, "$SYSTEM/effects/ledtest.json");
-test_effect!(test_effect_light_clock, "$SYSTEM/effects/light-clock.json");
-test_effect!(test_effect_lights, "$SYSTEM/effects/lights.json");
-test_effect!(
-    test_effect_mood_blobs_blue,
-    "$SYSTEM/effects/mood-blobs-blue.json"
-);
-test_effect!(
-    test_effect_mood_blobs_cold,
-    "$SYSTEM/effects/mood-blobs-cold.json"
-);
-test_effect!(
-    test_effect_mood_blobs_full,
-    "$SYSTEM/effects/mood-blobs-full.json"
-);
-test_effect!(
-    test_effect_mood_blobs_green,
-    "$SYSTEM/effects/mood-blobs-green.json"
-);
-test_effect!(
-    test_effect_mood_blobs_red,
-    "$SYSTEM/effects/mood-blobs-red.json"
-);
-test_effect!(
-    test_effect_mood_blobs_warm,
-    "$SYSTEM/effects/mood-blobs-warm.json"
-);
-test_effect!(test_effect_notify_blue, "$SYSTEM/effects/notify-blue.json");
-test_effect!(test_effect_pacman, "$SYSTEM/effects/pacman.json");
-test_effect!(test_effect_plasma, "$SYSTEM/effects/plasma.json");
-test_effect!(
-    test_effect_police_lights_single,
-    "$SYSTEM/effects/police-lights-single.json"
-);
-test_effect!(
-    test_effect_police_lights_solid,
-    "$SYSTEM/effects/police-lights-solid.json"
-);
-test_effect!(
-    test_effect_rainbow_mood,
-    "$SYSTEM/effects/rainbow-mood.json"
-);
-test_effect!(
-    test_effect_rainbow_swirl_fast,
-    "$SYSTEM/effects/rainbow-swirl-fast.json"
-);
-test_effect!(
-    test_effect_rainbow_swirl,
-    "$SYSTEM/effects/rainbow-swirl.json"
-);
-test_effect!(test_effect_random, "$SYSTEM/effects/random.json");
-test_effect!(test_effect_seawaves, "$SYSTEM/effects/Seawaves.json");
-test_effect!(test_effect_shutdown, "$SYSTEM/effects/shutdown.json");
-test_effect!(test_effect_snake, "$SYSTEM/effects/snake.json");
-test_effect!(test_effect_sparks, "$SYSTEM/effects/sparks.json");
-test_effect!(test_effect_strobe_red, "$SYSTEM/effects/strobe-red.json");
-test_effect!(
-    test_effect_strobe_white,
-    "$SYSTEM/effects/strobe-white.json"
-);
-test_effect!(test_effect_traces, "$SYSTEM/effects/traces.json");
-test_effect!(
-    test_effect_trails_color,
-    "$SYSTEM/effects/trails_color.json"
-);
-test_effect!(test_effect_trails, "$SYSTEM/effects/trails.json");
-test_effect!(test_effect_waves, "$SYSTEM/effects/waves.json");
-test_effect!(test_effect_x_mas, "$SYSTEM/effects/x-mas.json");
+#[rustfmt::skip]
+mod builtin {
+    use super::run_effect;
+
+    test_effect!(#[ignore = "getImage missing"] test_effect_fire, "$SYSTEM/effects/fire.json");
+    test_effect!(#[ignore = "getImage missing"] test_effect_lights, "$SYSTEM/effects/lights.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_atomic, "$SYSTEM/effects/atomic.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_double_swirl, "$SYSTEM/effects/double-swirl.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_flag, "$SYSTEM/effects/flag.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_light_clock, "$SYSTEM/effects/light-clock.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_plasma, "$SYSTEM/effects/plasma.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_rainbow_swirl, "$SYSTEM/effects/rainbow-swirl.json");
+    test_effect!(#[ignore = "imageMinSize missing"] test_effect_rainbow_swirl_fast, "$SYSTEM/effects/rainbow-swirl-fast.json");
+    test_effect!(#[ignore = "imageWidth missing"] test_effect_seawaves, "$SYSTEM/effects/Seawaves.json");
+    test_effect!(#[ignore = "imageWidth missing"] test_effect_trails, "$SYSTEM/effects/trails.json");
+    test_effect!(#[ignore = "imageWidth missing"] test_effect_trails_color, "$SYSTEM/effects/trails_color.json");
+    test_effect!(#[ignore = "imageWidth missing"] test_effect_waves, "$SYSTEM/effects/waves.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_breath, "$SYSTEM/effects/breath.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_cinema_fade_in, "$SYSTEM/effects/cinema-fade-in.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_cinema_fade_off, "$SYSTEM/effects/cinema-fade-off.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_notify_blue, "$SYSTEM/effects/notify-blue.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_random, "$SYSTEM/effects/random.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_strobe_red, "$SYSTEM/effects/strobe-red.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_strobe_white, "$SYSTEM/effects/strobe-white.json");
+    test_effect!(#[ignore = "latchTime missing"] test_effect_traces, "$SYSTEM/effects/traces.json");
+    test_effect!(test_effect_candle, "$SYSTEM/effects/candle.json");
+    test_effect!(test_effect_collision, "$SYSTEM/effects/collision.json");
+    test_effect!(test_effect_knight_rider, "$SYSTEM/effects/knight-rider.json");
+    test_effect!(test_effect_ledtest, "$SYSTEM/effects/ledtest.json");
+    test_effect!(test_effect_mood_blobs_blue, "$SYSTEM/effects/mood-blobs-blue.json");
+    test_effect!(test_effect_mood_blobs_cold, "$SYSTEM/effects/mood-blobs-cold.json");
+    test_effect!(test_effect_mood_blobs_full, "$SYSTEM/effects/mood-blobs-full.json");
+    test_effect!(test_effect_mood_blobs_green, "$SYSTEM/effects/mood-blobs-green.json");
+    test_effect!(test_effect_mood_blobs_red, "$SYSTEM/effects/mood-blobs-red.json");
+    test_effect!(test_effect_mood_blobs_warm, "$SYSTEM/effects/mood-blobs-warm.json");
+    test_effect!(test_effect_pacman, "$SYSTEM/effects/pacman.json");
+    test_effect!(test_effect_police_lights_single, "$SYSTEM/effects/police-lights-single.json");
+    test_effect!(test_effect_police_lights_solid, "$SYSTEM/effects/police-lights-solid.json");
+    test_effect!(test_effect_rainbow_mood, "$SYSTEM/effects/rainbow-mood.json");
+    test_effect!(test_effect_shutdown, "$SYSTEM/effects/shutdown.json");
+    test_effect!(test_effect_snake, "$SYSTEM/effects/snake.json");
+    test_effect!(test_effect_sparks, "$SYSTEM/effects/sparks.json");
+    test_effect!(test_effect_x_mas, "$SYSTEM/effects/x-mas.json");
+}

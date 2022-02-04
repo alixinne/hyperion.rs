@@ -1,6 +1,12 @@
-use std::{cell::RefCell, panic, ptr::null_mut, sync::Once};
+use std::{
+    cell::RefCell,
+    panic,
+    ptr::null_mut,
+    sync::{Arc, Once, Weak},
+};
 
 use drop_bomb::DropBomb;
+use futures::Future;
 use pyo3::prelude::*;
 
 use super::{hyperion_init, RuntimeMethods};
@@ -15,12 +21,12 @@ thread_local! {
 /// Python effect module context
 pub struct Context {
     tstate: *mut pyo3::ffi::PyThreadState,
-    methods: Box<dyn RuntimeMethods>,
+    methods: Weak<dyn RuntimeMethods>,
     bomb: DropBomb,
 }
 
 impl Context {
-    unsafe fn new(_py: Python, methods: impl RuntimeMethods + 'static) -> Result<Self, ()> {
+    unsafe fn new(_py: Python, methods: Weak<dyn RuntimeMethods>) -> Result<Self, ()> {
         // Get the main_state ptr
         let main_state = pyo3::ffi::PyEval_SaveThread();
 
@@ -39,7 +45,7 @@ impl Context {
         } else {
             Ok(Self {
                 tstate,
-                methods: Box::new(methods),
+                methods,
                 bomb: DropBomb::new("Context::release must be called before dropping it"),
             })
         }
@@ -80,7 +86,7 @@ impl Context {
         }
     }
 
-    pub fn with<U>(methods: impl RuntimeMethods + 'static, f: impl FnOnce(&Self) -> U) -> U {
+    pub fn with<U>(methods: Arc<dyn RuntimeMethods>, f: impl FnOnce(&Self) -> U) -> U {
         unsafe {
             // Initialize the Python interpreter global state
             INITIALIZED_PYTHON.call_once(|| {
@@ -96,7 +102,8 @@ impl Context {
             let result = CONTEXT.with(|ctx| {
                 // Initialize the thread-local state, i.e. interpreter
                 *ctx.borrow_mut() = Some(Python::with_gil(|py| {
-                    Self::new(py, methods).expect("failed initializing python subinterp")
+                    Self::new(py, Arc::downgrade(&methods))
+                        .expect("failed initializing python subinterp")
                 }));
 
                 // Run user callback
@@ -124,7 +131,18 @@ impl Context {
         }
     }
 
-    pub fn with_current<U>(f: impl FnOnce(&dyn RuntimeMethods) -> U) -> U {
-        CONTEXT.with(|ctx| f(&*ctx.borrow().as_ref().expect("no current context").methods))
+    pub fn with_current<F, U>(f: impl FnOnce(Arc<dyn RuntimeMethods>) -> F) -> U
+    where
+        F: Future<Output = U>,
+    {
+        CONTEXT.with(|ctx| {
+            futures::executor::block_on(f(ctx
+                .borrow()
+                .as_ref()
+                .expect("no current context")
+                .methods
+                .upgrade()
+                .expect("no current methods")))
+        })
     }
 }

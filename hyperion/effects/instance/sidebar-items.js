@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ControlMessage",""],["RuntimeMethodError",""]],"struct":[["InstanceMethods",""]],"trait":[["RuntimeMethods",""]]});
+initSidebarItems({"enum":[["ControlMessage",""],["RuntimeMethodError",""]],"struct":[["InstanceMethods",""],["InstanceMethodsData",""]],"trait":[["RuntimeMethods",""]]});

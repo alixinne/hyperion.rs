@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc};
 
 use thiserror::Error;
 
-use super::InstanceMethods;
+use super::instance::RuntimeMethods;
 
 #[cfg(feature = "python")]
 mod python;
@@ -41,7 +41,7 @@ pub trait Provider: std::fmt::Debug + Send + Sync {
         &self,
         full_script_path: &Path,
         args: serde_json::Value,
-        methods: InstanceMethods,
+        methods: Arc<dyn RuntimeMethods>,
     ) -> Result<(), ProviderError>;
 }
 

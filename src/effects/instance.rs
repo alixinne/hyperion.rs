@@ -1,10 +1,11 @@
-use std::{
-    cell::{Cell, RefCell},
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
+use async_trait::async_trait;
 use thiserror::Error;
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::{
+    mpsc::{Receiver, Sender},
+    Mutex,
+};
 
 use crate::{
     image::{RawImage, RawImageError},
@@ -18,12 +19,16 @@ pub enum ControlMessage {
     Abort,
 }
 
+struct InstanceMethodsData {
+    crx: Receiver<ControlMessage>,
+    aborted: bool,
+}
+
 pub struct InstanceMethods {
     tx: Sender<EffectMessageKind>,
-    crx: RefCell<Receiver<ControlMessage>>,
     led_count: usize,
     deadline: Option<Instant>,
-    aborted: Cell<bool>,
+    data: Mutex<InstanceMethodsData>,
 }
 
 impl InstanceMethods {
@@ -35,23 +40,26 @@ impl InstanceMethods {
     ) -> Self {
         Self {
             tx,
-            crx: crx.into(),
             led_count,
             deadline: duration.map(|d| Instant::now() + d),
-            aborted: false.into(),
+            data: Mutex::new(InstanceMethodsData {
+                crx: crx.into(),
+                aborted: false.into(),
+            }),
         }
     }
 
-    fn completed(&self) -> bool {
-        self.aborted.get() || self.deadline.map(|d| Instant::now() > d).unwrap_or(false)
+    fn completed(&self, data: &InstanceMethodsData) -> bool {
+        data.aborted || self.deadline.map(|d| Instant::now() > d).unwrap_or(false)
     }
 
     /// Returns true if the should abort
-    fn poll_control(&self) -> Result<(), RuntimeMethodError> {
-        match self.crx.borrow_mut().try_recv() {
+    async fn poll_control(&self) -> Result<(), RuntimeMethodError> {
+        let mut data = self.data.lock().await;
+        match data.crx.try_recv() {
             Ok(m) => match m {
                 ControlMessage::Abort => {
-                    self.aborted.set(true);
+                    data.aborted = true;
                     return Err(RuntimeMethodError::EffectAborted);
                 }
             },
@@ -62,21 +70,21 @@ impl InstanceMethods {
                     }
                     tokio::sync::mpsc::error::TryRecvError::Disconnected => {
                         // We were disconnected
-                        self.aborted.set(true);
+                        data.aborted = true;
                         return Err(RuntimeMethodError::EffectAborted);
                     }
                 }
             }
         }
 
-        if self.completed() {
+        if self.completed(&*data) {
             Err(RuntimeMethodError::EffectAborted)
         } else {
             Ok(())
         }
     }
 
-    fn wrap_result<T, E: Into<RuntimeMethodError>>(
+    async fn wrap_result<T, E: Into<RuntimeMethodError>>(
         &self,
         res: Result<T, E>,
     ) -> Result<T, RuntimeMethodError> {
@@ -84,52 +92,68 @@ impl InstanceMethods {
             Ok(t) => Ok(t),
             Err(err) => {
                 // TODO: Log error?
-                self.aborted.set(true);
+                self.data.lock().await.aborted = true;
                 Err(err.into())
             }
         }
     }
 }
 
+#[async_trait]
 impl RuntimeMethods for InstanceMethods {
     fn get_led_count(&self) -> usize {
         self.led_count
     }
 
-    fn abort(&self) -> bool {
-        self.poll_control().is_err()
+    async fn abort(&self) -> bool {
+        self.poll_control().await.is_err()
     }
 
-    fn set_color(&self, color: crate::models::Color) -> Result<(), RuntimeMethodError> {
-        self.poll_control()?;
+    async fn set_color(&self, color: crate::models::Color) -> Result<(), RuntimeMethodError> {
+        self.poll_control().await?;
 
-        self.wrap_result(self.tx.blocking_send(EffectMessageKind::SetColor { color }))
+        self.wrap_result(self.tx.send(EffectMessageKind::SetColor { color }).await)
+            .await
     }
 
-    fn set_led_colors(&self, colors: Vec<crate::models::Color>) -> Result<(), RuntimeMethodError> {
-        self.poll_control()?;
+    async fn set_led_colors(
+        &self,
+        colors: Vec<crate::models::Color>,
+    ) -> Result<(), RuntimeMethodError> {
+        self.poll_control().await?;
 
-        self.wrap_result(self.tx.blocking_send(EffectMessageKind::SetLedColors {
-            colors: colors.into(),
-        }))
+        self.wrap_result(
+            self.tx
+                .send(EffectMessageKind::SetLedColors {
+                    colors: colors.into(),
+                })
+                .await,
+        )
+        .await
     }
 
-    fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError> {
-        self.poll_control()?;
+    async fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError> {
+        self.poll_control().await?;
 
-        self.wrap_result(self.tx.blocking_send(EffectMessageKind::SetImage {
-            image: image.into(),
-        }))
+        self.wrap_result(
+            self.tx
+                .send(EffectMessageKind::SetImage {
+                    image: image.into(),
+                })
+                .await,
+        )
+        .await
     }
 }
 
-pub trait RuntimeMethods {
+#[async_trait]
+pub trait RuntimeMethods: Send {
     fn get_led_count(&self) -> usize;
-    fn abort(&self) -> bool;
+    async fn abort(&self) -> bool;
 
-    fn set_color(&self, color: Color) -> Result<(), RuntimeMethodError>;
-    fn set_led_colors(&self, colors: Vec<Color>) -> Result<(), RuntimeMethodError>;
-    fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError>;
+    async fn set_color(&self, color: Color) -> Result<(), RuntimeMethodError>;
+    async fn set_led_colors(&self, colors: Vec<Color>) -> Result<(), RuntimeMethodError>;
+    async fn set_image(&self, image: RawImage) -> Result<(), RuntimeMethodError>;
 }
 
 #[derive(Debug, Error)]

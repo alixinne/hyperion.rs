@@ -162,11 +162,17 @@ impl EffectHandle {
         let (etx, mut erx) = channel(1);
 
         // Create instance methods
-        let methods =
-            InstanceMethods::new(etx, crx, led_count, duration.and_then(|d| d.to_std().ok()));
+        let methods = Arc::new(InstanceMethods::new(
+            etx,
+            crx,
+            led_count,
+            duration.and_then(|d| d.to_std().ok()),
+        ));
 
         // Run effect
         let join_handle = tokio::task::spawn(async move {
+            let methods = methods.clone();
+
             // Create the blocking task
             let mut run_effect =
                 tokio::task::spawn_blocking(move || provider.run(&full_path, args, methods));

@@ -1,4 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use validator::Validate;
 
 use super::ServerConfig;
@@ -67,6 +68,7 @@ impl Default for FramegrabberType {
     }
 }
 
+#[serde_as]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct Framegrabber {
@@ -76,16 +78,19 @@ pub struct Framegrabber {
     #[serde(rename = "available_devices")]
     pub available_devices: String,
     pub device: String,
+    #[serde_as(as = "DisplayFromStr")]
     #[serde(rename = "device_inputs")]
-    pub device_inputs: String,
+    pub device_inputs: usize,
     #[validate(range(min = 10))]
     pub width: u32,
     #[validate(range(min = 10))]
     pub height: u32,
     pub fps: u32,
-    pub framerates: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub framerates: u32,
     pub input: u32,
-    pub resolutions: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub resolutions: usize,
     #[serde(rename = "frequency_Hz")]
     #[validate(range(min = 1))]
     pub frequency_hz: u32,
@@ -106,13 +111,13 @@ impl Default for Framegrabber {
             ty: Default::default(),
             available_devices: "".to_owned(),
             device: "".to_owned(),
-            device_inputs: "0".to_owned(),
+            device_inputs: 0,
             width: 80,
             height: 45,
             fps: 25,
-            framerates: "25".to_owned(),
+            framerates: 25,
             input: 0,
-            resolutions: "0".to_owned(),
+            resolutions: 0,
             frequency_hz: 10,
             crop_left: 0,
             crop_right: 0,
@@ -462,4 +467,76 @@ pub struct GlobalConfig {
     pub proto_server: ProtoServer,
     pub web_config: WebConfig,
     pub hooks: Hooks,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_framegrabber() {
+        let json_data = r#"
+        {
+            "available_devices": "UVC Camera (046d:0825)",
+            "blueSignalThreshold": 0,
+            "cecDetection": false,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropTop": 0,
+            "device": "/dev/video1",
+            "device_inputs": "0",
+            "enable": true,
+            "encoding": "YUYV",
+            "flip": "NO_CHANGE",
+            "fps": 15,
+            "fpsSoftwareDecimation": 0,
+            "framerates": "15",
+            "greenSignalThreshold": 100,
+            "hardware_brightness": 128,
+            "hardware_contrast": 32,
+            "hardware_hue": 0,
+            "hardware_saturation": 32,
+            "height": 480,
+            "input": 0,
+            "noSignalCounterThreshold": 200,
+            "redSignalThreshold": 0,
+            "resolutions": "8",
+            "sDHOffsetMax": 0.46,
+            "sDHOffsetMin": 0.4,
+            "sDVOffsetMax": 0.9,
+            "sDVOffsetMin": 0.1,
+            "signalDetection": false,
+            "sizeDecimation": 8,
+            "standard": "NONE",
+            "width": 640
+        }"#;
+
+        let deserialized = serde_json::de::from_str::<Framegrabber>(json_data)
+            .expect("Failed to deserialize json data");
+
+        assert_eq!(deserialized.available_devices, "UVC Camera (046d:0825)");
+        assert_eq!(deserialized.device_inputs, 0);
+        assert_eq!(deserialized.framerates, 15);
+        assert_eq!(deserialized.resolutions, 8);
+    }
+
+    #[test]
+    fn serialize_framegrabber() {
+        let framegrabber = {
+            let mut f = Framegrabber::default();
+            f.available_devices = "Some camera (0123:321d)".to_string();
+            f.device_inputs = 12;
+            f.framerates = 30;
+            f.resolutions = 10;
+            f
+        };
+        let serialized = serde_json::ser::to_string(&framegrabber)
+            .expect("Failed to serialize Framegrabber struct");
+
+        assert!(serialized.contains(r#""available_devices":"Some camera (0123:321d)""#));
+        assert!(serialized.contains(r#""device_inputs":"12""#));
+        assert!(serialized.contains(r#""framerates":"30""#));
+        assert!(serialized.contains(r#""resolutions":"10""#));
+    }
 }

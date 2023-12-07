@@ -67,7 +67,7 @@ fn abort() -> bool {
 }
 
 /// Set a new color for the leds
-#[pyfunction(args = "*")]
+#[pyfunction(signature = (*args))]
 #[pyo3(name = "setColor")]
 fn set_color(args: &PyTuple) -> Result<(), PyErr> {
     Context::with_current(|m| {
@@ -132,7 +132,7 @@ fn hyperion(_py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 extern "C" fn hyperion_init() -> *mut pyo3::ffi::PyObject {
-    unsafe { PyInit_hyperion() }
+    unsafe { hyperion::init() }
 }
 
 fn do_run<T>(

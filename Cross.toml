@@ -5,4 +5,4 @@ passthrough = ["ENABLE_PYO3"]
 image = "vtavernier/cross:x86_64-bullseye"
 
 [target.arm-unknown-linux-gnueabihf]
-image = "vtavernier/cross:raspberrypi"
+image = "vtavernier/cross:raspberrypi-bookworm"

@@ -43,7 +43,7 @@ where
             match listener.accept().await {
                 Ok(incoming) => {
                     tokio::spawn({
-                        let peer_addr = incoming.1.clone();
+                        let peer_addr = incoming.1;
                         let ft = handle_client(incoming, global.clone());
 
                         async move {

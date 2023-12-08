@@ -39,14 +39,14 @@ struct InputEntry {
     effect_key: Option<RunningEffectKey>,
 }
 
+type BoxedTimeoutCallback =
+    Box<dyn Fn() -> Pin<Box<dyn Future<Output = (usize, i32)> + Send + Sync>> + Send + Sync>;
+
 pub struct PriorityMuxer {
     global: Global,
     inputs: BTreeMap<i32, InputEntry>,
     input_id: usize,
-    timeouts: HashMap<
-        usize,
-        Box<dyn Fn() -> Pin<Box<dyn Future<Output = (usize, i32)> + Send + Sync>> + Send + Sync>,
-    >,
+    timeouts: HashMap<usize, BoxedTimeoutCallback>,
     effect_runner: EffectRunner,
 }
 
@@ -258,12 +258,9 @@ impl PriorityMuxer {
                 let result = self.effect_runner.start(*priority, *duration, effect).await;
                 let response = response.clone();
 
-                match result {
-                    Ok(ref key) => {
-                        // Register this input to keep track of it
-                        self.insert_input(*priority, input, Some(*key));
-                    }
-                    Err(_) => {}
+                if let Ok(ref key) = result {
+                    // Register this input to keep track of it
+                    self.insert_input(*priority, input, Some(*key));
                 }
 
                 if let Some(tx) = (*response.lock().await).take() {
@@ -296,7 +293,7 @@ impl PriorityMuxer {
                             sources
                                 .get(&entry.message.source_id())
                                 .map(|source| source.name().to_string())
-                                .unwrap_or_else(String::new),
+                                .unwrap_or_default(),
                             entry.expires,
                             i == 0,
                         )
@@ -314,7 +311,7 @@ impl PriorityMuxer {
             Some(msg) => {
                 match msg {
                     EffectRunnerUpdate::Message(msg) => {
-                        (msg.priority() <= self.current_priority()).then(|| msg)
+                        (msg.priority() <= self.current_priority()).then_some(msg)
                     }
                     EffectRunnerUpdate::Completed { key, priority } => {
                         let notify = self.current_priority() == priority;
@@ -351,7 +348,7 @@ impl PriorityMuxer {
 
     pub async fn update(&mut self) -> Option<MuxedMessage> {
         // Check for input timeouts
-        if self.timeouts.len() > 0 {
+        if !self.timeouts.is_empty() {
             select! {
                 id = futures::future::select_all(self.timeouts.values().map(|f| f())) => {
                     self.handle_timeout(id.0).await

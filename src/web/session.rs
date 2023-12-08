@@ -91,7 +91,7 @@ impl Session {
                     return None;
                 }
 
-                let response = self.handle_message(&global, message).await;
+                let response = self.handle_message(global, message).await;
 
                 trace!(response = ?response, "ws response");
 

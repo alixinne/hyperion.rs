@@ -1,7 +1,6 @@
 use std::{
     cell::RefCell,
     panic,
-    ptr::null_mut,
     sync::{Arc, Once, Weak},
 };
 
@@ -40,7 +39,7 @@ impl Context {
         pyo3::ffi::PyThreadState_Swap(main_state);
 
         // Return object
-        if tstate == null_mut() {
+        if tstate.is_null() {
             Err(())
         } else {
             Ok(Self {

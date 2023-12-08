@@ -83,8 +83,8 @@ impl ClassicLedParams {
     }
 
     fn create_top_leds(&self, leds: &mut Vec<Led>) {
-        let steph = (self.pttrh - self.pttlh - (2. * self.edgehgap)) as f32 / self.ledstop as f32;
-        let stepv = (self.pttrv - self.pttlv) as f32 / self.ledstop as f32;
+        let steph = (self.pttrh - self.pttlh - (2. * self.edgehgap)) / self.ledstop as f32;
+        let stepv = (self.pttrv - self.pttlv) / self.ledstop as f32;
 
         leds.reserve(self.ledstop as _);
         for i in 0..self.ledstop {
@@ -99,7 +99,7 @@ impl ClassicLedParams {
     }
 
     fn create_right_leds(&self, leds: &mut Vec<Led>) {
-        let steph = (self.ptbrh - self.pttrh) as f32 / self.ledsright as f32;
+        let steph = (self.ptbrh - self.pttrh) / self.ledsright as f32;
         let stepv = (self.ptbrv - self.pttrv - (2. * self.edgevgap)) / self.ledsright as f32;
 
         leds.reserve(self.ledsright as _);
@@ -115,9 +115,8 @@ impl ClassicLedParams {
     }
 
     fn create_bottom_leds(&self, leds: &mut Vec<Led>) {
-        let steph =
-            (self.ptbrh - self.ptblh - (2. * self.edgehgap)) as f32 / self.ledsbottom as f32;
-        let stepv = (self.ptbrv - self.ptblv) as f32 / self.ledsbottom as f32;
+        let steph = (self.ptbrh - self.ptblh - (2. * self.edgehgap)) / self.ledsbottom as f32;
+        let stepv = (self.ptbrv - self.ptblv) / self.ledsbottom as f32;
 
         leds.reserve(self.ledsbottom as _);
         for i in 0..self.ledsbottom {
@@ -132,8 +131,8 @@ impl ClassicLedParams {
     }
 
     fn create_left_leds(&self, leds: &mut Vec<Led>) {
-        let steph = (self.ptblh - self.pttlh) as f32 / self.ledsleft as f32;
-        let stepv = (self.ptblv - self.pttlv - (2. * self.edgevgap)) as f32 / self.ledsleft as f32;
+        let steph = (self.ptblh - self.pttlh) / self.ledsleft as f32;
+        let stepv = (self.ptblv - self.pttlv - (2. * self.edgevgap)) / self.ledsleft as f32;
 
         leds.reserve(self.ledsleft as _);
         for i in 0..self.ledsleft {

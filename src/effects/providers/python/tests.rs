@@ -126,6 +126,7 @@ duration = time.time() - start
                     .as_ref(py)
                     .get_item("duration")
                     .unwrap()
+                    .unwrap()
                     .extract::<f32>()
                     .unwrap())
             .abs()
@@ -154,6 +155,7 @@ leds = hyperion.ledCount
             result
                 .as_ref(py)
                 .get_item("leds")
+                .unwrap()
                 .unwrap()
                 .extract::<usize>()
                 .unwrap()

@@ -156,18 +156,14 @@ impl Instance {
             {
                 self.active_state = ActiveState::Deactivating;
             }
-        } else {
-            if message.priority() != muxer::MAX_PRIORITY
-                || message.color() != Some(Color::new(0, 0, 0))
-            {
-                if std::mem::replace(&mut self.active_state, ActiveState::Active)
-                    == ActiveState::Inactive
-                {
-                    self.event_tx
-                        .send(Event::instance(self.id(), InstanceEventKind::Activate))
-                        .unwrap();
-                }
-            }
+        } else if (message.priority() != muxer::MAX_PRIORITY
+            || message.color() != Some(Color::new(0, 0, 0)))
+            && std::mem::replace(&mut self.active_state, ActiveState::Active)
+                == ActiveState::Inactive
+        {
+            self.event_tx
+                .send(Event::instance(self.id(), InstanceEventKind::Activate))
+                .unwrap();
         }
 
         self.core.handle_message(message);

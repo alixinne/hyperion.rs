@@ -74,7 +74,7 @@ impl<T: Message> std::ops::Deref for InputSourceHandle<T> {
     type Target = InputSource<T>;
 
     fn deref(&self) -> &Self::Target {
-        &*self.input_source
+        &self.input_source
     }
 }
 

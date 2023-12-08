@@ -18,6 +18,10 @@ pub trait Image: Sized {
     fn color_at(&self, x: u16, y: u16) -> Option<Color>;
 
     /// Get the color at the given coordinates skipping bound checks
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible to ensure that 0 <= x < width and 0 <= y < height.
     unsafe fn color_at_unchecked(&self, x: u16, y: u16) -> Color;
 
     /// Convert this image trait object to a raw image

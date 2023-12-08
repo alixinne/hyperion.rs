@@ -34,7 +34,7 @@ impl TryFrom<&[&str]> for GetArg {
     type Error = DecodeError;
 
     fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        match value.get(0).map(|s| *s) {
+        match value.first().copied() {
             Some("version") => Ok(Self::Version),
             Some("lights") => Ok(Self::Lights),
             _ => Err(DecodeError::InvalidGet),
@@ -53,9 +53,9 @@ impl TryFrom<&[&str]> for LightParam {
 
     fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
         let index = value
-            .get(0)
+            .first()
             .and_then(|s| s.parse().ok())
-            .ok_or_else(|| DecodeError::InvalidIndex)?;
+            .ok_or(DecodeError::InvalidIndex)?;
 
         if value.len() <= 1 {
             return Err(DecodeError::NotEnoughData);
@@ -81,21 +81,21 @@ impl TryFrom<&[&str]> for LightParamData {
     type Error = DecodeError;
 
     fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        match value.get(0).map(|s| *s) {
-            Some("color") => match value.get(1).map(|s| *s) {
+        match value.first().copied() {
+            Some("color") => match value.get(1).copied() {
                 Some("rgb") => {
                     let r = value
                         .get(2)
                         .and_then(|s| s.parse().ok())
-                        .ok_or_else(|| DecodeError::InvalidColor)?;
+                        .ok_or(DecodeError::InvalidColor)?;
                     let g = value
                         .get(3)
                         .and_then(|s| s.parse().ok())
-                        .ok_or_else(|| DecodeError::InvalidColor)?;
+                        .ok_or(DecodeError::InvalidColor)?;
                     let b = value
                         .get(4)
                         .and_then(|s| s.parse().ok())
-                        .ok_or_else(|| DecodeError::InvalidColor)?;
+                        .ok_or(DecodeError::InvalidColor)?;
 
                     Ok(Self::Color(Color::new(r, g, b)))
                 }
@@ -120,7 +120,7 @@ impl TryFrom<&[&str]> for SetArg {
     type Error = DecodeError;
 
     fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        match value.get(0).map(|s| *s) {
+        match value.first().copied() {
             Some("light") => {
                 if value.len() <= 1 {
                     return Err(DecodeError::NotEnoughData);
@@ -132,7 +132,7 @@ impl TryFrom<&[&str]> for SetArg {
                 let priority = value
                     .get(1)
                     .and_then(|s| s.parse().ok())
-                    .ok_or_else(|| DecodeError::InvalidPriority)?;
+                    .ok_or(DecodeError::InvalidPriority)?;
 
                 Ok(Self::Priority(priority))
             }
@@ -160,7 +160,7 @@ impl FromStr for BoblightRequest {
             .filter(|s| !s.trim().is_empty())
             .collect();
 
-        match spans.get(0).map(|s| *s) {
+        match spans.first().copied() {
             Some("hello") => Ok(Self::Hello),
             Some("ping") => Ok(Self::Ping),
             Some("get") => {

@@ -46,23 +46,16 @@ pub struct Device {
 
 impl Device {
     fn build_inner(config: models::Device) -> Result<Box<dyn DeviceImpl>, DeviceError> {
-        let inner: Box<dyn DeviceImpl>;
-        match config {
-            models::Device::Dummy(dummy) => {
-                inner = Box::new(dummy::DummyDevice::new(dummy)?);
-            }
+        Ok(match config {
+            models::Device::Dummy(dummy) => Box::new(dummy::DummyDevice::new(dummy)?),
             models::Device::Ws2812Spi(ws2812spi) => {
-                inner = Box::new(ws2812spi::Ws2812SpiDevice::new(ws2812spi)?);
+                Box::new(ws2812spi::Ws2812SpiDevice::new(ws2812spi)?)
             }
-            models::Device::File(file) => {
-                inner = Box::new(file::FileDevice::new(file)?);
-            }
+            models::Device::File(file) => Box::new(file::FileDevice::new(file)?),
             other => {
                 return Err(DeviceError::NotSupported(other.into()));
             }
-        }
-
-        Ok(inner)
+        })
     }
 
     #[instrument(skip(config))]
@@ -121,7 +114,7 @@ impl Device {
 
     #[instrument]
     pub async fn update(&mut self) -> Result<(), DeviceError> {
-        Ok(self.inner.update().await?)
+        self.inner.update().await
     }
 }
 

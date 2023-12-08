@@ -103,7 +103,7 @@ impl Core {
                 self.handle_image(image.as_ref());
             }
             MuxedMessageData::LedColors { led_colors, .. } => {
-                self.handle_led_colors(&*led_colors);
+                self.handle_led_colors(led_colors);
             }
         }
 

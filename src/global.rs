@@ -85,7 +85,7 @@ impl Global {
         priority: Option<i32>,
     ) -> Result<InputSourceHandle<InputMessage>, InputSourceError> {
         let priority = if let Some(priority) = priority {
-            if priority < 0 || priority > 255 {
+            if !(0..=255).contains(&priority) {
                 return Err(InputSourceError::InvalidPriority(priority));
             }
 
@@ -219,7 +219,7 @@ impl GlobalData {
     }
 
     fn unregister_instance(&mut self, id: i32) {
-        if let Some(_) = self.instances.remove(&id) {
+        if self.instances.remove(&id).is_some() {
             info!(id = %id, "unregistered instance");
         }
     }

@@ -44,6 +44,8 @@ impl Message for InputMessage {
     }
 }
 
+pub type StartEffectResponseCallback = Mutex<Option<oneshot::Sender<Result<(), StartEffectError>>>>;
+
 #[derive(Debug, Clone)]
 pub enum InputMessageData {
     ClearAll,
@@ -69,7 +71,7 @@ pub enum InputMessageData {
         priority: i32,
         duration: Option<chrono::Duration>,
         effect: Arc<EffectRequest>,
-        response: Arc<Mutex<Option<oneshot::Sender<Result<(), StartEffectError>>>>>,
+        response: Arc<StartEffectResponseCallback>,
     },
 }
 

@@ -41,7 +41,7 @@ async fn handle_register(
 ) -> Result<(), FlatApiError> {
     let priority = register.priority();
 
-    if priority < 100 || priority >= 200 {
+    if !(100..200).contains(&priority) {
         return Err(FlatApiError::InvalidPriority(priority));
     } else {
         // unwrap: we checked the priority value before
@@ -137,12 +137,10 @@ pub async fn handle_request(
         } else {
             return Err(FlatApiError::UnknownCommand);
         }
+    } else if let Some(register) = request.command_as_register() {
+        return handle_register(peer_addr, register, source, global, priority_guard).await;
     } else {
-        if let Some(register) = request.command_as_register() {
-            return handle_register(peer_addr, register, source, global, priority_guard).await;
-        } else {
-            return Err(FlatApiError::Unregistered);
-        }
+        return Err(FlatApiError::Unregistered);
     };
 
     Ok(())

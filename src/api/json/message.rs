@@ -434,6 +434,12 @@ pub struct LedDevicesInfo {
     pub available: Vec<LedDeviceClass>,
 }
 
+impl Default for LedDevicesInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LedDevicesInfo {
     pub fn new() -> Self {
         use LedDeviceClass::*;
@@ -487,6 +493,12 @@ pub struct GrabbersInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub active: Option<GrabberClass>,
     pub available: Vec<GrabberClass>,
+}
+
+impl Default for GrabbersInfo {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GrabbersInfo {
@@ -605,25 +617,25 @@ impl SystemInfo {
                 "winnt".to_owned()
             } else if cfg!(target_os = "linux") {
                 Command::new("uname")
-                    .args(&["-s"])
+                    .args(["-s"])
                     .stdout(Stdio::piped())
                     .output()
                     .ok()
                     .and_then(|output| String::from_utf8(output.stdout).ok())
                     .map(|output| output.trim().to_ascii_lowercase())
-                    .unwrap_or_else(String::new)
+                    .unwrap_or_default()
             } else {
                 String::new()
             },
             kernel_version: if cfg!(target_os = "linux") {
                 Command::new("uname")
-                    .args(&["-r"])
+                    .args(["-r"])
                     .stdout(Stdio::piped())
                     .output()
                     .ok()
                     .and_then(|output| String::from_utf8(output.stdout).ok())
                     .map(|output| output.trim().to_ascii_lowercase())
-                    .unwrap_or_else(String::new)
+                    .unwrap_or_default()
             } else {
                 String::new()
             },
@@ -676,6 +688,7 @@ impl SysInfo {
 /// Hyperion JSON response
 #[derive(Debug, Serialize)]
 #[serde(tag = "command", content = "info")]
+#[allow(clippy::large_enum_variant)]
 pub enum HyperionResponseInfo {
     /// Server information response
     #[serde(rename = "serverinfo")]

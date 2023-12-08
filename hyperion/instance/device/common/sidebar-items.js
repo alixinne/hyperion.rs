@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Rewriter",""]],"trait":[["WritingDevice",""]]});
+window.SIDEBAR_ITEMS = {"struct":["Rewriter"],"trait":["WritingDevice"]};

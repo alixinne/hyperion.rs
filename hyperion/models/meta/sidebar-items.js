@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["MetaError",""]],"struct":[["Meta",""]]});
+window.SIDEBAR_ITEMS = {"enum":["MetaError"],"struct":["Meta"]};

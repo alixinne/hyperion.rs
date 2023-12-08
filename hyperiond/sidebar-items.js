@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["install_tracing",""],["main",""],["run",""]],"struct":[["Opts",""]]});
+window.SIDEBAR_ITEMS = {"fn":["install_tracing","main","run"],"struct":["Opts"]};

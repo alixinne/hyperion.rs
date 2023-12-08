@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["default_meta",""],["default_users",""]],"struct":[["DeserializableConfig",""],["FileBackend",""],["SerializableConfig",""]],"trait":[["ConfigExt",""]]});
+window.SIDEBAR_ITEMS = {"fn":["default_meta","default_users"],"struct":["DeserializableConfig","FileBackend","SerializableConfig"],"trait":["ConfigExt"]};

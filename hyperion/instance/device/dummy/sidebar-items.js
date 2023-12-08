@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DummyDeviceImpl",""]],"type":[["DummyDevice",""]]});
+window.SIDEBAR_ITEMS = {"struct":["DummyDeviceImpl"],"type":["DummyDevice"]};

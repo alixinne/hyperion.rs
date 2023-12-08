@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["hyperion_reply","Nested message and enum types in `HyperionReply`."],["hyperion_request","Nested message and enum types in `HyperionRequest`."]],"struct":[["ClearRequest",""],["ColorRequest",""],["HyperionReply",""],["HyperionRequest",""],["ImageRequest",""]]});
+window.SIDEBAR_ITEMS = {"mod":["hyperion_reply","hyperion_request"],"struct":["ClearRequest","ColorRequest","HyperionReply","HyperionRequest","ImageRequest"]};

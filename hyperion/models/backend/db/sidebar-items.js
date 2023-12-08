@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DbBackend",""],["GlobalConfigCreator",""],["InstanceConfigCreator",""]]});
+window.SIDEBAR_ITEMS = {"struct":["DbBackend","GlobalConfigCreator","InstanceConfigCreator"]};

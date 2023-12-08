@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["LedSpec",""],["Reducer",""]]});
+window.SIDEBAR_ITEMS = {"struct":["LedSpec","Reducer"]};

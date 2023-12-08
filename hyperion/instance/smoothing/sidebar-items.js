@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["SmoothingUpdate",""]],"struct":[["Smoothing",""]]});
+window.SIDEBAR_ITEMS = {"enum":["SmoothingUpdate"],"struct":["Smoothing"]};

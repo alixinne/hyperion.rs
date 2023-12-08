@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["SendingChannel",""]],"struct":[["PriorityGuard",""]]});
+window.SIDEBAR_ITEMS = {"enum":["SendingChannel"],"struct":["PriorityGuard"]};

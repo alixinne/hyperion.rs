@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ProtoCodecError",""]],"struct":[["ProtoCodec","JSON tokio codec"]]});
+window.SIDEBAR_ITEMS = {"enum":["ProtoCodecError"],"struct":["ProtoCodec"]};

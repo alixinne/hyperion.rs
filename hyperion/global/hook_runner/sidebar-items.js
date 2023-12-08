@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["INSTANCE_ID",""]],"struct":[["HookBuilder",""],["HookRunner",""]]});
+window.SIDEBAR_ITEMS = {"constant":["INSTANCE_ID"],"struct":["HookBuilder","HookRunner"]};

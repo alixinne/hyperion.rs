@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["boblight",""],["flat",""],["json",""],["proto",""],["types",""]]});
+window.SIDEBAR_ITEMS = {"mod":["boblight","flat","json","proto","types"]};

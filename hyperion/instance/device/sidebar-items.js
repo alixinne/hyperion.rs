@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["DeviceError",""]],"mod":[["common",""],["dummy",""],["file",""],["ws2812spi",""]],"struct":[["Device",""]],"trait":[["DeviceImpl",""]]});
+window.SIDEBAR_ITEMS = {"enum":["DeviceError"],"mod":["common","dummy","file","ws2812spi"],"struct":["Device"],"trait":["DeviceImpl"]};

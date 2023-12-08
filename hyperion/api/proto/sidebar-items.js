@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ProtoApiError",""]],"fn":[["handle_request",""],["validate_priority",""]],"mod":[["message","Schema definitions as Serde serializable structures and enums"]]});
+window.SIDEBAR_ITEMS = {"enum":["ProtoApiError"],"fn":["handle_request","validate_priority"],"mod":["message"]};

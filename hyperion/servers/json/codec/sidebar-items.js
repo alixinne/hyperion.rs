@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["JsonCodecError",""]],"struct":[["JsonCodec","JSON tokio codec"]]});
+window.SIDEBAR_ITEMS = {"enum":["JsonCodecError"],"struct":["JsonCodec"]};

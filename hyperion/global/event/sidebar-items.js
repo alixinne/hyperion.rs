@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Event",""],["InstanceEventKind",""]],"struct":[["InstanceEvent",""]]});
+window.SIDEBAR_ITEMS = {"enum":["Event","InstanceEventKind"],"struct":["InstanceEvent"]};

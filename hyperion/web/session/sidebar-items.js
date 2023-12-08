@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["COOKIE_NAME",""]],"enum":[["SessionError",""]],"fn":[["reply_session",""]],"struct":[["Session",""],["SessionInstance",""],["SessionStore",""],["WithSession",""]],"type":[["SessionData",""]]});
+window.SIDEBAR_ITEMS = {"constant":["COOKIE_NAME"],"enum":["SessionError"],"fn":["reply_session"],"struct":["Session","SessionInstance","SessionStore","WithSession"],"type":["SessionData"]};

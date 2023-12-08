@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["models",""]],"struct":[["Db",""]],"type":[["DbError",""]]});
+window.SIDEBAR_ITEMS = {"mod":["models"],"struct":["Db"],"type":["DbError"]};

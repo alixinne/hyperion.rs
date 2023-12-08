@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["BoblightApiError",""]],"mod":[["message",""]],"struct":[["ClientConnection",""]]});
+window.SIDEBAR_ITEMS = {"enum":["BoblightApiError"],"mod":["message"],"struct":["ClientConnection"]};

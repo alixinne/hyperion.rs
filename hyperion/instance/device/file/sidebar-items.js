@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["FileDeviceImpl",""]],"type":[["FileDevice",""]]});
+window.SIDEBAR_ITEMS = {"struct":["FileDeviceImpl"],"type":["FileDevice"]};

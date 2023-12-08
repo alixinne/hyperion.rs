@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["bind",""]],"mod":[["boblight","Boblight protocol server implementation"],["flat","flatbuffers flatcol server implementation"],["json","JSON protocol server implementation"],["proto","protobuf protocol server implementation"]],"struct":[["ServerHandle",""]]});
+window.SIDEBAR_ITEMS = {"fn":["bind"],"mod":["boblight","flat","json","proto"],"struct":["ServerHandle"]};

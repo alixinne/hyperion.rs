@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["BoblightRequest",""],["BoblightResponse",""],["DecodeError",""],["GetArg",""],["LightParamData",""],["SetArg",""]],"struct":[["LightParam",""]]});
+window.SIDEBAR_ITEMS = {"enum":["BoblightRequest","BoblightResponse","DecodeError","GetArg","LightParamData","SetArg"],"struct":["LightParam"]};

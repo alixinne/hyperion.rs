@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["CONTEXT","Current effect context"]],"static":[["INITIALIZED_PYTHON",""]],"struct":[["Context","Python effect module context"]]});
+window.SIDEBAR_ITEMS = {"constant":["CONTEXT"],"static":["INITIALIZED_PYTHON"],"struct":["Context"]};

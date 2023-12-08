@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["InputSourceError",""]],"struct":[["InputSource",""],["InputSourceHandle",""]]});
+window.SIDEBAR_ITEMS = {"enum":["InputSourceError"],"struct":["InputSource","InputSourceHandle"]};

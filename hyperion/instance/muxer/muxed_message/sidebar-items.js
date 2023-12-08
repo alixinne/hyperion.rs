@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["MuxedMessageData",""]],"struct":[["MuxedMessage",""]]});
+window.SIDEBAR_ITEMS = {"enum":["MuxedMessageData"],"struct":["MuxedMessage"]};

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["BoblightCodecError",""]],"struct":[["BoblightCodec","JSON tokio codec"]]});
+window.SIDEBAR_ITEMS = {"enum":["BoblightCodecError"],"struct":["BoblightCodec"]};

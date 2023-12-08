@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Command",""]]});
+window.SIDEBAR_ITEMS = {"enum":["Command"]};

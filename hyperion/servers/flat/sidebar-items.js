@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["FlatServerError",""]],"fn":[["error_response",""],["handle_client",""],["handle_request",""],["register_response",""]]});
+window.SIDEBAR_ITEMS = {"enum":["FlatServerError"],"fn":["error_response","handle_client","handle_request","register_response"]};

@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["bind",""]],"mod":[["session",""]]});
+window.SIDEBAR_ITEMS = {"fn":["bind"],"mod":["session"]};

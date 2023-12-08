@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["hyperion"] = [{"text":"impl&lt;'a&gt; <a class=\"trait\" href=\"https://docs.rs/serde/1.0.130/serde/de/trait.Visitor.html\" title=\"trait serde::de::Visitor\">Visitor</a>&lt;'a&gt; for <a class=\"struct\" href=\"hyperion/serde/base64/struct.Base64Visitor.html\" title=\"struct hyperion::serde::base64::Base64Visitor\">Base64Visitor</a>","synthetic":false,"types":["hyperion::serde::base64::Base64Visitor"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"hyperion":[["impl&lt;'a&gt; <a class=\"trait\" href=\"https://docs.rs/serde/1.0.193/serde/de/trait.Visitor.html\" title=\"trait serde::de::Visitor\">Visitor</a>&lt;'a&gt; for <a class=\"struct\" href=\"hyperion/serde/base64/struct.Base64Visitor.html\" title=\"struct hyperion::serde::base64::Base64Visitor\">Base64Visitor</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

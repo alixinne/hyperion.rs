@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ProtoServerError",""]],"fn":[["error_response",""],["handle_client",""],["success_response",""]],"mod":[["codec",""]]});
+window.SIDEBAR_ITEMS = {"enum":["ProtoServerError"],"fn":["error_response","handle_client","success_response"],"mod":["codec"]};

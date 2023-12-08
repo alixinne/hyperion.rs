@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["InputMessageData",""]],"struct":[["InputMessage",""]]});
+window.SIDEBAR_ITEMS = {"enum":["InputMessageData"],"struct":["InputMessage"],"type":["StartEffectResponseCallback"]};

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["RawImageError",""]],"mod":[["prelude",""],["reducer",""]],"struct":[["ImageView",""],["RawImage",""],["Reducer",""]],"trait":[["Image",""],["ImageViewExt",""]]});
+window.SIDEBAR_ITEMS = {"enum":["RawImageError"],"mod":["prelude","reducer"],"struct":["ImageView","RawImage","Reducer"],"trait":["Image","ImageViewExt"]};

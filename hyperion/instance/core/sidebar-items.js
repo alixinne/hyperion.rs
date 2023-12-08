@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Core","Core part of an instance"]]});
+window.SIDEBAR_ITEMS = {"struct":["Core"]};

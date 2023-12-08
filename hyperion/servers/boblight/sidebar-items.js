@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["BoblightServerError",""]],"fn":[["handle_client",""]],"mod":[["codec","Boblight protocol codec definition"]]});
+window.SIDEBAR_ITEMS = {"enum":["BoblightServerError"],"fn":["handle_client"],"mod":["codec"]};

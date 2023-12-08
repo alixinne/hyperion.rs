@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["EffectRunnerUpdate",""],["StartEffectError",""]],"struct":[["EffectRunner",""],["EffectRunnerConfig",""],["RunningEffectKey",""]],"type":[["EffectMessage",""]]});
+window.SIDEBAR_ITEMS = {"enum":["EffectRunnerUpdate","StartEffectError"],"struct":["EffectRunner","EffectRunnerConfig","RunningEffectKey"],"type":["EffectMessage"]};

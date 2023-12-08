@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["from_base64","Decode a base64-encoded value"],["serialize_color_as_array",""]],"mod":[["base64","Base64 deserialization of Vec"],["color",""]]});
+window.SIDEBAR_ITEMS = {"fn":["from_base64","serialize_color_as_array"],"mod":["base64","color"]};

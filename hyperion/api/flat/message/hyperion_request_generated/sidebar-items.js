@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["hyperionnet",""]]});
+window.SIDEBAR_ITEMS = {"mod":["hyperionnet"]};

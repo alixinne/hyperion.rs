@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DbInstance",""],["DbMeta",""],["DbSetting",""],["DbUser",""]]});
+window.SIDEBAR_ITEMS = {"struct":["DbInstance","DbMeta","DbSetting","DbUser"]};

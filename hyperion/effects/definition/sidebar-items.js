@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["EffectDefinitionError",""]],"struct":[["EffectDefinition",""]]});
+window.SIDEBAR_ITEMS = {"enum":["EffectDefinitionError"],"struct":["EffectDefinition"]};

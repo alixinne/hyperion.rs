@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["ROOT_MARKER",""],["SYSTEM_MARKER",""]],"enum":[["ResolvedPaths",""]],"struct":[["Paths",""]]});
+window.SIDEBAR_ITEMS = {"constant":["ROOT_MARKER","SYSTEM_MARKER"],"enum":["ResolvedPaths"],"struct":["Paths"]};

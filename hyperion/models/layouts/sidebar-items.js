@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ClassicLedParams",""]],"trait":[["ToLeds","Trait for converting a LED configuration to LEDs"]]});
+window.SIDEBAR_ITEMS = {"struct":["ClassicLedParams"],"trait":["ToLeds"]};

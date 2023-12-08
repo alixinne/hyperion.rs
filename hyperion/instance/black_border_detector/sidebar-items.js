@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["BlackBorder",""],["BlackBorderDetector",""]]});
+window.SIDEBAR_ITEMS = {"struct":["BlackBorder","BlackBorderDetector"]};

@@ -23,7 +23,7 @@ pub struct PythonProvider;
 
 impl PythonProvider {
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 }
 
@@ -41,7 +41,7 @@ impl super::Provider for PythonProvider {
         Ok(do_run(methods, args, |py| {
             // Run script
             py.run(
-                std::fs::read_to_string(&full_script_path)?.as_str(),
+                std::fs::read_to_string(full_script_path)?.as_str(),
                 None,
                 None,
             )?;
@@ -108,7 +108,7 @@ fn set_image(width: u16, height: u16, data: &PyByteArray) -> Result<(), PyErr> {
             // unwrap: we did all the necessary checks already
             m.set_image(
                 RawImage::try_from((data.to_vec(), width as u32, height as u32))
-                    .map_err(|err| RuntimeMethodError::InvalidImageData(err))?,
+                    .map_err(RuntimeMethodError::InvalidImageData)?,
             )
             .await?;
 

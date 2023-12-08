@@ -5,7 +5,7 @@ use tokio::sync::broadcast;
 use super::{Event, InstanceEvent, InstanceEventKind};
 use crate::models::Hooks;
 
-const INSTANCE_ID: &'static str = "HYPERION_INSTANCE_ID";
+const INSTANCE_ID: &str = "HYPERION_INSTANCE_ID";
 
 struct HookBuilder<'s> {
     variables: BTreeMap<&'static str, String>,

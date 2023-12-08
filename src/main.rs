@@ -45,7 +45,7 @@ async fn run(opts: Opts) -> color_eyre::eyre::Result<()> {
     // Load configuration
     let mut backend: Box<dyn hyperion::models::backend::ConfigBackend> =
         if let Some(config_path) = opts.config_path.as_deref() {
-            Box::new(hyperion::models::backend::FileBackend::new(&config_path))
+            Box::new(hyperion::models::backend::FileBackend::new(config_path))
         } else {
             // Connect to database
             let db = hyperion::db::Db::open(&paths.resolve_path(opts.database_path)).await?;
@@ -164,7 +164,7 @@ async fn run(opts: Opts) -> color_eyre::eyre::Result<()> {
     // Start the JSON server
     let _json_server = hyperion::servers::bind(
         "JSON",
-        config.global.json_server.clone(),
+        config.global.json_server,
         global.clone(),
         hyperion::servers::json::handle_client,
     )

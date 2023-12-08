@@ -116,7 +116,7 @@ impl RgbTransform {
                     rgb_sum = r as f32 + g as f32 + b as f32;
                 }
 
-                let cl = (self.sum_brightness_low / rgb_sum as f32).min(255.0);
+                let cl = (self.sum_brightness_low / rgb_sum).min(255.0);
 
                 r = (r as f32 * cl) as u8;
                 g = (g as f32 * cl) as u8;

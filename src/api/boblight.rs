@@ -47,7 +47,7 @@ impl ClientConnection {
     }
 
     async fn set_priority(&mut self, priority: i32) {
-        let new_priority = if priority < 128 || priority >= 254 {
+        let new_priority = if !(128..254).contains(&priority) {
             self.instance
                 .current_priorities()
                 .await
@@ -119,8 +119,8 @@ impl ClientConnection {
             },
             BoblightRequest::Set(set) => {
                 match set {
-                    message::SetArg::Light(message::LightParam { index, data }) => match data {
-                        message::LightParamData::Color(color) => {
+                    message::SetArg::Light(message::LightParam { index, data }) => {
+                        if let message::LightParamData::Color(color) = data {
                             if let Some(color_mut) = self.led_colors.get_mut(index) {
                                 *color_mut = color;
 
@@ -129,8 +129,7 @@ impl ClientConnection {
                                 }
                             }
                         }
-                        _ => {}
-                    },
+                    }
                     message::SetArg::Priority(priority) => {
                         self.set_priority(priority).await;
                     }

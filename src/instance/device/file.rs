@@ -64,7 +64,7 @@ impl WritingDevice for FileDeviceImpl {
         }
         writeln!(self.str_buf, "]")?;
 
-        self.file_handle.write(&self.str_buf.as_bytes()).await?;
+        self.file_handle.write_all(self.str_buf.as_bytes()).await?;
         self.file_handle.flush().await?;
 
         Ok(())

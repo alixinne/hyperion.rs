@@ -43,8 +43,8 @@ impl InstanceMethods {
             led_count,
             deadline: duration.map(|d| Instant::now() + d),
             data: Mutex::new(InstanceMethodsData {
-                crx: crx.into(),
-                aborted: false.into(),
+                crx,
+                aborted: false,
             }),
         }
     }
@@ -77,7 +77,7 @@ impl InstanceMethods {
             }
         }
 
-        if self.completed(&*data) {
+        if self.completed(&data) {
             Err(RuntimeMethodError::EffectAborted)
         } else {
             Ok(())

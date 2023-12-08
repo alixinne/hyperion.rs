@@ -33,7 +33,7 @@ fn validate_priority(
     source: &InputSourceHandle<InputMessage>,
     priority_guard: &mut PriorityGuard,
 ) -> Result<i32, ProtoApiError> {
-    if priority < 100 || priority >= 200 {
+    if !(100..200).contains(&priority) {
         return Err(ProtoApiError::InvalidPriority(priority));
     }
 

@@ -289,11 +289,10 @@ impl BlackBorderDetector {
                 self.current_border = new_border;
                 return true;
             }
-        } else {
-            if self.current_border.unknown || self.consistent_cnt == self.config.border_frame_cnt {
-                self.current_border = new_border;
-                return true;
-            }
+        } else if self.current_border.unknown || self.consistent_cnt == self.config.border_frame_cnt
+        {
+            self.current_border = new_border;
+            return true;
         }
 
         false

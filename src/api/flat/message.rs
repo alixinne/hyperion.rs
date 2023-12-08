@@ -1,7 +1,9 @@
 #[allow(unused_imports)]
+#[allow(clippy::extra_unused_lifetimes)]
 #[rustfmt::skip]
 mod hyperion_reply_generated;
 #[allow(unused_imports)]
+#[allow(clippy::extra_unused_lifetimes)]
 #[rustfmt::skip]
 mod hyperion_request_generated;
 

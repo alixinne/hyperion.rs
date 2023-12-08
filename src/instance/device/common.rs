@@ -51,23 +51,21 @@ impl<D: WritingDevice> Rewriter<D> {
         if latch_time.is_zero() {
             // No latch time, write immediately
             self.write().await?;
-        } else {
-            if let Some(lwt) = self.last_write_time {
-                // We wrote something already, so schedule a write after the next latch period
-                let now = Instant::now();
-                let next_write_time = lwt + latch_time;
+        } else if let Some(lwt) = self.last_write_time {
+            // We wrote something already, so schedule a write after the next latch period
+            let now = Instant::now();
+            let next_write_time = lwt + latch_time;
 
-                if next_write_time < now {
-                    // Latch time elapsed already
-                    self.write().await?;
-                } else {
-                    // Not elapsed yet, so schedule it
-                    self.next_write_time = Some(next_write_time);
-                }
-            } else {
-                // Never wrote anything, so immediately write
+            if next_write_time < now {
+                // Latch time elapsed already
                 self.write().await?;
+            } else {
+                // Not elapsed yet, so schedule it
+                self.next_write_time = Some(next_write_time);
             }
+        } else {
+            // Never wrote anything, so immediately write
+            self.write().await?;
         }
 
         Ok(())

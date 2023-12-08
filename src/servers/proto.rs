@@ -26,19 +26,23 @@ pub enum ProtoServerError {
 }
 
 fn success_response(peer_addr: SocketAddr) -> message::HyperionReply {
-    let mut reply = message::HyperionReply::default();
-    reply.r#type = message::hyperion_reply::Type::Reply.into();
-    reply.success = Some(true);
+    let reply = message::HyperionReply {
+        r#type: message::hyperion_reply::Type::Reply.into(),
+        success: Some(true),
+        ..Default::default()
+    };
 
     trace!("({}) sending success: {:?}", peer_addr, reply);
     reply
 }
 
 fn error_response(peer_addr: SocketAddr, error: impl std::fmt::Display) -> message::HyperionReply {
-    let mut reply = message::HyperionReply::default();
-    reply.r#type = message::hyperion_reply::Type::Reply.into();
-    reply.success = Some(false);
-    reply.error = Some(error.to_string());
+    let reply = message::HyperionReply {
+        r#type: message::hyperion_reply::Type::Reply.into(),
+        success: Some(false),
+        error: Some(error.to_string()),
+        ..Default::default()
+    };
 
     trace!("({}) sending error: {:?}", peer_addr, reply);
     reply
@@ -71,15 +75,14 @@ pub async fn handle_client(
 
         trace!("({}) got request: {:?}", peer_addr, request);
 
-        let reply =
-            match proto::handle_request(peer_addr.clone(), request, &source, &mut priority_guard) {
-                Ok(()) => success_response(peer_addr),
-                Err(error) => {
-                    error!("({}) error processing request: {}", peer_addr, error);
+        let reply = match proto::handle_request(peer_addr, request, &source, &mut priority_guard) {
+            Ok(()) => success_response(peer_addr),
+            Err(error) => {
+                error!("({}) error processing request: {}", peer_addr, error);
 
-                    error_response(peer_addr, error)
-                }
-            };
+                error_response(peer_addr, error)
+            }
+        };
 
         writer.send(reply).await?;
         writer.flush().await?;

@@ -1,3 +1,5 @@
+#![allow(clippy::comparison_chain)]
+
 #[macro_use]
 extern crate tracing;
 

@@ -257,8 +257,8 @@ impl flatbuffers::Verifiable for Register<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<flatbuffers::ForwardsUOffset<&str>>(&"origin", Self::VT_ORIGIN, true)?
-     .visit_field::<i32>(&"priority", Self::VT_PRIORITY, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("origin", Self::VT_ORIGIN, true)?
+     .visit_field::<i32>("priority", Self::VT_PRIORITY, false)?
      .finish();
     Ok(())
   }
@@ -369,9 +369,9 @@ impl flatbuffers::Verifiable for RawImage<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, u8>>>(&"data", Self::VT_DATA, false)?
-     .visit_field::<i32>(&"width", Self::VT_WIDTH, false)?
-     .visit_field::<i32>(&"height", Self::VT_HEIGHT, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, u8>>>("data", Self::VT_DATA, false)?
+     .visit_field::<i32>("width", Self::VT_WIDTH, false)?
+     .visit_field::<i32>("height", Self::VT_HEIGHT, false)?
      .finish();
     Ok(())
   }
@@ -499,13 +499,13 @@ impl flatbuffers::Verifiable for Image<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_union::<ImageType, _>(&"data_type", Self::VT_DATA_TYPE, &"data", Self::VT_DATA, true, |key, v, pos| {
+     .visit_union::<ImageType, _>("data_type", Self::VT_DATA_TYPE, "data", Self::VT_DATA, true, |key, v, pos| {
         match key {
           ImageType::RawImage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<RawImage>>("ImageType::RawImage", pos),
           _ => Ok(()),
         }
      })?
-     .visit_field::<i32>(&"duration", Self::VT_DURATION, false)?
+     .visit_field::<i32>("duration", Self::VT_DURATION, false)?
      .finish();
     Ok(())
   }
@@ -623,7 +623,7 @@ impl flatbuffers::Verifiable for Clear<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<i32>(&"priority", Self::VT_PRIORITY, false)?
+     .visit_field::<i32>("priority", Self::VT_PRIORITY, false)?
      .finish();
     Ok(())
   }
@@ -720,8 +720,8 @@ impl flatbuffers::Verifiable for Color<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<i32>(&"data", Self::VT_DATA, false)?
-     .visit_field::<i32>(&"duration", Self::VT_DURATION, false)?
+     .visit_field::<i32>("data", Self::VT_DATA, false)?
+     .visit_field::<i32>("duration", Self::VT_DURATION, false)?
      .finish();
     Ok(())
   }
@@ -869,7 +869,7 @@ impl flatbuffers::Verifiable for Request<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_union::<Command, _>(&"command_type", Self::VT_COMMAND_TYPE, &"command", Self::VT_COMMAND, true, |key, v, pos| {
+     .visit_union::<Command, _>("command_type", Self::VT_COMMAND_TYPE, "command", Self::VT_COMMAND, true, |key, v, pos| {
         match key {
           Command::Color => v.verify_union_variant::<flatbuffers::ForwardsUOffset<Color>>("Command::Color", pos),
           Command::Image => v.verify_union_variant::<flatbuffers::ForwardsUOffset<Image>>("Command::Image", pos),
@@ -1038,14 +1038,14 @@ pub unsafe fn size_prefixed_root_as_request_unchecked(buf: &[u8]) -> Request {
   flatbuffers::size_prefixed_root_unchecked::<Request>(buf)
 }
 #[inline]
-pub fn finish_request_buffer<'a, 'b>(
-    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a>,
+pub fn finish_request_buffer<'a>(
+    fbb: &mut flatbuffers::FlatBufferBuilder<'a>,
     root: flatbuffers::WIPOffset<Request<'a>>) {
   fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_request_buffer<'a, 'b>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a>, root: flatbuffers::WIPOffset<Request<'a>>) {
+pub fn finish_size_prefixed_request_buffer<'a>(fbb: &mut flatbuffers::FlatBufferBuilder<'a>, root: flatbuffers::WIPOffset<Request<'a>>) {
   fbb.finish_size_prefixed(root, None);
 }
 }  // pub mod hyperionnet

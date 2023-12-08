@@ -21,6 +21,12 @@ pub struct Meta {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
+impl Default for Meta {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Meta {
     pub fn new() -> Self {
         let intf = pnet::datalink::interfaces()

@@ -73,9 +73,9 @@ impl flatbuffers::Verifiable for Reply<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<flatbuffers::ForwardsUOffset<&str>>(&"error", Self::VT_ERROR, false)?
-     .visit_field::<i32>(&"video", Self::VT_VIDEO, false)?
-     .visit_field::<i32>(&"registered", Self::VT_REGISTERED, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("error", Self::VT_ERROR, false)?
+     .visit_field::<i32>("video", Self::VT_VIDEO, false)?
+     .visit_field::<i32>("registered", Self::VT_REGISTERED, false)?
      .finish();
     Ok(())
   }
@@ -209,14 +209,14 @@ pub unsafe fn size_prefixed_root_as_reply_unchecked(buf: &[u8]) -> Reply {
   flatbuffers::size_prefixed_root_unchecked::<Reply>(buf)
 }
 #[inline]
-pub fn finish_reply_buffer<'a, 'b>(
-    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a>,
+pub fn finish_reply_buffer<'a>(
+    fbb: &mut flatbuffers::FlatBufferBuilder<'a>,
     root: flatbuffers::WIPOffset<Reply<'a>>) {
   fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_reply_buffer<'a, 'b>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a>, root: flatbuffers::WIPOffset<Reply<'a>>) {
+pub fn finish_size_prefixed_reply_buffer<'a>(fbb: &mut flatbuffers::FlatBufferBuilder<'a>, root: flatbuffers::WIPOffset<Reply<'a>>) {
   fbb.finish_size_prefixed(root, None);
 }
 }  // pub mod hyperionnet

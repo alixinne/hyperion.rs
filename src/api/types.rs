@@ -7,7 +7,7 @@ use crate::{
 };
 
 fn not_positive(x: &i64) -> bool {
-    !(*x > 0)
+    *x <= 0
 }
 
 fn color_to_hsl(color: Color) -> palette::Hsl {
@@ -51,7 +51,7 @@ impl PriorityInfo {
                     Some(chrono::Duration::zero())
                 }
             })
-            .map(|d| d.num_milliseconds() as i64)
+            .map(|d| d.num_milliseconds())
             .unwrap_or(-1);
         let active = duration_ms >= -1;
 

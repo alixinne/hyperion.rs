@@ -93,6 +93,10 @@ impl EffectRegistry {
         self.effects.iter().find(|e| e.definition.name == name)
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.effects.is_empty()
+    }
+
     pub fn len(&self) -> usize {
         self.effects.len()
     }

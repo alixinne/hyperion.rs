@@ -10,7 +10,7 @@ jobs:
   checks:
     name: Check code
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout source code
@@ -67,7 +67,7 @@ jobs:
             cross: arm-linux-gnueabihf-
             image: "vtavernier/cross:raspberrypi"
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout source code

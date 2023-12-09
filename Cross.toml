@@ -1,5 +1,5 @@
 [build.env]
-passthrough = ["ENABLE_PYO3"]
+passthrough = ["ENABLE_PYO3", "PROTOC"]
 
 [target.x86_64-unknown-linux-gnu]
 image = "vtavernier/cross:x86_64-bullseye"

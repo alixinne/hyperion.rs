@@ -121,7 +121,7 @@ pub async fn handle_request(
             // Parse message
             let width = u32::try_from(width).map_err(|_| RawImageError::InvalidWidth)?;
             let height = u32::try_from(height).map_err(|_| RawImageError::InvalidHeight)?;
-            let raw_image = RawImage::try_from((data.to_vec(), width, height))?;
+            let raw_image = RawImage::try_from((data.bytes().to_vec(), width, height))?;
 
             // Update state
             handle.send(

@@ -1,4 +1,4 @@
-use std::{convert::TryInto, fmt::Display, sync::Arc};
+use std::{convert::TryInto, fmt::Display, num::NonZeroUsize, sync::Arc};
 
 use lru::LruCache;
 use thiserror::Error;
@@ -188,8 +188,7 @@ impl<T: Reply> Reply for WithSession<T> {
             // TODO: Other cookie options?
             inner.headers_mut().insert(
                 "Set-Cookie",
-                cookie::Cookie::build(COOKIE_NAME, cookie_value)
-                    .finish()
+                cookie::Cookie::build((COOKIE_NAME, cookie_value))
                     .to_string()
                     .try_into()
                     .unwrap(),
@@ -201,7 +200,7 @@ impl<T: Reply> Reply for WithSession<T> {
 }
 
 impl SessionStore {
-    pub fn new(max_sessions: usize) -> Self {
+    pub fn new(max_sessions: NonZeroUsize) -> Self {
         Self {
             sessions: Arc::new(RwLock::new(LruCache::new(max_sessions))),
         }

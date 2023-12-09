@@ -14,62 +14,62 @@ name = "reducer"
 harness = false
 
 [dependencies]
-ambassador = "0.2"
+ambassador = "0.3"
 async-trait = "0.1"
-base64 = "0.13"
-byteorder = "1.4"
-bytes = "1.0"
+base64 = "0.21"
+byteorder = "1.5"
+bytes = "1.5"
 chrono = { version = "0.4", features = ["serde"] }
-color-eyre = "0.5"
-cookie = "0.15"
+color-eyre = "0.6"
+cookie = "0.18"
 derive_more = "0.99"
 dirs = "5.0"
 drop_bomb = "0.1"
-flatbuffers = "2.0"
+flatbuffers = "2.1"
 futures = "0.3"
 futures-io = "0.3"
 git-version = "0.3"
 hex = { version = "0.4", features = ["serde"] }
 hostname = "0.3"
-image = { version = "0.23", default-features = false, features = ["png"] }
+image = { version = "0.24", default-features = false, features = ["png"] }
 lazy_static = "1.4"
-lru = "0.7"
-num_cpus = "1.13"
-palette = { version = "0.5", features = ["serializing"] }
-parse-display = "0.5"
+lru = "0.12"
+num_cpus = "1.16"
+palette = { version = "0.7", features = ["serializing"] }
+parse-display = "0.8"
 paw = "1.0"
-pnet = "0.28"
-prost = "0.7"
+pnet = "0.34"
+prost = "0.12"
 pyo3 = { version = "0.20", optional = true }
 pythonize = { version = "0.20", optional = true }
-regex = "1.5"
+regex = "1.10"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-sha2 = "0.9"
+sha2 = "0.10"
 slotmap = "1.0"
-spidev = "0.4"
-sqlx = { version = "0.5", features = ["sqlite", "runtime-tokio-rustls"] }
+spidev = "0.6"
+sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio-rustls"] }
 structopt = { version = "0.3", features = ["paw"] }
-strum = "0.21"
-strum_macros = "0.21"
+strum = "0.25"
+strum_macros = "0.25"
 thiserror = "1.0"
-tokio = { version = "1.8", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { version = "1.35", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
-tokio-util = { version = "0.6", features = ["codec"] }
-toml = "0.5"
+tokio-util = { version = "0.7", features = ["codec"] }
+toml = "0.8"
 tracing = "0.1"
-tracing-error = "0.1"
-tracing-subscriber = "0.2"
+tracing-error = "0.2"
+tracing-subscriber = "0.3"
 uuid = { version = "1.6", features = ["serde", "v4", "v5"] }
-validator = { version = "0.14", features = ["derive"] }
+validator = { version = "0.16", features = ["derive"] }
 warp = "0.3"
 
 [build-dependencies]
-prost-build = "0.7"
+prost-build = "0.12"
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.5"
 rand = "0.8"
 
 [features]

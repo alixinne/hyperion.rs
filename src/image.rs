@@ -1,5 +1,7 @@
 use std::convert::TryFrom;
 
+use base64::Engine;
+use image::ImageEncoder;
 use thiserror::Error;
 
 use crate::models::Color;
@@ -70,14 +72,14 @@ impl RawImage {
         // PNG encoder
         let encoder = image::codecs::png::PngEncoder::new(&mut buf);
         // Write PNG to buffer
-        encoder.encode(
+        encoder.write_image(
             &self.data[..],
             self.width as _,
             self.height as _,
             image::ColorType::Rgb8,
         )?;
         // Encode to base64
-        let encoded = base64::encode(&buf);
+        let encoded = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&buf);
         // Split into chunks
         let chunks = encoded.as_bytes().chunks(4096).collect::<Vec<_>>();
         // Transmit chunks

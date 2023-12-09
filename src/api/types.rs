@@ -1,3 +1,7 @@
+use palette::{
+    encoding::{Linear, Srgb},
+    FromColor, Hsl,
+};
 use serde::Serialize;
 
 use crate::{
@@ -10,9 +14,9 @@ fn not_positive(x: &i64) -> bool {
     *x <= 0
 }
 
-fn color_to_hsl(color: Color) -> palette::Hsl {
+fn color_to_hsl(color: Color) -> Hsl<Linear<Srgb>> {
     let (r, g, b) = color.into_components();
-    palette::Hsl::from(palette::LinSrgb::new(
+    palette::Hsl::from_color(palette::LinSrgb::new(
         r as f32 / 255.0,
         g as f32 / 255.0,
         b as f32 / 255.0,
@@ -101,7 +105,7 @@ impl From<&Color> for LedColor {
         Self {
             rgb: [c.red, c.green, c.blue],
             hsl: (
-                (hsl.hue.to_positive_degrees() * 100.) as u16,
+                (hsl.hue.into_positive_degrees() * 100.) as u16,
                 hsl.saturation,
                 hsl.lightness,
             ),

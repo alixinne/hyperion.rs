@@ -2,6 +2,8 @@
 
 use std::fmt;
 
+use base64::Engine;
+
 /// Serde visitor for deserializing Base64-encoded values
 struct Base64Visitor;
 
@@ -16,7 +18,9 @@ impl<'a> serde::de::Visitor<'a> for Base64Visitor {
     where
         A: serde::de::Error,
     {
-        base64::decode(string).map_err(|err| serde::de::Error::custom(err.to_string()))
+        base64::engine::general_purpose::STANDARD_NO_PAD
+            .decode(string)
+            .map_err(|err| serde::de::Error::custom(err.to_string()))
     }
 }
 

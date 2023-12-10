@@ -120,7 +120,15 @@
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>serde::Serialize;
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>palette::{
+    encoding::{Linear, Srgb},
+    FromColor, Hsl,
+};
+<span class="kw">use </span>serde::Serialize;
 
 <span class="kw">use crate</span>::{
     component::ComponentName,
@@ -132,9 +140,9 @@
     <span class="kw-2">*</span>x &lt;= <span class="number">0
 </span>}
 
-<span class="kw">fn </span>color_to_hsl(color: Color) -&gt; palette::Hsl {
+<span class="kw">fn </span>color_to_hsl(color: Color) -&gt; Hsl&lt;Linear&lt;Srgb&gt;&gt; {
     <span class="kw">let </span>(r, g, b) = color.into_components();
-    palette::Hsl::from(palette::LinSrgb::new(
+    palette::Hsl::from_color(palette::LinSrgb::new(
         r <span class="kw">as </span>f32 / <span class="number">255.0</span>,
         g <span class="kw">as </span>f32 / <span class="number">255.0</span>,
         b <span class="kw">as </span>f32 / <span class="number">255.0</span>,
@@ -223,7 +231,7 @@
         <span class="self">Self </span>{
             rgb: [c.red, c.green, c.blue],
             hsl: (
-                (hsl.hue.to_positive_degrees() * <span class="number">100.</span>) <span class="kw">as </span>u16,
+                (hsl.hue.into_positive_degrees() * <span class="number">100.</span>) <span class="kw">as </span>u16,
                 hsl.saturation,
                 hsl.lightness,
             ),

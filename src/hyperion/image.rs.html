@@ -256,8 +256,12 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::convert::TryFrom;
 
+<span class="kw">use </span>base64::Engine;
+<span class="kw">use </span>image::ImageEncoder;
 <span class="kw">use </span>thiserror::Error;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::Color;
@@ -328,14 +332,14 @@
         <span class="comment">// PNG encoder
         </span><span class="kw">let </span>encoder = image::codecs::png::PngEncoder::new(<span class="kw-2">&amp;mut </span>buf);
         <span class="comment">// Write PNG to buffer
-        </span>encoder.encode(
+        </span>encoder.write_image(
             <span class="kw-2">&amp;</span><span class="self">self</span>.data[..],
             <span class="self">self</span>.width <span class="kw">as _</span>,
             <span class="self">self</span>.height <span class="kw">as _</span>,
             image::ColorType::Rgb8,
         )<span class="question-mark">?</span>;
         <span class="comment">// Encode to base64
-        </span><span class="kw">let </span>encoded = base64::encode(<span class="kw-2">&amp;</span>buf);
+        </span><span class="kw">let </span>encoded = base64::engine::general_purpose::STANDARD_NO_PAD.encode(<span class="kw-2">&amp;</span>buf);
         <span class="comment">// Split into chunks
         </span><span class="kw">let </span>chunks = encoded.as_bytes().chunks(<span class="number">4096</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
         <span class="comment">// Transmit chunks

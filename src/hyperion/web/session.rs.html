@@ -254,8 +254,7 @@
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::{convert::TryInto, fmt::Display, sync::Arc};
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::{convert::TryInto, fmt::Display, num::NonZeroUsize, sync::Arc};
 
 <span class="kw">use </span>lru::LruCache;
 <span class="kw">use </span>thiserror::Error;
@@ -445,8 +444,7 @@
             <span class="comment">// TODO: Other cookie options?
             </span>inner.headers_mut().insert(
                 <span class="string">&quot;Set-Cookie&quot;</span>,
-                cookie::Cookie::build(COOKIE_NAME, cookie_value)
-                    .finish()
+                cookie::Cookie::build((COOKIE_NAME, cookie_value))
                     .to_string()
                     .try_into()
                     .unwrap(),
@@ -458,7 +456,7 @@
 }
 
 <span class="kw">impl </span>SessionStore {
-    <span class="kw">pub fn </span>new(max_sessions: usize) -&gt; <span class="self">Self </span>{
+    <span class="kw">pub fn </span>new(max_sessions: NonZeroUsize) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             sessions: Arc::new(RwLock::new(LruCache::new(max_sessions))),
         }

@@ -381,7 +381,10 @@
 <a href="#381" id="381">381</a>
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>serde_derive::{Deserialize, Serialize};
+<a href="#384" id="384">384</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::num::NonZeroUsize;
+
+<span class="kw">use </span>serde_derive::{Deserialize, Serialize};
 <span class="kw">use </span>validator::Validate;
 
 <span class="kw">use </span><span class="kw">super</span>::ServerConfig;
@@ -705,8 +708,7 @@
     <span class="kw">pub </span>crt_path: String,
     <span class="kw">pub </span>key_path: String,
     <span class="kw">pub </span>key_pass_phrase: String,
-    <span class="attr">#[validate(range(min = <span class="number">1</span>))]
-    </span><span class="kw">pub </span>max_sessions: u32,
+    <span class="kw">pub </span>max_sessions: NonZeroUsize,
 }
 
 <span class="kw">impl </span>WebConfig {
@@ -722,7 +724,7 @@
             crt_path: String::new(),
             key_path: String::new(),
             key_pass_phrase: String::new(),
-            max_sessions: <span class="number">4</span>,
+            max_sessions: NonZeroUsize::new(<span class="number">4</span>).unwrap(),
         }
     }
 }

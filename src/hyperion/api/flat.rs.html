@@ -268,7 +268,7 @@
             <span class="comment">// Parse message
             </span><span class="kw">let </span>width = u32::try_from(width).map_err(|<span class="kw">_</span>| RawImageError::InvalidWidth)<span class="question-mark">?</span>;
             <span class="kw">let </span>height = u32::try_from(height).map_err(|<span class="kw">_</span>| RawImageError::InvalidHeight)<span class="question-mark">?</span>;
-            <span class="kw">let </span>raw_image = RawImage::try_from((data.to_vec(), width, height))<span class="question-mark">?</span>;
+            <span class="kw">let </span>raw_image = RawImage::try_from((data.bytes().to_vec(), width, height))<span class="question-mark">?</span>;
 
             <span class="comment">// Update state
             </span>handle.send(

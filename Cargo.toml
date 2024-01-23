@@ -61,7 +61,7 @@ toml = "0.8"
 tracing = "0.1"
 tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1.6", features = ["serde", "v4", "v5"] }
+uuid = { version = "1.7", features = ["serde", "v4", "v5"] }
 validator = { version = "0.16", features = ["derive"] }
 warp = "0.3"
 

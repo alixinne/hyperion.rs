@@ -36,7 +36,7 @@ lazy_static = "1.4"
 lru = "0.12"
 num_cpus = "1.16"
 palette = { version = "0.7", features = ["serializing"] }
-parse-display = "0.8"
+parse-display = "0.9"
 paw = "1.0"
 pnet = "0.34"
 prost = "0.12"
@@ -54,7 +54,7 @@ structopt = { version = "0.3", features = ["paw"] }
 strum = "0.26"
 strum_macros = "0.26"
 thiserror = "1.0"
-tokio = { version = "1.35", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { version = "1.36", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 toml = "0.8"

@@ -1,4 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>vtavernier/renovate-presets//rust-std"]
+  "extends": ["github>alixinne/renovate-presets//rust-std"]
 }

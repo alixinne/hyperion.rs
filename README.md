@@ -1,8 +1,8 @@
-# [hyperion.rs](https://github.com/vtavernier/hyperion.rs)
+# [hyperion.rs](https://github.com/alixinne/hyperion.rs)
 
-[![Build](https://github.com/vtavernier/hyperion.rs/workflows/build/badge.svg)](https://github.com/vtavernier/hyperion.rs/actions)
-[![Docs](https://img.shields.io/badge/docs-master-blue)](https://vtavernier.github.io/hyperion.rs/hyperion/)
-[![GitHub](https://img.shields.io/github/license/vtavernier/hyperion.rs)](LICENSE)
+[![Build](https://github.com/alixinne/hyperion.rs/workflows/build/badge.svg)](https://github.com/alixinne/hyperion.rs/actions)
+[![Docs](https://img.shields.io/badge/docs-master-blue)](https://alixinne.github.io/hyperion.rs/hyperion/)
+[![GitHub](https://img.shields.io/github/license/alixinne/hyperion.rs)](LICENSE)
 
 hyperion.rs is a rewrite of
 [hyperion.ng](https://github.com/hyperion-project/hyperion.ng) in the Rust
@@ -115,5 +115,5 @@ This work is licensed under the [MIT License](LICENSE).
 
 ## Author
 
-Vincent Tavernier <vince.tavernier@gmail.com>. Original project and protocol
+Alixinne <alixinne@pm.me>. Original project and protocol
 source files by [hyperion-project](https://github.com/hyperion-project).

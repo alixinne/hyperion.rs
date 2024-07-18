@@ -72,10 +72,10 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             cross: ""
-            image: "ghcr.io/vtavernier/cross:x86_64-bullseye"
+            image: "ghcr.io/alixinne/cross:x86_64-bullseye"
           - target: arm-unknown-linux-gnueabihf
             cross: arm-linux-gnueabihf-
-            image: "ghcr.io/vtavernier/cross:raspberrypi-bookworm"
+            image: "ghcr.io/alixinne/cross:raspberrypi-bookworm"
 
     runs-on: ubuntu-22.04
 

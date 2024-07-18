@@ -2,7 +2,7 @@
 passthrough = ["ENABLE_PYO3", "PROTOC"]
 
 [target.x86_64-unknown-linux-gnu]
-image = "ghcr.io/vtavernier/cross:x86_64-bullseye"
+image = "ghcr.io/alixinne/cross:x86_64-bullseye"
 
 [target.arm-unknown-linux-gnueabihf]
-image = "ghcr.io/vtavernier/cross:raspberrypi-bookworm"
+image = "ghcr.io/alixinne/cross:raspberrypi-bookworm"

@@ -17,7 +17,7 @@ jobs:
   checks:
     name: Check code
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout source code
@@ -77,7 +77,7 @@ jobs:
             cross: arm-linux-gnueabihf-
             image: "ghcr.io/alixinne/cross:raspberrypi-bookworm"
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout source code

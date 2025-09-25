@@ -23,7 +23,7 @@ chrono = { version = "0.4", features = ["serde"] }
 color-eyre = "0.6"
 cookie = "0.18"
 derive_more = "0.99"
-dirs = "5.0"
+dirs = "6.0"
 drop_bomb = "0.1"
 flatbuffers = "25.0"
 futures = "0.3"

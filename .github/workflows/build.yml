@@ -125,7 +125,7 @@ jobs:
         run: |
           ./ci/prepare-release.sh ${{ matrix.target }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: hyperion.rs-${{ matrix.target }}.tar.xz
           path: release/hyperion.rs-${{ matrix.target }}.tar.xz
@@ -143,7 +143,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           path: release
 

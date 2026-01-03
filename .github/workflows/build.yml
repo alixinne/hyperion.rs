@@ -6,7 +6,7 @@ on:
       - master
       - renovate/**
     tags:
-      - '**'
+      - "**"
   pull_request:
 
 env:
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
@@ -31,7 +31,6 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          target: ${{ matrix.target }}
           profile: minimal
           components: rustfmt,clippy
 
@@ -63,77 +62,32 @@ jobs:
   build:
     name: Build hyperion.rs binaries
 
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - x86_64-unknown-linux-gnu
-          - arm-unknown-linux-gnueabihf
-        include:
-          - target: x86_64-unknown-linux-gnu
-            cross: ""
-            image: "ghcr.io/alixinne/cross:x86_64-bullseye"
-          - target: arm-unknown-linux-gnueabihf
-            cross: arm-linux-gnueabihf-
-            image: "ghcr.io/alixinne/cross:raspberrypi-bookworm"
-
     runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: recursive
 
-      - name: Install Protoc
-        id: protoc
-        uses: arduino/setup-protoc@v2
-
-      - uses: actions/cache@v5
+      - name: Install nix
+        uses: cachix/install-nix-action@v31
         with:
-          path: |
-            ~/.cargo
-            target
-          key: ${{ runner.os }}-build-${{ matrix.target }}-${{ hashFiles('Cargo.lock', 'rust-toolchain') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ matrix.target }}-${{ hashFiles('Cargo.lock', 'rust-toolchain') }}
-            ${{ runner.os }}-build-${{ matrix.target }}-
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          target: ${{ matrix.target }}
-          profile: minimal
-
-      - name: Move protoc
+      - name: Build archives
         run: |
-          PROTOC=$GITHUB_WORKSPACE/protoc
-          cp ${{ steps.protoc.outputs.path }}/bin/protoc $PROTOC
-          echo "PROTOC=./protoc" >> $GITHUB_ENV
-
-      - name: Build project
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target=${{ matrix.target }}
-
-      - name: Strip resulting binary
-        run: docker run -v ${{ github.workspace }}:/src ${{ matrix.image }} ${{ matrix.cross }}strip /src/target/${{ matrix.target }}/release/hyperiond
-
-      - name: Prepare release
-        run: |
-          ./ci/prepare-release.sh ${{ matrix.target }}
+          nix build .?submodules=1#packages.x86_64-linux.allArchives
 
       - uses: actions/upload-artifact@v6
         with:
-          name: hyperion.rs-${{ matrix.target }}.tar.xz
-          path: release/hyperion.rs-${{ matrix.target }}.tar.xz
+          name: archives
+          path: result/*.tar.xz
 
   release-nightly:
     name: Release hyperion.rs
 
-    needs: [ checks, build ]
+    needs: [checks, build]
     runs-on: ubuntu-latest
     if: "github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')"
 
@@ -145,7 +99,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v7
         with:
-          path: release
+          name: archives
+          path: result
 
       - uses: marvinpinto/action-automatic-releases@latest
         with:
@@ -154,7 +109,7 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            release/**/*
+            result/**/*
         if: "github.ref == 'refs/heads/master'"
 
       - uses: marvinpinto/action-automatic-releases@latest
@@ -163,7 +118,6 @@ jobs:
           prerelease: false
           title: ${{ github.ref_name }}
           files: |
-            release/**/*
+            result/**/*
         if: "startsWith(github.ref, 'refs/tags/v')"
-
 # vim: ts=2:sw=2

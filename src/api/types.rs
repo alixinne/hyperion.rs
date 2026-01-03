@@ -84,7 +84,7 @@ impl PriorityInfo {
                 visible,
                 value: None,
             },
-            InputMessageData::Clear { .. } | InputMessageData::ClearAll { .. } => {
+            InputMessageData::Clear { .. } | InputMessageData::ClearAll => {
                 panic!("cannot create PriorityInfo for InputMessage")
             }
         }

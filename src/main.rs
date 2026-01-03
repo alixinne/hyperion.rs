@@ -249,7 +249,7 @@ fn main(opts: Opts) -> color_eyre::eyre::Result<()> {
     let thd_count = opts
         .core_threads
         .and_then(|n| if n > 0 { Some(n) } else { None })
-        .unwrap_or_else(|| num_cpus::get().max(2).min(4));
+        .unwrap_or_else(|| num_cpus::get().clamp(2, 4));
     let rt = Builder::new_multi_thread()
         .worker_threads(thd_count)
         .enable_all()

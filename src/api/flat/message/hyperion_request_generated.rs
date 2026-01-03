@@ -1041,7 +1041,7 @@ impl core::fmt::Debug for Request<'_> {
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `root_as_request_unchecked`.
-pub fn root_as_request(buf: &[u8]) -> Result<Request, flatbuffers::InvalidFlatbuffer> {
+pub fn root_as_request(buf: &[u8]) -> Result<Request<'_>, flatbuffers::InvalidFlatbuffer> {
   flatbuffers::root::<Request>(buf)
 }
 #[inline]
@@ -1051,7 +1051,7 @@ pub fn root_as_request(buf: &[u8]) -> Result<Request, flatbuffers::InvalidFlatbu
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_request_unchecked`.
-pub fn size_prefixed_root_as_request(buf: &[u8]) -> Result<Request, flatbuffers::InvalidFlatbuffer> {
+pub fn size_prefixed_root_as_request(buf: &[u8]) -> Result<Request<'_>, flatbuffers::InvalidFlatbuffer> {
   flatbuffers::size_prefixed_root::<Request>(buf)
 }
 #[inline]
@@ -1084,14 +1084,14 @@ pub fn size_prefixed_root_as_request_with_opts<'b, 'o>(
 /// Assumes, without verification, that a buffer of bytes contains a Request and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `Request`.
-pub unsafe fn root_as_request_unchecked(buf: &[u8]) -> Request {
+pub unsafe fn root_as_request_unchecked(buf: &[u8]) -> Request<'_> {
   flatbuffers::root_unchecked::<Request>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed Request and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `Request`.
-pub unsafe fn size_prefixed_root_as_request_unchecked(buf: &[u8]) -> Request {
+pub unsafe fn size_prefixed_root_as_request_unchecked(buf: &[u8]) -> Request<'_> {
   flatbuffers::size_prefixed_root_unchecked::<Request>(buf)
 }
 #[inline]

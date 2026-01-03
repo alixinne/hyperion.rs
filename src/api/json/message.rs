@@ -188,14 +188,10 @@ pub struct Effect {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum ImageFormat {
+    #[default]
     Auto,
-}
-
-impl Default for ImageFormat {
-    fn default() -> Self {
-        Self::Auto
-    }
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -817,5 +813,10 @@ fn hostname() -> String {
 }
 
 fn version() -> String {
-    git_version::git_version!(prefix = "hyperion.rs-", args = ["--always", "--tags"]).to_owned()
+    git_version::git_version!(
+        prefix = "hyperion.rs-",
+        args = ["--always", "--tags"],
+        fallback = env!("HYPERION_RS_GIT_VERSION")
+    )
+    .to_owned()
 }

@@ -23,7 +23,7 @@ pub trait Provider: std::fmt::Debug + Send + Sync {
     /// # Parameters
     ///
     /// * `script_path`: path to the script file describing this effect. This is the `script` field
-    /// in the effect definition JSON.
+    ///   in the effect definition JSON.
     ///
     /// # Returns
     ///

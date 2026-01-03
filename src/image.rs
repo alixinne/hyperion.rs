@@ -240,11 +240,11 @@ impl<'i, T: Image> Image for ImageView<'i, T> {
 }
 
 pub trait ImageViewExt: Image {
-    fn wrap(&self, x: std::ops::Range<u16>, y: std::ops::Range<u16>) -> ImageView<Self>;
+    fn wrap(&self, x: std::ops::Range<u16>, y: std::ops::Range<u16>) -> ImageView<'_, Self>;
 }
 
 impl<T: Image> ImageViewExt for T {
-    fn wrap(&self, x: std::ops::Range<u16>, y: std::ops::Range<u16>) -> ImageView<Self> {
+    fn wrap(&self, x: std::ops::Range<u16>, y: std::ops::Range<u16>) -> ImageView<'_, Self> {
         ImageView {
             inner: self,
             xmin: x.start,

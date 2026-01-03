@@ -79,7 +79,7 @@ impl EffectDefinition {
         Self::from_file(
             path,
             path.parent()
-                .ok_or_else(|| EffectDefinitionError::InvalidPath)?
+                .ok_or(EffectDefinitionError::InvalidPath)?
                 .to_owned()
                 .into(),
         )

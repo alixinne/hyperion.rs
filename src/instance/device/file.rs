@@ -23,7 +23,6 @@ impl WritingDevice for FileDeviceImpl {
 
     fn new(config: &Self::Config) -> Result<Self, DeviceError> {
         let file_handle = std::fs::OpenOptions::new()
-            .write(true)
             .create(true)
             .append(true)
             .open(&config.output)?;

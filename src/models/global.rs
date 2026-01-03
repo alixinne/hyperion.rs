@@ -51,7 +51,9 @@ impl Default for Forwarder {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase", deny_unknown_fields)]
+#[derive(Default)]
 pub enum FramegrabberType {
+    #[default]
     Auto,
     AMLogic,
     DispmanX,
@@ -61,12 +63,6 @@ pub enum FramegrabberType {
     QT,
     X11,
     XCB,
-}
-
-impl Default for FramegrabberType {
-    fn default() -> Self {
-        Self::Auto
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
@@ -136,17 +132,13 @@ impl Default for General {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE", deny_unknown_fields)]
+#[derive(Default)]
 pub enum V4L2Standard {
+    #[default]
     NoChange,
     Pal,
     Ntsc,
     Secam,
-}
-
-impl Default for V4L2Standard {
-    fn default() -> Self {
-        Self::NoChange
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]

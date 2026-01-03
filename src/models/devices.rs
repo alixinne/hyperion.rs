@@ -43,15 +43,11 @@ macro_rules! impl_device_config {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum DummyDeviceMode {
+    #[default]
     Text,
     Ansi,
-}
-
-impl Default for DummyDeviceMode {
-    fn default() -> Self {
-        Self::Text
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]

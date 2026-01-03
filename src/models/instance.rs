@@ -219,7 +219,9 @@ impl Default for ChannelAdjustment {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase", deny_unknown_fields)]
+#[derive(Default)]
 pub enum ColorOrder {
+    #[default]
     Rgb,
     Bgr,
     Rbg,
@@ -240,12 +242,6 @@ impl ColorOrder {
             ColorOrder::Gbr => (g, b, r),
             ColorOrder::Grb => (g, r, b),
         })
-    }
-}
-
-impl Default for ColorOrder {
-    fn default() -> Self {
-        Self::Rgb
     }
 }
 

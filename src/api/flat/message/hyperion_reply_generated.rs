@@ -156,7 +156,7 @@ impl core::fmt::Debug for Reply<'_> {
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `root_as_reply_unchecked`.
-pub fn root_as_reply(buf: &[u8]) -> Result<Reply, flatbuffers::InvalidFlatbuffer> {
+pub fn root_as_reply(buf: &[u8]) -> Result<Reply<'_>, flatbuffers::InvalidFlatbuffer> {
   flatbuffers::root::<Reply>(buf)
 }
 #[inline]
@@ -166,7 +166,7 @@ pub fn root_as_reply(buf: &[u8]) -> Result<Reply, flatbuffers::InvalidFlatbuffer
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_reply_unchecked`.
-pub fn size_prefixed_root_as_reply(buf: &[u8]) -> Result<Reply, flatbuffers::InvalidFlatbuffer> {
+pub fn size_prefixed_root_as_reply(buf: &[u8]) -> Result<Reply<'_>, flatbuffers::InvalidFlatbuffer> {
   flatbuffers::size_prefixed_root::<Reply>(buf)
 }
 #[inline]
@@ -199,14 +199,14 @@ pub fn size_prefixed_root_as_reply_with_opts<'b, 'o>(
 /// Assumes, without verification, that a buffer of bytes contains a Reply and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `Reply`.
-pub unsafe fn root_as_reply_unchecked(buf: &[u8]) -> Reply {
+pub unsafe fn root_as_reply_unchecked(buf: &[u8]) -> Reply<'_> {
   flatbuffers::root_unchecked::<Reply>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed Reply and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `Reply`.
-pub unsafe fn size_prefixed_root_as_reply_unchecked(buf: &[u8]) -> Reply {
+pub unsafe fn size_prefixed_root_as_reply_unchecked(buf: &[u8]) -> Reply<'_> {
   flatbuffers::size_prefixed_root_unchecked::<Reply>(buf)
 }
 #[inline]

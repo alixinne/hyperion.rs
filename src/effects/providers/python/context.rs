@@ -14,7 +14,7 @@ static INITIALIZED_PYTHON: Once = Once::new();
 
 thread_local! {
     /// Current effect context
-    static CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+    static CONTEXT: RefCell<Option<Context>> = const { RefCell::new(None) };
 }
 
 /// Python effect module context

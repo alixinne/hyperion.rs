@@ -8,15 +8,16 @@ hyperion.rs is a rewrite of
 [hyperion.ng](https://github.com/hyperion-project/hyperion.ng) in the Rust
 Programming Language. This version features:
 
-* Very low resource requirements (can be run on a single thread, useful for the
+- Very low resource requirements (can be run on a single thread, useful for the
   Raspberry Pi Zero for example)
-* No memory leaks (most allocations are static anyways)
-* Easy to compile *and* cross-compile
+- No memory leaks (most allocations are static anyways)
+- Easy to compile _and_ cross-compile
 
-***Disclaimer: this is an early work-in-progress***:
-* A lot of internals may still change, in case you would like to contribute
+**_Disclaimer: this is an early work-in-progress_**:
+
+- A lot of internals may still change, in case you would like to contribute
   please contact me beforehand.
-* Only a small subset of the original project's features are currently
+- Only a small subset of the original project's features are currently
   supported. This means that unless you're using it in the exact same context as
   I am (Android TV Grabber + Raspberry Pi Zero W + WS2815 LED strip), this might
   not be for you.
@@ -25,18 +26,18 @@ Programming Language. This version features:
 
 Currently implemented features:
 
-* Loading settings from the hyperion.ng database
-* File, WS2812SPI devices
-* JSON, Protobuf, Flatbuffers and Boblight server
-* Black border detector, color channel adjustments, smoothing
-* Basic effect support (only setColor and setImage, no custom smoothing, no
+- Loading settings from the hyperion.ng database
+- File, WS2812SPI devices
+- JSON, Protobuf, Flatbuffers and Boblight server
+- Black border detector, color channel adjustments, smoothing
+- Basic effect support (only setColor and setImage, no custom smoothing, no
   per-instance effect directory). Can be disabled if Python is not available
   for the target platform (see the `python` feature).
 
 Extra features not available in hyperion.ng:
 
-* Hooks (global start, stop, and instance start, stop, activate, deactivate)
-* RGB color temperature adjustment
+- Hooks (global start, stop, and instance start, stop, activate, deactivate)
+- RGB color temperature adjustment
 
 ## Configuration
 
@@ -92,21 +93,14 @@ If running from a release archive, invoke the `hyperiond-rs` binary directly.
 
 ## Cross-compiling
 
-Cross-compiling is done using [cross](https://github.com/rust-embedded/cross).
-Let's say we are building for the Raspberry Pi Zero, which corresponds to the
-Rust target arm-unknown-linux-gnueabihf.
+Cross-compiling is done using [nix](https://nixos.org/). In order to build
+the full install directory for a Raspberry Pi Zero, you can use the following
+command:
 
 ```bash
-$ export TARGET=arm-unknown-linux-gnueabihf
-$ export ENABLE_PYO3=1
+$ nix build .?submodules=1#packages.x86_64-linux.raspberryPiZero
 
-# (if not done already) Install cross
-$ cargo install --force cross
-
-# Build the project
-$ cross build --release --target $TARGET
-
-# The resulting binaries will be in target/$TARGET/release
+# The resulting binaries will be in result/
 ```
 
 ## License

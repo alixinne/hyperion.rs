@@ -39,17 +39,12 @@ pub enum InstanceError {
     Recv(#[from] broadcast::error::RecvError),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum ActiveState {
+    #[default]
     Inactive,
     Active,
     Deactivating,
-}
-
-impl Default for ActiveState {
-    fn default() -> Self {
-        Self::Inactive
-    }
 }
 
 pub struct Instance {

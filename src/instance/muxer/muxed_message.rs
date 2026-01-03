@@ -27,6 +27,7 @@ impl std::ops::Deref for MuxedMessage {
 }
 
 #[derive(Debug, Clone)]
+#[allow(unused)]
 pub enum MuxedMessageData {
     SolidColor {
         priority: i32,

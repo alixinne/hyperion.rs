@@ -261,7 +261,7 @@ impl BlackBorderDetector {
     }
 
     fn threshold(&self) -> u8 {
-        (self.config.threshold * 255 / 100).min(255).max(0) as u8
+        (self.config.threshold * 255 / 100).min(255) as u8
     }
 
     fn update_border(&mut self, new_border: BlackBorder) -> bool {

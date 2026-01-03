@@ -55,15 +55,12 @@ impl Smoothing {
                 let b_diff = tgt.blue as i32 - prev.blue as i32;
 
                 prev.red = (prev.red as i32 + r_diff.signum() * (k * r_diff.abs() as f32) as i32)
-                    .max(0)
-                    .min(65535) as u16;
+                    .clamp(0, 65535) as u16;
                 prev.green = (prev.green as i32
                     + g_diff.signum() * (k * g_diff.abs() as f32) as i32)
-                    .max(0)
-                    .min(65535) as u16;
+                    .clamp(0, 65535) as u16;
                 prev.blue = (prev.blue as i32 + b_diff.signum() * (k * b_diff.abs() as f32) as i32)
-                    .max(0)
-                    .min(65535) as u16;
+                    .clamp(0, 65535) as u16;
             }
         } else {
             // Smoothing disabled, update as soon as possible

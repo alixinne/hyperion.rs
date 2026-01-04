@@ -14,7 +14,7 @@ name = "reducer"
 harness = false
 
 [dependencies]
-ambassador = "0.3"
+ambassador = "0.5"
 async-trait = "0.1"
 base64 = "0.22"
 byteorder = "1.5"
@@ -30,47 +30,47 @@ futures = "0.3"
 futures-io = "0.3"
 git-version = "0.3"
 hex = { version = "0.4", features = ["serde"] }
-hostname = "0.3"
-image = { version = "0.24", default-features = false, features = ["png"] }
+hostname = "0.4"
+image = { version = "0.25", default-features = false, features = ["png"] }
 lazy_static = "1.4"
-lru = "0.12"
+lru = "0.16"
 num_cpus = "1.16"
 palette = { version = "0.7", features = ["serializing"] }
-parse-display = "0.9"
+parse-display = "0.10"
 paw = "1.0"
-pnet = "0.34"
-prost = "0.12"
-pyo3 = { version = "0.20", optional = true }
-pythonize = { version = "0.20", optional = true }
+pnet = "0.35"
+prost = "0.14"
+pyo3 = { version = "0.27", optional = true }
+pythonize = { version = "0.27", optional = true }
 regex = "1.10"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 sha2 = "0.10"
 slotmap = "1.0"
-spidev = "0.6"
-sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio-rustls"] }
+spidev = "0.7"
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls"] }
 structopt = { version = "0.3", features = ["paw"] }
-strum = "0.26"
-strum_macros = "0.26"
+strum = "0.27"
+strum_macros = "0.27"
 thiserror = "2.0"
 tokio = { version = "1.36", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
 tokio-util = { version = "0.7", features = ["codec"] }
-toml = "0.8"
+toml = "0.9"
 tracing = "0.1"
 tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.7", features = ["serde", "v4", "v5"] }
-validator = { version = "0.16", features = ["derive"] }
-warp = "0.3"
+validator = { version = "0.20", features = ["derive"] }
+warp = "0.4"
 
 [build-dependencies]
-prost-build = "0.12"
+prost-build = "0.14"
 
 [dev-dependencies]
-criterion = "0.5"
-rand = "0.8"
+criterion = "0.8"
+rand = "0.9"
 
 [features]
 default = ["python"]

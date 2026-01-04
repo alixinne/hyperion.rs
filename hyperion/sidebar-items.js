@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"macro":["ambassador_impl_DeviceConfig","ambassador_impl_DeviceConfig_body_enum","ambassador_impl_DeviceConfig_body_single_struct"],"mod":["api","color","component","db","effects","global","image","instance","models","serde","servers","web"]};
+window.SIDEBAR_ITEMS = {"mod":["api","color","component","db","effects","global","image","instance","models","serde","servers","web"]};

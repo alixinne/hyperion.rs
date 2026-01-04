@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["abort","do_run","hyperion","hyperion_init","set_color","set_image"],"mod":["context"],"struct":["PythonProvider"],"type":["Error"]};
+window.SIDEBAR_ITEMS = {"fn":["__pyfunction_abort","__pyfunction_set_color","__pyfunction_set_image","abort","do_run","hyperion","set_color","set_image"],"mod":["context"],"struct":["PythonProvider"],"type":["Error"]};

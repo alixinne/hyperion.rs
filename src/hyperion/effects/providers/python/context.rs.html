@@ -8,7 +8,7 @@
 <a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>futures::Future;
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>pyo3::prelude::<span class="kw-2">*</span>;
 <a href=#10 id=10 data-nosnippet>10</a>
-<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use super</span>::{hyperion_init, RuntimeMethods};
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use super</span>::{hyperion, RuntimeMethods};
 <a href=#12 id=12 data-nosnippet>12</a>
 <a href=#13 id=13 data-nosnippet>13</a><span class="kw">static </span>INITIALIZED_PYTHON: Once = Once::new();
 <a href=#14 id=14 data-nosnippet>14</a>
@@ -90,58 +90,54 @@
 <a href=#90 id=90 data-nosnippet>90</a>            <span class="comment">// Initialize the Python interpreter global state
 <a href=#91 id=91 data-nosnippet>91</a>            </span>INITIALIZED_PYTHON.call_once(|| {
 <a href=#92 id=92 data-nosnippet>92</a>                <span class="comment">// Register our module through inittab
-<a href=#93 id=93 data-nosnippet>93</a>                </span>pyo3::ffi::PyImport_AppendInittab(
-<a href=#94 id=94 data-nosnippet>94</a>                    <span class="string">b"hyperion\0"</span>.as_ptr() <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>,
-<a href=#95 id=95 data-nosnippet>95</a>                    <span class="prelude-val">Some</span>(hyperion_init),
-<a href=#96 id=96 data-nosnippet>96</a>                );
-<a href=#97 id=97 data-nosnippet>97</a>
-<a href=#98 id=98 data-nosnippet>98</a>                pyo3::prepare_freethreaded_python();
-<a href=#99 id=99 data-nosnippet>99</a>            });
-<a href=#100 id=100 data-nosnippet>100</a>
-<a href=#101 id=101 data-nosnippet>101</a>            <span class="kw">let </span>result = CONTEXT.with(|ctx| {
-<a href=#102 id=102 data-nosnippet>102</a>                <span class="comment">// Initialize the thread-local state, i.e. interpreter
-<a href=#103 id=103 data-nosnippet>103</a>                </span><span class="kw-2">*</span>ctx.borrow_mut() = <span class="prelude-val">Some</span>(Python::with_gil(|py| {
-<a href=#104 id=104 data-nosnippet>104</a>                    <span class="self">Self</span>::new(py, Arc::downgrade(<span class="kw-2">&amp;</span>methods))
-<a href=#105 id=105 data-nosnippet>105</a>                        .expect(<span class="string">"failed initializing python subinterp"</span>)
-<a href=#106 id=106 data-nosnippet>106</a>                }));
-<a href=#107 id=107 data-nosnippet>107</a>
-<a href=#108 id=108 data-nosnippet>108</a>                <span class="comment">// Run user callback
-<a href=#109 id=109 data-nosnippet>109</a>                </span><span class="kw">let </span>result = {
-<a href=#110 id=110 data-nosnippet>110</a>                    <span class="kw">let </span>borrow = ctx.borrow();
-<a href=#111 id=111 data-nosnippet>111</a>                    <span class="kw">let </span>ctx = borrow.as_ref().unwrap();
-<a href=#112 id=112 data-nosnippet>112</a>                    panic::catch_unwind(panic::AssertUnwindSafe(|| f(ctx)))
-<a href=#113 id=113 data-nosnippet>113</a>                };
-<a href=#114 id=114 data-nosnippet>114</a>
-<a href=#115 id=115 data-nosnippet>115</a>                <span class="comment">// Free the interpreter
-<a href=#116 id=116 data-nosnippet>116</a>                </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>ctx) = ctx.borrow_mut().take() {
-<a href=#117 id=117 data-nosnippet>117</a>                    Python::with_gil(|py| {
-<a href=#118 id=118 data-nosnippet>118</a>                        ctx.release(py);
-<a href=#119 id=119 data-nosnippet>119</a>                    })
-<a href=#120 id=120 data-nosnippet>120</a>                }
-<a href=#121 id=121 data-nosnippet>121</a>
-<a href=#122 id=122 data-nosnippet>122</a>                result
-<a href=#123 id=123 data-nosnippet>123</a>            });
-<a href=#124 id=124 data-nosnippet>124</a>
-<a href=#125 id=125 data-nosnippet>125</a>            <span class="comment">// Return result
-<a href=#126 id=126 data-nosnippet>126</a>            </span><span class="kw">match </span>result {
-<a href=#127 id=127 data-nosnippet>127</a>                <span class="prelude-val">Ok</span>(result) =&gt; result,
-<a href=#128 id=128 data-nosnippet>128</a>                <span class="prelude-val">Err</span>(panic) =&gt; panic::panic_any(panic),
-<a href=#129 id=129 data-nosnippet>129</a>            }
-<a href=#130 id=130 data-nosnippet>130</a>        }
-<a href=#131 id=131 data-nosnippet>131</a>    }
-<a href=#132 id=132 data-nosnippet>132</a>
-<a href=#133 id=133 data-nosnippet>133</a>    <span class="kw">pub fn </span>with_current&lt;F, U&gt;(f: <span class="kw">impl </span>FnOnce(Arc&lt;<span class="kw">dyn </span>RuntimeMethods&gt;) -&gt; F) -&gt; U
-<a href=#134 id=134 data-nosnippet>134</a>    <span class="kw">where
-<a href=#135 id=135 data-nosnippet>135</a>        </span>F: Future&lt;Output = U&gt;,
-<a href=#136 id=136 data-nosnippet>136</a>    {
-<a href=#137 id=137 data-nosnippet>137</a>        CONTEXT.with(|ctx| {
-<a href=#138 id=138 data-nosnippet>138</a>            futures::executor::block_on(f(ctx
-<a href=#139 id=139 data-nosnippet>139</a>                .borrow()
-<a href=#140 id=140 data-nosnippet>140</a>                .as_ref()
-<a href=#141 id=141 data-nosnippet>141</a>                .expect(<span class="string">"no current context"</span>)
-<a href=#142 id=142 data-nosnippet>142</a>                .methods
-<a href=#143 id=143 data-nosnippet>143</a>                .upgrade()
-<a href=#144 id=144 data-nosnippet>144</a>                .expect(<span class="string">"no current methods"</span>)))
-<a href=#145 id=145 data-nosnippet>145</a>        })
-<a href=#146 id=146 data-nosnippet>146</a>    }
-<a href=#147 id=147 data-nosnippet>147</a>}</code></pre></div></section></main></body></html>
+<a href=#93 id=93 data-nosnippet>93</a>                </span><span class="macro">pyo3::append_to_inittab!</span>(hyperion);
+<a href=#94 id=94 data-nosnippet>94</a>                Python::initialize();
+<a href=#95 id=95 data-nosnippet>95</a>            });
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a>            <span class="kw">let </span>result = CONTEXT.with(|ctx| {
+<a href=#98 id=98 data-nosnippet>98</a>                <span class="comment">// Initialize the thread-local state, i.e. interpreter
+<a href=#99 id=99 data-nosnippet>99</a>                </span><span class="kw-2">*</span>ctx.borrow_mut() = <span class="prelude-val">Some</span>(Python::attach(|py| {
+<a href=#100 id=100 data-nosnippet>100</a>                    <span class="self">Self</span>::new(py, Arc::downgrade(<span class="kw-2">&amp;</span>methods))
+<a href=#101 id=101 data-nosnippet>101</a>                        .expect(<span class="string">"failed initializing python subinterp"</span>)
+<a href=#102 id=102 data-nosnippet>102</a>                }));
+<a href=#103 id=103 data-nosnippet>103</a>
+<a href=#104 id=104 data-nosnippet>104</a>                <span class="comment">// Run user callback
+<a href=#105 id=105 data-nosnippet>105</a>                </span><span class="kw">let </span>result = {
+<a href=#106 id=106 data-nosnippet>106</a>                    <span class="kw">let </span>borrow = ctx.borrow();
+<a href=#107 id=107 data-nosnippet>107</a>                    <span class="kw">let </span>ctx = borrow.as_ref().unwrap();
+<a href=#108 id=108 data-nosnippet>108</a>                    panic::catch_unwind(panic::AssertUnwindSafe(|| f(ctx)))
+<a href=#109 id=109 data-nosnippet>109</a>                };
+<a href=#110 id=110 data-nosnippet>110</a>
+<a href=#111 id=111 data-nosnippet>111</a>                <span class="comment">// Free the interpreter
+<a href=#112 id=112 data-nosnippet>112</a>                </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>ctx) = ctx.borrow_mut().take() {
+<a href=#113 id=113 data-nosnippet>113</a>                    Python::attach(|py| {
+<a href=#114 id=114 data-nosnippet>114</a>                        ctx.release(py);
+<a href=#115 id=115 data-nosnippet>115</a>                    })
+<a href=#116 id=116 data-nosnippet>116</a>                }
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a>                result
+<a href=#119 id=119 data-nosnippet>119</a>            });
+<a href=#120 id=120 data-nosnippet>120</a>
+<a href=#121 id=121 data-nosnippet>121</a>            <span class="comment">// Return result
+<a href=#122 id=122 data-nosnippet>122</a>            </span><span class="kw">match </span>result {
+<a href=#123 id=123 data-nosnippet>123</a>                <span class="prelude-val">Ok</span>(result) =&gt; result,
+<a href=#124 id=124 data-nosnippet>124</a>                <span class="prelude-val">Err</span>(panic) =&gt; panic::panic_any(panic),
+<a href=#125 id=125 data-nosnippet>125</a>            }
+<a href=#126 id=126 data-nosnippet>126</a>        }
+<a href=#127 id=127 data-nosnippet>127</a>    }
+<a href=#128 id=128 data-nosnippet>128</a>
+<a href=#129 id=129 data-nosnippet>129</a>    <span class="kw">pub fn </span>with_current&lt;F, U&gt;(f: <span class="kw">impl </span>FnOnce(Arc&lt;<span class="kw">dyn </span>RuntimeMethods&gt;) -&gt; F) -&gt; U
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">where
+<a href=#131 id=131 data-nosnippet>131</a>        </span>F: Future&lt;Output = U&gt;,
+<a href=#132 id=132 data-nosnippet>132</a>    {
+<a href=#133 id=133 data-nosnippet>133</a>        CONTEXT.with(|ctx| {
+<a href=#134 id=134 data-nosnippet>134</a>            futures::executor::block_on(f(ctx
+<a href=#135 id=135 data-nosnippet>135</a>                .borrow()
+<a href=#136 id=136 data-nosnippet>136</a>                .as_ref()
+<a href=#137 id=137 data-nosnippet>137</a>                .expect(<span class="string">"no current context"</span>)
+<a href=#138 id=138 data-nosnippet>138</a>                .methods
+<a href=#139 id=139 data-nosnippet>139</a>                .upgrade()
+<a href=#140 id=140 data-nosnippet>140</a>                .expect(<span class="string">"no current methods"</span>)))
+<a href=#141 id=141 data-nosnippet>141</a>        })
+<a href=#142 id=142 data-nosnippet>142</a>    }
+<a href=#143 id=143 data-nosnippet>143</a>}</code></pre></div></section></main></body></html>

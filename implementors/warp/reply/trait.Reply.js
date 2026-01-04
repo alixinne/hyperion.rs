@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"hyperion":[["impl&lt;T: <a class=\"trait\" href=\"https://docs.rs/warp/0.3.6/warp/reply/trait.Reply.html\" title=\"trait warp::reply::Reply\">Reply</a>&gt; <a class=\"trait\" href=\"https://docs.rs/warp/0.3.6/warp/reply/trait.Reply.html\" title=\"trait warp::reply::Reply\">Reply</a> for <a class=\"struct\" href=\"hyperion/web/session/struct.WithSession.html\" title=\"struct hyperion::web::session::WithSession\">WithSession</a>&lt;T&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

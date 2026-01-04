@@ -1,6 +1,6 @@
 [package]
 name = "hyperion"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Alixinne <alixinne@pm.me>"]
 edition = "2018"
 default-run = "hyperiond"

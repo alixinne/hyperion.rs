@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, path::Path, sync::Arc};
+use std::{convert::TryFrom, ffi::CString, path::Path, sync::Arc};
 
 use pyo3::{
     exceptions::{PyRuntimeError, PyTypeError},
@@ -41,7 +41,7 @@ impl super::Provider for PythonProvider {
         Ok(do_run(methods, args, |py| {
             // Run script
             py.run(
-                std::fs::read_to_string(full_script_path)?.as_str(),
+                CString::new(std::fs::read_to_string(full_script_path)?)?.as_c_str(),
                 None,
                 None,
             )?;
@@ -69,12 +69,12 @@ fn abort() -> bool {
 /// Set a new color for the leds
 #[pyfunction(signature = (*args))]
 #[pyo3(name = "setColor")]
-fn set_color(args: &PyTuple) -> Result<(), PyErr> {
+fn set_color(args: Bound<'_, PyTuple>) -> Result<(), PyErr> {
     Context::with_current(|m| {
         async move {
             if let Result::<(u8, u8, u8), _>::Ok((r, g, b)) = args.extract() {
                 m.set_color(Color::new(r, g, b)).await?;
-            } else if let Result::<(&PyByteArray,), _>::Ok((bytearray,)) = args.extract() {
+            } else if let Result::<(Bound<'_, PyByteArray>,), _>::Ok((bytearray,)) = args.extract() {
                 if bytearray.len() == 3 * m.get_led_count() {
                     // Safety: we are not modifying bytearray while accessing it
                     unsafe {
@@ -102,7 +102,7 @@ fn set_color(args: &PyTuple) -> Result<(), PyErr> {
 /// Set a new image to process and determine new led colors
 #[pyfunction]
 #[pyo3(name = "setImage")]
-fn set_image(width: u16, height: u16, data: &PyByteArray) -> Result<(), PyErr> {
+fn set_image(width: u16, height: u16, data: Bound<'_, PyByteArray>) -> Result<(), PyErr> {
     Context::with_current(|m| {
         async move {
             // unwrap: we did all the necessary checks already
@@ -118,7 +118,7 @@ fn set_image(width: u16, height: u16, data: &PyByteArray) -> Result<(), PyErr> {
 }
 
 #[pymodule]
-fn hyperion(_py: Python, m: &PyModule) -> PyResult<()> {
+fn hyperion(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(abort, m)?)?;
     m.add_function(wrap_pyfunction!(set_color, m)?)?;
     m.add_function(wrap_pyfunction!(set_image, m)?)?;
@@ -131,10 +131,6 @@ fn hyperion(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-extern "C" fn hyperion_init() -> *mut pyo3::ffi::PyObject {
-    unsafe { hyperion::init() }
-}
-
 fn do_run<T>(
     methods: Arc<dyn RuntimeMethods>,
     args: serde_json::Value,
@@ -142,7 +138,7 @@ fn do_run<T>(
 ) -> Result<T, PyErr> {
     Context::with(methods, |ctx| {
         // Run the given code
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             ctx.run(py, || {
                 // Register arguments
                 let hyperion_mod = py.import("hyperion")?;

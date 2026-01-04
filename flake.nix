@@ -173,6 +173,7 @@
 
           PYO3_PYTHON = "${pkgs.python3}/bin/python";
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY = "1";
+          LD_LIBRARY_PATH = "${pkgs.python3}/lib";
         };
       }
     );

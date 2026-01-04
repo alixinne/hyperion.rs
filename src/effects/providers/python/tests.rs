@@ -1,4 +1,5 @@
 use std::{
+    ffi::CString,
     path::Path,
     sync::{Arc, Mutex},
     time::Duration,
@@ -23,7 +24,11 @@ fn run_string(
 ) -> Result<Py<PyDict>, PyErr> {
     do_run(methods, args, |py| {
         let locals = pyo3::types::PyDict::new(py);
-        let result = py.run(source, None, Some(locals));
+        let result = py.run(
+            CString::new(source).unwrap().as_c_str(),
+            None,
+            Some(&locals),
+        );
         result.map(|_| locals.into())
     })
 }
@@ -119,11 +124,11 @@ duration = time.time() - start
 
     // Wait for the effect to complete
     let locals = effect.await.unwrap().unwrap();
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         assert!(
             (seconds
                 - locals
-                    .as_ref(py)
+                    .bind_borrowed(py)
                     .get_item("duration")
                     .unwrap()
                     .unwrap()
@@ -149,11 +154,11 @@ leds = hyperion.ledCount
     )
     .expect("failed to run effect code");
 
-    Python::with_gil(|py| {
+    Python::attach(|py| {
         assert_eq!(
             led_count,
             result
-                .as_ref(py)
+                .bind_borrowed(py)
                 .get_item("leds")
                 .unwrap()
                 .unwrap()

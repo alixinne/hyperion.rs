@@ -146,7 +146,7 @@ pub struct ColorAdjustment {
     /// RGB color temperature in Kelvins
     pub rgb_temperature: u32,
     pub image_to_led_mapping_type: ImageToLedMappingType,
-    #[validate]
+    #[validate(nested)]
     pub channel_adjustment: Vec<ChannelAdjustment>,
 }
 
@@ -414,9 +414,9 @@ impl Default for MatrixLedConfig {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(default, deny_unknown_fields)]
 pub struct LedConfig {
-    #[validate]
+    #[validate(nested)]
     pub classic: ClassicLedConfig,
-    #[validate]
+    #[validate(nested)]
     pub matrix: MatrixLedConfig,
 }
 
@@ -452,7 +452,7 @@ fn validate_scan_range(led: &Led) -> Result<(), validator::ValidationError> {
 
 #[derive(Debug, Clone, PartialEq, Validate)]
 pub struct Leds {
-    #[validate]
+    #[validate(nested)]
     pub leds: Vec<Led>,
 }
 
@@ -546,39 +546,39 @@ impl Default for Smoothing {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Validate)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InstanceConfig {
-    #[validate]
+    #[validate(nested)]
     pub instance: Instance,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub background_effect: BackgroundEffect,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub black_border_detector: BlackBorderDetector,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub boblight_server: BoblightServer,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub color: ColorAdjustment,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub device: Device,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub effects: Effects,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub foreground_effect: ForegroundEffect,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub instance_capture: InstanceCapture,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub led_config: LedConfig,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub leds: Leds,
-    #[validate]
+    #[validate(nested)]
     #[serde(default = "Default::default")]
     pub smoothing: Smoothing,
 }

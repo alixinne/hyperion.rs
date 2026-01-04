@@ -8,7 +8,7 @@ use drop_bomb::DropBomb;
 use futures::Future;
 use pyo3::prelude::*;
 
-use super::{hyperion_init, RuntimeMethods};
+use super::{hyperion, RuntimeMethods};
 
 static INITIALIZED_PYTHON: Once = Once::new();
 
@@ -90,17 +90,13 @@ impl Context {
             // Initialize the Python interpreter global state
             INITIALIZED_PYTHON.call_once(|| {
                 // Register our module through inittab
-                pyo3::ffi::PyImport_AppendInittab(
-                    b"hyperion\0".as_ptr() as *const _,
-                    Some(hyperion_init),
-                );
-
-                pyo3::prepare_freethreaded_python();
+                pyo3::append_to_inittab!(hyperion);
+                Python::initialize();
             });
 
             let result = CONTEXT.with(|ctx| {
                 // Initialize the thread-local state, i.e. interpreter
-                *ctx.borrow_mut() = Some(Python::with_gil(|py| {
+                *ctx.borrow_mut() = Some(Python::attach(|py| {
                     Self::new(py, Arc::downgrade(&methods))
                         .expect("failed initializing python subinterp")
                 }));
@@ -114,7 +110,7 @@ impl Context {
 
                 // Free the interpreter
                 if let Some(mut ctx) = ctx.borrow_mut().take() {
-                    Python::with_gil(|py| {
+                    Python::attach(|py| {
                         ctx.release(py);
                     })
                 }

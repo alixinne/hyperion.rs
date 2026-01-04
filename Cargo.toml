@@ -63,7 +63,7 @@ tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.7", features = ["serde", "v4", "v5"] }
 validator = { version = "0.20", features = ["derive"] }
-warp = "0.4"
+warp = "0.3" # 0.4 breaks a bunch of stuff
 
 [build-dependencies]
 prost-build = "0.14"

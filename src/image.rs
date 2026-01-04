@@ -76,7 +76,7 @@ impl RawImage {
             &self.data[..],
             self.width as _,
             self.height as _,
-            image::ColorType::Rgb8,
+            image::ColorType::Rgb8.into(),
         )?;
         // Encode to base64
         let encoded = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&buf);

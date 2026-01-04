@@ -11,7 +11,7 @@ use crate::{api::types::PriorityInfo, component::ComponentName, models::Color as
 /// Change color adjustement values
 #[derive(Debug, Deserialize, Validate)]
 pub struct Adjustment {
-    #[validate]
+    #[validate(nested)]
     pub adjustment: ChannelAdjustment,
 }
 

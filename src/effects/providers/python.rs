@@ -74,7 +74,8 @@ fn set_color(args: Bound<'_, PyTuple>) -> Result<(), PyErr> {
         async move {
             if let Result::<(u8, u8, u8), _>::Ok((r, g, b)) = args.extract() {
                 m.set_color(Color::new(r, g, b)).await?;
-            } else if let Result::<(Bound<'_, PyByteArray>,), _>::Ok((bytearray,)) = args.extract() {
+            } else if let Result::<(Bound<'_, PyByteArray>,), _>::Ok((bytearray,)) = args.extract()
+            {
                 if bytearray.len() == 3 * m.get_led_count() {
                     // Safety: we are not modifying bytearray while accessing it
                     unsafe {

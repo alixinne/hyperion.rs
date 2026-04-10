@@ -43,9 +43,13 @@
               {
                 src = ./.;
 
+                cargoBuildOptions = p: (p ++ [ "--workspace" ]);
+                cargoTestOptions = p: (p ++ [ "--workspace" ]);
+
                 nativeBuildInputs = with pkgs; [
                   protobuf
                   patchelf
+                  makeWrapper
                 ];
 
                 # Python version used during the build
@@ -56,11 +60,21 @@
               // additionalAttrs
             );
 
+        nixHyperionRsBinary = mkHyperionRsBinary {
+          toolchain = defaultToolchain;
+
+          additionalAttrs.postInstall = ''
+            wrapProgram $out/bin/hyperion-grabber-kms \
+              --suffix LD_LIBRARY_PATH : ${pkgs.libglvnd}/lib
+          '';
+        };
+
         nativeHyperionRsBinary = mkHyperionRsBinary {
           toolchain = defaultToolchain;
 
           additionalAttrs.postInstall = ''
             patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 $out/bin/hyperiond
+            patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 $out/bin/hyperion-grabber-kms
           '';
         };
 
@@ -93,6 +107,7 @@
 
               postInstall = ''
                 patchelf --set-interpreter /lib/ld-linux-armhf.so.3 $out/bin/hyperiond
+                patchelf --set-interpreter /lib/ld-linux-armhf.so.3 $out/bin/hyperion-grabber-kms
               '';
             };
           };
@@ -109,6 +124,7 @@
               mkdir -p $out/bin $out/share/hyperion
 
               cp ${binary}/bin/hyperiond $out/bin/hyperiond-rs
+              cp ${binary}/bin/hyperion-grabber-kms $out/bin/hyperion-grabber-kms
               cp -rv ext/hyperion.ng/assets/webconfig $out/share/hyperion
               cp -rv ext/hyperion.ng/effects $out/share/hyperion
             '';
@@ -151,6 +167,11 @@
           };
           raspberryPiZeroArchive = mkHyperionRsArchive { root = raspberryPiZero; };
 
+          nix = mkHyperionRsRoot {
+            binary = nixHyperionRsBinary;
+            system = "x86_64-unknown-linux-gnu";
+          };
+
           allArchives = pkgs.stdenvNoCC.mkDerivation {
             inherit version;
             name = "hyperion-rs-archives";
@@ -165,16 +186,32 @@
           };
         };
 
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = [
-            defaultToolchain
-            pkgs.protobuf
-          ];
+        devShells.default =
+          let
+            libBuildInputs = [
+              pkgs.libglvnd
+              pkgs.libgbm
+            ];
+          in
+          pkgs.mkShell {
+            nativeBuildInputs = [
+              defaultToolchain
+              pkgs.protobuf
+              pkgs.pkg-config
+            ]
+            ++ libBuildInputs;
 
-          PYO3_PYTHON = "${pkgs.python3}/bin/python";
-          PYO3_USE_ABI3_FORWARD_COMPATIBILITY = "1";
-          LD_LIBRARY_PATH = "${pkgs.python3}/lib";
-        };
+            PYO3_PYTHON = "${pkgs.python3}/bin/python";
+            PYO3_USE_ABI3_FORWARD_COMPATIBILITY = "1";
+            LD_LIBRARY_PATH = "/run/opengl-driver/lib:${
+              pkgs.lib.makeLibraryPath (
+                [
+                  pkgs.python3
+                ]
+                ++ libBuildInputs
+              )
+            }";
+          };
       }
     );
 }

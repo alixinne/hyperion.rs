@@ -75,3 +75,9 @@ rand = "0.9"
 [features]
 default = ["python"]
 python = ["pyo3", "pythonize"]
+
+[workspace]
+members = [
+  ".",
+  "hyperion-grabber-kms",
+]

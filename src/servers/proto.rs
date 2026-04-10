@@ -13,7 +13,7 @@ use crate::{
 };
 
 mod codec;
-use codec::*;
+pub use codec::*;
 
 #[derive(Debug, Error)]
 pub enum ProtoServerError {

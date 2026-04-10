@@ -14,7 +14,7 @@ use crate::{
 
 /// JSON protocol codec definition
 mod codec;
-use codec::*;
+pub use codec::*;
 
 #[derive(Debug, Error)]
 pub enum JsonServerError {

@@ -52,14 +52,10 @@ impl Decoder for ProtoCodec {
     }
 }
 
-impl Encoder<message::HyperionReply> for ProtoCodec {
+impl<T: prost::Message> Encoder<T> for ProtoCodec {
     type Error = ProtoCodecError;
 
-    fn encode(
-        &mut self,
-        item: message::HyperionReply,
-        dst: &mut BytesMut,
-    ) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: T, dst: &mut BytesMut) -> Result<(), Self::Error> {
         self.buf.clear();
         self.buf.reserve(item.encoded_len());
 

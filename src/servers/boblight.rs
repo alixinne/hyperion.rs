@@ -15,7 +15,7 @@ use crate::{
 
 /// Boblight protocol codec definition
 mod codec;
-use codec::*;
+pub use codec::*;
 
 #[derive(Debug, Error)]
 pub enum BoblightServerError {

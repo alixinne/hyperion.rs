@@ -18,23 +18,23 @@ ambassador = "0.5"
 async-trait = "0.1"
 base64 = "0.22"
 byteorder = "1.5"
-bytes = "1.5"
+bytes = "1.11"
 chrono = { version = "0.4", features = ["serde"] }
 color-eyre = "0.6"
 cookie = "0.18"
 derive_more = "0.99"
 dirs = "6.0"
 drop_bomb = "0.1"
-flatbuffers = "25.0"
+flatbuffers = "25.12"
 futures = "0.3"
 futures-io = "0.3"
 git-version = "0.3"
 hex = { version = "0.4", features = ["serde"] }
 hostname = "0.4"
 image = { version = "0.25", default-features = false, features = ["png"] }
-lazy_static = "1.4"
+lazy_static = "1.5"
 lru = "0.16"
-num_cpus = "1.16"
+num_cpus = "1.17"
 palette = { version = "0.7", features = ["serializing"] }
 parse-display = "0.10"
 paw = "1.0"
@@ -42,26 +42,26 @@ pnet = "0.35"
 prost = "0.14"
 pyo3 = { version = "0.27", optional = true }
 pythonize = { version = "0.27", optional = true }
-regex = "1.10"
+regex = "1.12"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 sha2 = "0.10"
-slotmap = "1.0"
+slotmap = "1.1"
 spidev = "0.7"
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls"] }
 structopt = { version = "0.3", features = ["paw"] }
 strum = "0.27"
 strum_macros = "0.27"
 thiserror = "2.0"
-tokio = { version = "1.36", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { version = "1.51", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
 tokio-util = { version = "0.7", features = ["codec"] }
-toml = "1.0"
+toml = "1.1"
 tracing = "0.1"
 tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1.7", features = ["serde", "v4", "v5"] }
+uuid = { version = "1.23", features = ["serde", "v4", "v5"] }
 validator = { version = "0.20", features = ["derive"] }
 warp = "0.3" # 0.4 breaks a bunch of stuff
 

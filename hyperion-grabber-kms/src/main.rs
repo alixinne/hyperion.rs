@@ -135,10 +135,13 @@ fn main() -> color_eyre::eyre::Result<()> {
         let term = term.clone();
         let target_host = opts.target_host.clone();
         move || {
-            while let Err(error) =
-                network_loop(term.clone(), rx.clone(), target_host.clone(), opts.fps)
-            {
-                error!(%error, "Network loop failed, restarting");
+            while !term.load(Ordering::Relaxed) {
+                if let Err(error) =
+                    network_loop(term.clone(), rx.clone(), target_host.clone(), opts.fps)
+                {
+                    error!(%error, "Network loop failed, restarting in 5s");
+                    sleep(Duration::from_secs(5));
+                }
             }
         }
     });

@@ -14,7 +14,7 @@ crossbeam-channel = "0.5.15"
 drm = "0.15.0"
 gbm = { version = "0.18.0", default-features = false }
 glutin = { version = "0.32.3", default-features = false, features = ["egl"] }
-hyperion = { version = "0.3.2", path = "..", default-features = false }
+hyperion = { version = "0.3.3", path = "..", default-features = false }
 png = "0.18.1"
 prost = "0.14.3"
 signal-hook = "0.4.4"

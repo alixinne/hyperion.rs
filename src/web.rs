@@ -138,7 +138,8 @@ pub async fn bind(
                     .or(files)
                     .with(warp::filters::log::log("hyperion::web")),
             )
-            .run_incoming(tokio_stream::wrappers::TcpListenerStream::new(listener)))
+            .incoming(listener)
+            .run())
         }
         Err(error) => Err(error),
     }

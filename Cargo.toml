@@ -22,7 +22,7 @@ bytes = "1.11"
 chrono = { version = "0.4", features = ["serde"] }
 color-eyre = "0.6"
 cookie = "0.18"
-derive_more = "0.99"
+derive_more = { version = "2.1", features = ["full"] }
 dirs = "6.0"
 drop_bomb = "0.1"
 flatbuffers = "25.12"
@@ -40,19 +40,19 @@ parse-display = "0.10"
 paw = "1.0"
 pnet = "0.35"
 prost = "0.14"
-pyo3 = { version = "0.27", optional = true }
-pythonize = { version = "0.27", optional = true }
+pyo3 = { version = "0.28", optional = true }
+pythonize = { version = "0.28", optional = true }
 regex = "1.12"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-sha2 = "0.10"
+sha2 = "0.11"
 slotmap = "1.1"
 spidev = "0.7"
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls"] }
 structopt = { version = "0.3", features = ["paw"] }
-strum = "0.27"
-strum_macros = "0.27"
+strum = "0.28"
+strum_macros = "0.28"
 thiserror = "2.0"
 tokio = { version = "1.51", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
@@ -63,14 +63,14 @@ tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.23", features = ["serde", "v4", "v5"] }
 validator = { version = "0.20", features = ["derive"] }
-warp = "0.3" # 0.4 breaks a bunch of stuff
+warp = { git = "https://github.com/seanmonstar/warp.git", rev = "de1ccd83e2b65575cade3520e6b8031afe7d87b7", features = ["server", "websocket"] }
 
 [build-dependencies]
 prost-build = "0.14"
 
 [dev-dependencies]
 criterion = "0.8"
-rand = "0.9"
+rand = "0.10"
 
 [features]
 default = ["python"]

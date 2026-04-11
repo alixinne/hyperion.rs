@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["BoblightServerError"],"fn":["handle_client"],"mod":["codec"]};
+window.SIDEBAR_ITEMS = {"enum":["BoblightCodecError","BoblightServerError"],"fn":["handle_client"],"mod":["codec"],"struct":["BoblightCodec"]};

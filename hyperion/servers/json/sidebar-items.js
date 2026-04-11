@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["JsonServerError"],"fn":["handle_client"],"mod":["codec"]};
+window.SIDEBAR_ITEMS = {"enum":["JsonCodecError","JsonServerError"],"fn":["handle_client"],"mod":["codec"],"struct":["JsonCodec"]};

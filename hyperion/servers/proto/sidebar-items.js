@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ProtoServerError"],"fn":["error_response","handle_client","success_response"],"mod":["codec"]};
+window.SIDEBAR_ITEMS = {"enum":["ProtoCodecError","ProtoServerError"],"fn":["error_response","handle_client","success_response"],"mod":["codec"],"struct":["ProtoCodec"]};

@@ -9,6 +9,7 @@ bytes = "1.11.1"
 clap = { version = "4.6.0", features = ["env", "derive"] }
 clap-verbosity-flag = { version = "3.0.4", features = ["tracing"] }
 color-eyre = "0.6.5"
+crc32fast = "1.5.0"
 crossbeam-channel = "0.5.15"
 drm = "0.15.0"
 gbm = { version = "0.18.0", default-features = false }

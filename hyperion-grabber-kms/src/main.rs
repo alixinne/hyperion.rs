@@ -19,6 +19,7 @@ use hyperion::api::proto::message::ImageRequest;
 use hyperion::servers::proto::ProtoCodec;
 use tokio_util::codec::Encoder;
 use tracing::error;
+use tracing::info;
 
 mod capture;
 
@@ -150,6 +151,9 @@ fn main() -> color_eyre::eyre::Result<()> {
 
     // Frame capture loop
     let mut frame_buf = BytesMut::new();
+    // Still frame tracking
+    let mut last_crc = 0u32;
+    let mut start_still_frame = Instant::now();
     while !term.load(Ordering::Relaxed) {
         let start_frame = Instant::now();
         let next_frame = start_frame + Duration::from_micros(1_000_000 / opts.fps as u64);
@@ -172,10 +176,27 @@ fn main() -> color_eyre::eyre::Result<()> {
             next_frame,
         );
 
-        // Wait for next frame
+        // Compute crc32
+        let new_crc = crc32fast::hash(&frame_buf);
+        if last_crc != new_crc {
+            // The image has changed, update crc and reset timing
+            last_crc = new_crc;
+            start_still_frame = start_frame;
+        }
+
+        // Wait for next frame, or refresh buffer if we've had still frames for too long
         let now = Instant::now();
-        if next_frame > now {
-            sleep(next_frame - now);
+        if now - start_still_frame > Duration::from_secs(5) {
+            info!("Still image for more than 5 seconds, refreshing capture texture");
+
+            // Reset state, reattach current fb
+            capture.attach_plane()?;
+            last_crc = 0;
+            start_still_frame = now;
+        } else {
+            if next_frame > now {
+                sleep(next_frame - now);
+            }
         }
     }
 

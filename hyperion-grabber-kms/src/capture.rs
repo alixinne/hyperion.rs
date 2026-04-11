@@ -54,6 +54,8 @@ impl Card {
 }
 
 pub struct KmsCapture {
+    card: Card,
+    display: Display,
     renderer: graphics::Renderer,
     framebuffer: GLuint,
     renderbuffer: GLuint,
@@ -110,6 +112,174 @@ impl KmsCapture {
         }
 
         (self.width, self.height)
+    }
+
+    pub fn attach_plane(&mut self) -> color_eyre::eyre::Result<()> {
+        let (_handle, _info, fb) = self
+            .card
+            .plane_handles()?
+            .into_iter()
+            .find_map(|handle| {
+                let info = self.card.get_plane(handle).ok()?;
+                if !(info.crtc().is_some() && info.framebuffer().is_some()) {
+                    return None;
+                }
+
+                let fb = self
+                    .card
+                    .get_planar_framebuffer(info.framebuffer().unwrap())
+                    .ok()?;
+                if !(fb.size().0 >= 640 && fb.size().1 >= 480) {
+                    return None;
+                }
+
+                debug!("Plane: {handle:?}");
+                debug!("\tCRTC: {:?}", info.crtc());
+                debug!("\tFramebuffer: {:?}", info.framebuffer());
+                debug!("\tFormats: {:?}", info.formats());
+
+                debug!("Framebuffer: {handle:?}");
+                debug!("\tSize: {:?}", fb.size());
+                debug!("\tFlags: {:?}", fb.flags());
+                debug!("\tPixel format: {:?}", fb.pixel_format());
+                debug!("\tModifiers: {:?}", fb.modifier());
+
+                debug!("\tBuffers: {:?}", fb.buffers());
+                debug!("\tPitches: {:?}", fb.pitches());
+                debug!("\tOffsets: {:?}", fb.offsets());
+
+                Some((handle, info, fb))
+            })
+            .unwrap();
+
+        let bpo = fb
+            .buffers()
+            .iter()
+            .zip(fb.pitches())
+            .zip(fb.offsets())
+            .filter_map(|((f, p), o)| {
+                f.map(|x| (self.card.buffer_to_prime_fd(x, 0).unwrap(), p, o))
+            })
+            .collect::<Vec<_>>();
+
+        let width = self.width;
+        let height = (self.width * fb.size().1) / fb.size().0;
+
+        self.width = width;
+        self.height = height;
+        self.renderer.resize(width as _, height as _);
+
+        // Create a framebuffer for offscreen rendering since we do not have a window.
+        unsafe {
+            if self.framebuffer == 0 {
+                self.renderer.GenFramebuffers(1, &mut self.framebuffer);
+            }
+            if self.renderbuffer == 0 {
+                self.renderer.GenRenderbuffers(1, &mut self.renderbuffer);
+            }
+            self.renderer
+                .BindFramebuffer(gl::FRAMEBUFFER, self.framebuffer);
+            self.renderer
+                .BindRenderbuffer(gl::RENDERBUFFER, self.renderbuffer);
+            self.renderer
+                .RenderbufferStorage(gl::RENDERBUFFER, gl::RGBA8, width as _, height as _);
+            self.renderer.FramebufferRenderbuffer(
+                gl::FRAMEBUFFER,
+                gl::COLOR_ATTACHMENT0,
+                gl::RENDERBUFFER,
+                self.renderbuffer,
+            );
+        }
+
+        unsafe {
+            let display_ptr = match self.display.raw_display() {
+                glutin::display::RawDisplay::Egl(ptr) => ptr,
+            };
+
+            let modifier: u64 = fb.modifier().unwrap().into();
+
+            let attribs = if bpo.len() > 1 {
+                [
+                    egl::WIDTH as isize,
+                    fb.size().0 as _,
+                    egl::HEIGHT as _,
+                    fb.size().1 as _,
+                    egl::LINUX_DRM_FOURCC_EXT as isize,
+                    fb.pixel_format() as _,
+                    // Plane 0
+                    egl::DMA_BUF_PLANE0_FD_EXT as isize,
+                    bpo[0].0.as_raw_fd() as isize,
+                    egl::DMA_BUF_PLANE0_PITCH_EXT as isize,
+                    bpo[0].1 as _,
+                    egl::DMA_BUF_PLANE0_OFFSET_EXT as isize,
+                    bpo[0].2 as _,
+                    egl::DMA_BUF_PLANE0_MODIFIER_LO_EXT as isize,
+                    (modifier & 0xFFFF_FFFF) as isize,
+                    egl::DMA_BUF_PLANE0_MODIFIER_HI_EXT as isize,
+                    (modifier >> 32) as isize,
+                    // Plane 1
+                    egl::DMA_BUF_PLANE1_FD_EXT as isize,
+                    bpo[1].0.as_raw_fd() as isize,
+                    egl::DMA_BUF_PLANE1_PITCH_EXT as isize,
+                    bpo[1].1 as _,
+                    egl::DMA_BUF_PLANE1_OFFSET_EXT as isize,
+                    bpo[1].2 as _,
+                    egl::DMA_BUF_PLANE1_MODIFIER_LO_EXT as isize,
+                    (modifier & 0xFFFF_FFFF) as isize,
+                    egl::DMA_BUF_PLANE1_MODIFIER_HI_EXT as isize,
+                    (modifier >> 32) as isize,
+                    // Plane 2
+                    egl::DMA_BUF_PLANE2_FD_EXT as isize,
+                    bpo[2].0.as_raw_fd() as isize,
+                    egl::DMA_BUF_PLANE2_PITCH_EXT as isize,
+                    bpo[2].1 as _,
+                    egl::DMA_BUF_PLANE2_OFFSET_EXT as isize,
+                    bpo[2].2 as _,
+                    egl::DMA_BUF_PLANE2_MODIFIER_LO_EXT as isize,
+                    (modifier & 0xFFFF_FFFF) as isize,
+                    egl::DMA_BUF_PLANE2_MODIFIER_HI_EXT as isize,
+                    (modifier >> 32) as isize,
+                    egl::NONE as isize,
+                ]
+                .to_vec()
+            } else {
+                [
+                    egl::WIDTH as isize,
+                    fb.size().0 as _,
+                    egl::HEIGHT as _,
+                    fb.size().1 as _,
+                    egl::LINUX_DRM_FOURCC_EXT as isize,
+                    fb.pixel_format() as _,
+                    // Plane 0
+                    egl::DMA_BUF_PLANE0_FD_EXT as isize,
+                    bpo[0].0.as_raw_fd() as isize,
+                    egl::DMA_BUF_PLANE0_PITCH_EXT as isize,
+                    bpo[0].1 as _,
+                    egl::DMA_BUF_PLANE0_OFFSET_EXT as isize,
+                    bpo[0].2 as _,
+                    egl::DMA_BUF_PLANE0_MODIFIER_LO_EXT as isize,
+                    (modifier & 0xFFFF_FFFF) as isize,
+                    egl::DMA_BUF_PLANE0_MODIFIER_HI_EXT as isize,
+                    (modifier >> 32) as isize,
+                    egl::NONE as isize,
+                ]
+                .to_vec()
+            };
+
+            let image = self.renderer.egl().CreateImage(
+                display_ptr,
+                null_mut(),
+                egl::LINUX_DMA_BUF_EXT,
+                null_mut(),
+                attribs.as_ptr(),
+            );
+
+            self.renderer.prepare_texture(image);
+
+            self.renderer.egl().DestroyImage(display_ptr, image);
+        }
+
+        Ok(())
     }
 }
 
@@ -169,168 +339,25 @@ pub fn init(card_path: &Path, image_width: u32) -> color_eyre::eyre::Result<KmsC
     // Make the context current for rendering
     let _context = not_current.make_current_surfaceless().unwrap();
 
+    // Initialize renderer
     let renderer = graphics::Renderer::new(&display);
-    let (_handle, _info, fb) = card
-        .plane_handles()?
-        .into_iter()
-        .find_map(|handle| {
-            let info = card.get_plane(handle).ok()?;
-            if !(info.crtc().is_some() && info.framebuffer().is_some()) {
-                return None;
-            }
 
-            let fb = card
-                .get_planar_framebuffer(info.framebuffer().unwrap())
-                .ok()?;
-            if !(fb.size().0 >= 640 && fb.size().1 >= 480) {
-                return None;
-            }
-
-            debug!("Plane: {handle:?}");
-            debug!("\tCRTC: {:?}", info.crtc());
-            debug!("\tFramebuffer: {:?}", info.framebuffer());
-            debug!("\tFormats: {:?}", info.formats());
-
-            debug!("Framebuffer: {handle:?}");
-            debug!("\tSize: {:?}", fb.size());
-            debug!("\tFlags: {:?}", fb.flags());
-            debug!("\tPixel format: {:?}", fb.pixel_format());
-            debug!("\tModifiers: {:?}", fb.modifier());
-
-            debug!("\tBuffers: {:?}", fb.buffers());
-            debug!("\tPitches: {:?}", fb.pitches());
-            debug!("\tOffsets: {:?}", fb.offsets());
-
-            Some((handle, info, fb))
-        })
-        .unwrap();
-
-    let bpo = fb
-        .buffers()
-        .iter()
-        .zip(fb.pitches())
-        .zip(fb.offsets())
-        .filter_map(|((f, p), o)| f.map(|x| (card.buffer_to_prime_fd(x, 0).unwrap(), p, o)))
-        .collect::<Vec<_>>();
-
-    let width = image_width;
-    let height = (image_width * fb.size().1) / fb.size().0;
-
-    renderer.resize(width as _, height as _);
-
-    // Create a framebuffer for offscreen rendering since we do not have a window.
-    let mut framebuffer = 0;
-    let mut renderbuffer = 0;
-    unsafe {
-        renderer.GenFramebuffers(1, &mut framebuffer);
-        renderer.GenRenderbuffers(1, &mut renderbuffer);
-        renderer.BindFramebuffer(gl::FRAMEBUFFER, framebuffer);
-        renderer.BindRenderbuffer(gl::RENDERBUFFER, renderbuffer);
-        renderer.RenderbufferStorage(gl::RENDERBUFFER, gl::RGBA8, width as _, height as _);
-        renderer.FramebufferRenderbuffer(
-            gl::FRAMEBUFFER,
-            gl::COLOR_ATTACHMENT0,
-            gl::RENDERBUFFER,
-            renderbuffer,
-        );
-    }
-
-    unsafe {
-        let display_ptr = match display.raw_display() {
-            glutin::display::RawDisplay::Egl(ptr) => ptr,
-        };
-
-        let modifier: u64 = fb.modifier().unwrap().into();
-
-        let attribs = if bpo.len() > 1 {
-            [
-                egl::WIDTH as isize,
-                fb.size().0 as _,
-                egl::HEIGHT as _,
-                fb.size().1 as _,
-                egl::LINUX_DRM_FOURCC_EXT as isize,
-                fb.pixel_format() as _,
-                // Plane 0
-                egl::DMA_BUF_PLANE0_FD_EXT as isize,
-                bpo[0].0.as_raw_fd() as isize,
-                egl::DMA_BUF_PLANE0_PITCH_EXT as isize,
-                bpo[0].1 as _,
-                egl::DMA_BUF_PLANE0_OFFSET_EXT as isize,
-                bpo[0].2 as _,
-                egl::DMA_BUF_PLANE0_MODIFIER_LO_EXT as isize,
-                (modifier & 0xFFFF_FFFF) as isize,
-                egl::DMA_BUF_PLANE0_MODIFIER_HI_EXT as isize,
-                (modifier >> 32) as isize,
-                // Plane 1
-                egl::DMA_BUF_PLANE1_FD_EXT as isize,
-                bpo[1].0.as_raw_fd() as isize,
-                egl::DMA_BUF_PLANE1_PITCH_EXT as isize,
-                bpo[1].1 as _,
-                egl::DMA_BUF_PLANE1_OFFSET_EXT as isize,
-                bpo[1].2 as _,
-                egl::DMA_BUF_PLANE1_MODIFIER_LO_EXT as isize,
-                (modifier & 0xFFFF_FFFF) as isize,
-                egl::DMA_BUF_PLANE1_MODIFIER_HI_EXT as isize,
-                (modifier >> 32) as isize,
-                // Plane 2
-                egl::DMA_BUF_PLANE2_FD_EXT as isize,
-                bpo[2].0.as_raw_fd() as isize,
-                egl::DMA_BUF_PLANE2_PITCH_EXT as isize,
-                bpo[2].1 as _,
-                egl::DMA_BUF_PLANE2_OFFSET_EXT as isize,
-                bpo[2].2 as _,
-                egl::DMA_BUF_PLANE2_MODIFIER_LO_EXT as isize,
-                (modifier & 0xFFFF_FFFF) as isize,
-                egl::DMA_BUF_PLANE2_MODIFIER_HI_EXT as isize,
-                (modifier >> 32) as isize,
-                egl::NONE as isize,
-            ]
-            .to_vec()
-        } else {
-            [
-                egl::WIDTH as isize,
-                fb.size().0 as _,
-                egl::HEIGHT as _,
-                fb.size().1 as _,
-                egl::LINUX_DRM_FOURCC_EXT as isize,
-                fb.pixel_format() as _,
-                // Plane 0
-                egl::DMA_BUF_PLANE0_FD_EXT as isize,
-                bpo[0].0.as_raw_fd() as isize,
-                egl::DMA_BUF_PLANE0_PITCH_EXT as isize,
-                bpo[0].1 as _,
-                egl::DMA_BUF_PLANE0_OFFSET_EXT as isize,
-                bpo[0].2 as _,
-                egl::DMA_BUF_PLANE0_MODIFIER_LO_EXT as isize,
-                (modifier & 0xFFFF_FFFF) as isize,
-                egl::DMA_BUF_PLANE0_MODIFIER_HI_EXT as isize,
-                (modifier >> 32) as isize,
-                egl::NONE as isize,
-            ]
-            .to_vec()
-        };
-
-        let image = renderer.egl().CreateImage(
-            display_ptr,
-            null_mut(),
-            egl::LINUX_DMA_BUF_EXT,
-            null_mut(),
-            attribs.as_ptr(),
-        );
-
-        renderer.prepare_texture(image);
-
-        renderer.egl().DestroyImage(display_ptr, image);
-    }
-
-    Ok(KmsCapture {
+    // Initialize capture state
+    let mut capture = KmsCapture {
+        card,
         renderer,
-        framebuffer,
-        renderbuffer,
-        width,
-        height,
+        display,
+        framebuffer: 0,
+        renderbuffer: 0,
+        width: image_width,
+        height: 0,
         _unsend: Default::default(),
-    })
+    };
+
+    // Attach current framebuffer once
+    capture.attach_plane()?;
+
+    Ok(capture)
 }
 
 fn config_template() -> ConfigTemplate {

@@ -1589,6 +1589,7 @@ dependencies = [
  "clap 4.6.0",
  "clap-verbosity-flag",
  "color-eyre",
+ "crc32fast",
  "crossbeam-channel",
  "drm",
  "gbm",

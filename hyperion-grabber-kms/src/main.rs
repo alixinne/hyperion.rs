@@ -9,6 +9,8 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::time::Instant;
 
+use bytes::Buf;
+use bytes::Bytes;
 use bytes::BytesMut;
 use clap::Parser;
 use hyperion::api::proto::message::ClearRequest;
@@ -55,7 +57,7 @@ struct Opts {
 }
 
 struct ImageMessage {
-    buffer: BytesMut,
+    buffer: Bytes,
     width: u32,
     height: u32,
 }
@@ -147,19 +149,23 @@ fn main() -> color_eyre::eyre::Result<()> {
     });
 
     // Frame capture loop
+    let mut frame_buf = BytesMut::new();
     while !term.load(Ordering::Relaxed) {
         let start_frame = Instant::now();
         let next_frame = start_frame + Duration::from_micros(1_000_000 / opts.fps as u64);
 
         // Capture frame
-        let (buffer, (width, height)) =
-            capture.next_frame(opts.tone_mapping_offset, opts.tone_mapping_scaling);
+        let (width, height) = capture.next_frame(
+            &mut frame_buf,
+            opts.tone_mapping_offset,
+            opts.tone_mapping_scaling,
+        );
 
         // Forward it to network loop, but if the network loop is busy just drop it and move on to
         // the next frame to avoid running late
         let _ = tx.send_deadline(
             ImageMessage {
-                buffer,
+                buffer: frame_buf.copy_to_bytes(frame_buf.len()),
                 width,
                 height,
             },

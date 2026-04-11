@@ -59,7 +59,6 @@ pub struct KmsCapture {
     renderbuffer: GLuint,
     width: u32,
     height: u32,
-    buffer: BytesMut,
 
     // GL state is bound to the current thread, it can't be sent across threads
     _unsend: PhantomData<*const ()>,
@@ -80,11 +79,17 @@ impl Drop for KmsCapture {
 impl KmsCapture {
     pub fn next_frame(
         &mut self,
+        buffer: &mut BytesMut,
         tone_mapping_offset: f32,
         tone_mapping_scaling: f32,
-    ) -> (BytesMut, (u32, u32)) {
+    ) -> (u32, u32) {
         self.renderer
             .draw(tone_mapping_offset, tone_mapping_scaling);
+
+        // Clear buffer
+        let buf_len = (self.width * self.height * 4) as _;
+        buffer.clear();
+        buffer.reserve(buf_len);
 
         unsafe {
             // Wait for the previous commands to finish before reading from the framebuffer.
@@ -98,13 +103,13 @@ impl KmsCapture {
                 self.height as _,
                 gl::RGBA,
                 gl::UNSIGNED_BYTE,
-                self.buffer.as_mut_ptr() as *mut _,
+                buffer.as_mut_ptr() as *mut _,
             );
 
-            self.buffer.set_len((self.width * self.height * 4) as _);
+            buffer.set_len(buf_len);
         }
 
-        (self.buffer.clone(), (self.width, self.height))
+        (self.width, self.height)
     }
 }
 
@@ -324,7 +329,6 @@ pub fn init(card_path: &Path, image_width: u32) -> color_eyre::eyre::Result<KmsC
         renderbuffer,
         width,
         height,
-        buffer: BytesMut::with_capacity((width * height * 4) as _),
         _unsend: Default::default(),
     })
 }

@@ -63,7 +63,7 @@ tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.23", features = ["serde", "v4", "v5"] }
 validator = { version = "0.20", features = ["derive"] }
-warp = { git = "https://github.com/seanmonstar/warp.git", rev = "de1ccd83e2b65575cade3520e6b8031afe7d87b7", features = ["server", "websocket"] }
+warp = { git = "https://github.com/seanmonstar/warp.git", rev = "d7f6fddfef68f57e06ee99ee7e12c1189fc43d6c", features = ["server", "websocket"] }
 
 [build-dependencies]
 prost-build = "0.14"

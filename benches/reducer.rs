@@ -11,7 +11,7 @@ use hyperion::{
 fn random_image(width: u16, height: u16) -> RawImage {
     let mut data = vec![0u8; width as usize * height as usize * RawImage::CHANNELS as usize];
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     rng.fill_bytes(&mut data);
 
     RawImage::try_from((data, width as u32, height as u32)).unwrap()

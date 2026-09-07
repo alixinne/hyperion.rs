@@ -24,7 +24,7 @@
       system:
       let
         # TODO: Update this on new releases
-        version = "0.3.3";
+        version = "0.3.4";
 
         pkgs = nixpkgs.legacyPackages.${system};
         raspberryPiZeroTarget = "arm-unknown-linux-gnueabihf";

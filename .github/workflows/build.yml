@@ -17,7 +17,7 @@ jobs:
   checks:
     name: Check code
 
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout source code
@@ -62,7 +62,7 @@ jobs:
   build:
     name: Build hyperion.rs binaries
 
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout source code

@@ -24,7 +24,7 @@
       system:
       let
         # TODO: Update this on new releases
-        version = "0.3.4";
+        version = "0.3.5";
 
         pkgs = nixpkgs.legacyPackages.${system};
         raspberryPiZeroTarget = "arm-unknown-linux-gnueabihf";
@@ -64,8 +64,7 @@
           toolchain = defaultToolchain;
 
           additionalAttrs.postInstall = ''
-            wrapProgram $out/bin/hyperion-grabber-kms \
-              --suffix LD_LIBRARY_PATH : ${pkgs.libglvnd}/lib
+            patchelf --add-rpath ${pkgs.libglvnd}/lib $out/bin/hyperion-grabber-kms
           '';
         };
 
